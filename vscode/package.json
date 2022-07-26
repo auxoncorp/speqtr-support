@@ -1,0 +1,37 @@
+{
+    "name": "speqtr",
+    "displayName": "speqtr",
+    "description": "Support for Auxon's SpeQTr specification and query language",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.69.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "speqtr",
+                "aliases": [
+                    "SpeQTr",
+                    "speqtr"
+                ],
+                "extensions": [
+                    ".speqtr"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "speqtr",
+                "scopeName": "source.speqtr",
+                "path": "./syntaxes/speqtr.tmLanguage.json"
+            }
+        ]
+    },
+    "devDependencies": {
+        "vscode-tmgrammar-test": "^0.1.1"
+    }
+}

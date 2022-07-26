@@ -1,0 +1,179 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "SpeQTr",
+    "scopeName": "source.speqtr",
+    "patterns": [
+        { "include": "#keywords" },
+        { "include": "#literals" },
+        { "include": "#event_at_probe" },
+        { "include": "#strings" },
+        { "include": "#comments" }
+    ],
+    "repository": {
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.other.speqtr",
+                    "match": "\\b(?i)(triggered|global|behavior|end|followed|preceded|by|->|<-|!->|<-!|within|as|until|trigger|recovery|nominal|prohibited|case|in|until)\\b"
+                },
+                {
+                    "name": "keyword.operator.arithmetic.speqtr",
+                    "match": "\\b(\\+|\\-|\\*|\\/)\\b"
+                },
+                {
+                    "name": "keyword.operator.logical.speqtr",
+                    "match": "\\b(?i)(and|or)\\b"
+                }
+            ]
+        },
+        "literals": {
+            "patterns": [
+                {
+                    "name": "constant.language.boolean.true.speqtr",
+                    "match": "\\b(?i)(true)\\b"
+                },
+                {
+                    "name": "constant.language.boolean.false.speqtr",
+                    "match": "\\b(?i)(false)\\b"
+                },
+                {
+                    "name": "constant.numeric.hex.js",
+                    "match": "\\b(?<!\\$)0(?:x|X)[0-9a-fA-F][0-9a-fA-F_]*(n)?\\b(?!\\$)",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        }
+                    }
+                },
+                {
+                    "name": "constant.numeric.binary.speqtr",
+                    "match": "\\b(?<!\\$)0(?:b|B)[01][01_]*(n)?\\b(?!\\$)",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        }
+                    }
+                },
+                {
+                    "name": "constant.numeric.octal.speqtr",
+                    "match": "\\b(?<!\\$)0(?:o|O)?[0-7][0-7_]*(n)?\\b(?!\\$)",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        }
+                    }
+                },
+                {
+                    "match": "(?x)\n(?<!\\$)(?:\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*(n)?\\b)| # 1.1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[eE][+-]?[0-9][0-9_]*(n)?\\b)|             # 1.E+3\n  (?:\\B(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*(n)?\\b)|             # .1E+3\n  (?:\\b[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*(n)?\\b)|                 # 1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*(n)?\\b)|                      # 1.1\n  (?:\\b[0-9][0-9_]*(\\.)(n)?\\B)|                                  # 1.\n  (?:\\B(\\.)[0-9][0-9_]*(n)?\\b)|                                  # .1\n  (?:\\b[0-9][0-9_]*(n)?\\b(?!\\.))                                 # 1\n)(?!\\$)",
+                    "captures": {
+                        "0": {
+                            "name": "constant.numeric.decimal.speqtr"
+                        },
+                        "1": {
+                            "name": "meta.delimiter.decimal.period.speqtr"
+                        },
+                        "2": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        },
+                        "3": {
+                            "name": "meta.delimiter.decimal.period.speqtr"
+                        },
+                        "4": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        },
+                        "5": {
+                            "name": "meta.delimiter.decimal.period.speqtr"
+                        },
+                        "6": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        },
+                        "7": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        },
+                        "8": {
+                            "name": "meta.delimiter.decimal.period.speqtr"
+                        },
+                        "9": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        },
+                        "10": {
+                            "name": "meta.delimiter.decimal.period.speqtr"
+                        },
+                        "11": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        },
+                        "12": {
+                            "name": "meta.delimiter.decimal.period.speqtr"
+                        },
+                        "13": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        },
+                        "14": {
+                            "name": "storage.type.numeric.bigint.speqtr"
+                        }
+                    }
+                }
+            ]
+        },
+        "event_at_probe": {
+            "patterns": [
+                {
+                    "match": "\\b([\\w\\?\\*]+)\\@([\\w\\?\\*]+)",
+                    "name": "entity.name.event_at_probe.speqtr",
+                    "captures": {
+                        "1": { "name": "entity.name.type.class.speqtr" },
+                        "2": { "name": "entity.name.namespace.speqtr" }
+                    }
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.speqtr",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.speqtr",
+                            "match": "\\\\."
+                        }
+                    ]
+
+                },
+                {
+                    "name": "string.quoted.double.speqtr",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.speqtr",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        },
+        "comment": {
+	    "begin": "(^\\s+)?(?<=^|\\W)(?<!-)(?=#)(?!#{)",
+	    "beginCaptures": {
+		"1": {
+		    "name": "punctuation.whitespace.comment.leading.speqtr"
+		}
+	    },
+	    "end": "(?!\\G)",
+	    "patterns": [
+		{
+		    "begin": "#",
+		    "beginCaptures": {
+			"0": {
+			    "name": "punctuation.definition.comment.speqtr"
+			}
+		    },
+		    "end": "$",
+		    "name": "comment.line.number-sign.speqtr"
+		}
+	    ]
+	}
+    }
+}
