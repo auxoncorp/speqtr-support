@@ -2,38 +2,20 @@
     "Behavior": {
         "prefix": "b",
         "body": [
-            "$1 behavior '$2'",
-            "    $3",
+            "behavior '$1'",
+            "    $2",
             "end"
         ],
         "description": "behavior"
     },
-    "Triggered Behavior": {
-        "prefix": "tb",
+    "When": {
+        "prefix": "w",
         "body": [
-            "triggered behavior '$1'",
+            "when '$1'",
             "    $2",
             "end"
         ],
-        "description": "triggered behavior"
-    },
-    "Global Behavior": {
-        "prefix": "gb",
-        "body": [
-            "global behavior '$1'",
-            "    $2",
-            "end"
-        ],
-        "description": "global behavior"
-    },
-    "Trigger": {
-        "prefix": "tr",
-        "body": [
-            "trigger '$1'",
-            "    $2",
-            "end"
-        ],
-        "description": "trigger"
+        "description": "when"
     },
     "Nominal Case": {
         "prefix": "nc",

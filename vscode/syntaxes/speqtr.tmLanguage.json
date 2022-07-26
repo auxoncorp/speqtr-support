@@ -14,7 +14,7 @@
             "patterns": [
                 {
                     "name": "keyword.other.speqtr",
-                    "match": "\\b(?i)(triggered|global|behavior|end|followed|preceded|by|->|<-|!->|<-!|within|as|until|trigger|recovery|nominal|prohibited|case|in|until)\\b"
+                    "match": "\\b(?i)(behavior|end|followed|preceded|by|->|<-|!->|<-!|within|as|until|when|recovery|nominal|prohibited|case|in|until)\\b"
                 },
                 {
                     "name": "keyword.operator.arithmetic.speqtr",

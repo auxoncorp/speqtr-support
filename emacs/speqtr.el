@@ -9,9 +9,9 @@
 
   ;; keyword list
   '("->" "<-" "!->" "<-!" "within" "as"
-    "scenario" "trigger" "recovery" "nominal" "case"
+    "when" "recovery" "nominal" "case"
     "and" "or" "true" "false" "_" "behavior" "behaviour" "end"
-    "unspecified" "in" "until" "prohibited" "period")
+    "unspecified" "in" "until" "prohibited")
 
   ;; font-lock list
   '(
