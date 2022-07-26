@@ -29,6 +29,12 @@
                 "scopeName": "source.speqtr",
                 "path": "./syntaxes/speqtr.tmLanguage.json"
             }
+        ],
+        "snippets": [
+            {
+                "language": "speqtr",
+                "path": "./snippets.json"
+            }
         ]
     },
     "devDependencies": {

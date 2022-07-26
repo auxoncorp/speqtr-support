@@ -1,0 +1,65 @@
+{
+    "Behavior": {
+        "prefix": "b",
+        "body": [
+            "$1 behavior '$2'",
+            "    $3",
+            "end"
+        ],
+        "description": "behavior"
+    },
+    "Triggered Behavior": {
+        "prefix": "tb",
+        "body": [
+            "triggered behavior '$1'",
+            "    $2",
+            "end"
+        ],
+        "description": "triggered behavior"
+    },
+    "Global Behavior": {
+        "prefix": "gb",
+        "body": [
+            "global behavior '$1'",
+            "    $2",
+            "end"
+        ],
+        "description": "global behavior"
+    },
+    "Trigger": {
+        "prefix": "tr",
+        "body": [
+            "trigger '$1'",
+            "    $2",
+            "end"
+        ],
+        "description": "trigger"
+    },
+    "Nominal Case": {
+        "prefix": "nc",
+        "body": [
+            "nominal case '$1'",
+            "    $2",
+            "end"
+        ],
+        "description": "nominal case"
+    },
+    "Recovery Case": {
+        "prefix": "rc",
+        "body": [
+            "recovery case '$1'",
+            "    $2",
+            "end"
+        ],
+        "description": "recovery case"
+    },
+    "Prohibited": {
+        "prefix": "pc",
+        "body": [
+            "prohibited case '$1'",
+            "    $2",
+            "end"
+        ],
+        "description": "prohibited case"
+    },
+}
