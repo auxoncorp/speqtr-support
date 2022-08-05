@@ -2,6 +2,7 @@
     "name": "speqtr",
     "displayName": "speqtr",
     "description": "Support for Auxon's SpeQTr specification and query language",
+    "publisher": "auxon",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.69.0"
@@ -35,9 +36,63 @@
                 "language": "speqtr",
                 "path": "./snippets.json"
             }
-        ]
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Auxon SpeQTr",
+            "properties": {
+                "speqtr.server.path":  {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "scope": "machine-overridable",
+                    "default": null,
+                    "markdownDescription": "Path to the speqtr-lsp executable."
+                },
+
+                "speqtr.server.extraEnv": {
+                    "type": [
+                        "null",
+                        "object"
+                    ],
+                    "additionalProperties": {
+                        "type": [
+                            "string",
+                            "number"
+                        ]
+                    },
+                    "default": null,
+                    "markdownDescription": "Extra environment variables that will be passed to the speqtr-lsp executable."
+                }
+            }
+        }
     },
-    "devDependencies": {
-        "vscode-tmgrammar-test": "^0.1.1"
-    }
+    "activationEvents": ["onLanguage:speqtr"],
+    "main": "out/main.js",
+    "scripts": {
+        "vscode:prepublish": "npm run build-base -- --minify",
+        "package": "vsce package -o speqtr.vsix",
+        "build-base": "esbuild ./src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node16",
+        "build": "npm run build-base -- --sourcemap",
+        "watch": "npm run build-base -- --sourcemap --watch",
+        "lint": "prettier --check . && eslint -c .eslintrc.js --ext ts ./src",
+        "fix": "prettier --write . && eslint -c .eslintrc.js --ext ts ./src --fix"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^7.0.0"
+    },
+	"devDependencies": {
+		"@types/mocha": "^9.1.0",
+		"@types/node": "^16.11.7",
+		"@typescript-eslint/eslint-plugin": "^5.30.0",
+		"@typescript-eslint/parser": "^5.30.0",
+        "@types/vscode": "^1.63.0",
+
+        "esbuild": "^0.14.48",
+		"eslint": "^8.13.0",
+		"mocha": "^9.2.1",
+		"typescript": "^4.7.2",
+        "vsce": "^2.9.2"
+	}
 }
