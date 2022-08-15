@@ -10,7 +10,6 @@
     ],
     // symbols that are auto closed when typing
     "autoClosingPairs": [
-        ["{", "}"],
         ["[", "]"],
         ["(", ")"],
         ["\"", "\""],
@@ -18,10 +17,21 @@
     ],
     // symbols that can be used to surround a selection
     "surroundingPairs": [
-        ["{", "}"],
         ["[", "]"],
         ["(", ")"],
         ["\"", "\""],
         ["'", "'"]
     ],
+    "indentationRules": {
+        "increaseIndentPattern": "^\\s*(behavior|nominal|recovery|prohibited|case|when)",
+        "decreaseIndentPattern": "^\\s*end"
+    },
+    "onEnterRules": [
+        {
+            "beforeText": "^\\s*(behavior|nominal|recovery|prohibited|case|when)",
+            "action": { 
+                "indent": "indent"
+             }
+        }
+    ]
 }
