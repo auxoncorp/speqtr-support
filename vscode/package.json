@@ -64,6 +64,47 @@
                     },
                     "default": null,
                     "markdownDescription": "Extra environment variables that will be passed to the speqtr-lsp executable."
+                },
+
+                "modality.url": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "scope": "machine-overridable",
+                    "default": null,
+                    "markdownDescription": "The URL of the Auxon Modality backend server. Defaults to http://localhost:14181/v1/"
+                },
+
+                "modality.insecure": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ],
+                    "scope": "machine-overridable",
+                    "default": null,
+                    "markdownDescription": "Ignore certificate validation for https connections."
+                },
+
+                "modality.auth_token": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "scope": "machine-overridable",
+                    "default": null,
+                    "markdownDescription": "The authentication token to use when connecting to the Modality back end."
+                },
+
+                "modality.workspace": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "scope": "machine-overridable",
+                    "default": null,
+                    "markdownDescription": "The name of the workspace to use for Modality data operations, including completions."
+
                 }
             }
         }
