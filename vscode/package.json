@@ -104,12 +104,34 @@
                     "scope": "machine-overridable",
                     "default": null,
                     "markdownDescription": "The name of the workspace to use for Modality data operations, including completions."
+                },
 
+                "modality.cli.path": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "scope": "machine-overridable",
+                    "default": null,
+                    "markdownDescription": "Path to the modality executable."
                 }
             }
+        },
+        "viewsContainers": {
+            "activitybar": [{
+                "id": "auxon-explorer",
+                "title": "Auxon",
+                "icon": "media/dep.svg"
+            }]
+        },
+        "views": {
+            "auxon-explorer": [{
+                "id": "modalityWorkspaces",
+                "name": "Modality Workspaces"
+            }]
         }
     },
-    "activationEvents": ["onLanguage:speqtr"],
+    "activationEvents": ["onLanguage:speqtr", "onView:modalityWorkspaces"],
     "main": "out/main.js",
     "scripts": {
         "vscode:prepublish": "npm run build-base -- --minify",
@@ -121,7 +143,8 @@
         "fix": "prettier --write . && eslint -c .eslintrc.js --ext ts ./src --fix"
     },
     "dependencies": {
-        "vscode-languageclient": "^7.0.0"
+        "vscode-languageclient": "^7.0.0",
+        "node-fetch": "^2.6.7"
     },
 	"devDependencies": {
 		"@types/mocha": "^9.1.0",
@@ -129,7 +152,7 @@
 		"@typescript-eslint/eslint-plugin": "^5.30.0",
 		"@typescript-eslint/parser": "^5.30.0",
         "@types/vscode": "^1.63.0",
-
+        "@types/node-fetch": "^2.5.12",
         "esbuild": "^0.14.48",
 		"eslint": "^8.13.0",
 		"mocha": "^9.2.1",

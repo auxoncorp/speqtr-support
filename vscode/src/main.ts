@@ -1,8 +1,10 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as vscode from "vscode";
-// TODO
 import { workspace, ExtensionContext } from 'vscode';
+import { ModalityWorkspaceTreeDataProvider } from './WorkspaceProvider'; 'WorkspaceProvider';
+
+
 
 import {
 	LanguageClient,
@@ -15,8 +17,14 @@ let client: LanguageClient;
 
 console.log("load");
 
+
 export function activate(context: ExtensionContext) {
     console.log("activate");
+
+	// vscode.window.registerTreeDataProvider('modalityWorkspaces', new ModalityWorkspaceTreeDataProvider());
+	vscode.window.createTreeView('modalityWorkspaces', {
+		treeDataProvider: new ModalityWorkspaceTreeDataProvider()
+	});
 
     var serverConfig : vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("speqtr.server");
 
