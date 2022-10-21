@@ -23,11 +23,11 @@ export function activate(context: ExtensionContext) {
     var serverPath = serverConfig.get<null | string>("path");
     if (serverPath == null) {
         if (process.platform == "win32") {
-            serverPath = "C:\\Program Files\\Auxon\\SpeqtrLsp\\speqtr-lsp.exe";
+            serverPath = "C:\\Program Files\\Auxon\\SpeqtrLsp\\speqtr_lsp.exe";
         } else {
-            serverPath = "/usr/local/bin/speqtr-lsp";
+            serverPath = "/usr/local/bin/speqtr_lsp";
             if (!fs.existsSync(serverPath)) {
-                serverPath = "/usr/bin/speqtr-lsp";
+                serverPath = "/usr/bin/speqtr_lsp";
             }
         }   
     }
@@ -35,7 +35,7 @@ export function activate(context: ExtensionContext) {
     console.info(`Using lsp executable at ${serverPath}`);
 
     if (!fs.existsSync(serverPath)) {
-        void vscode.window.showErrorMessage(`speqtr-lsp executable not found at ${serverPath}. If you have it installed elsewhere, set the 'speqtr.server.path' configuration.`);
+        void vscode.window.showErrorMessage(`speqtr_lsp executable not found at ${serverPath}. If you have it installed elsewhere, set the 'speqtr.server.path' configuration.`);
         return;
     }
 

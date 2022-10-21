@@ -48,7 +48,7 @@
                     ],
                     "scope": "machine-overridable",
                     "default": null,
-                    "markdownDescription": "Path to the speqtr-lsp executable."
+                    "markdownDescription": "Path to the speqtr_lsp executable."
                 },
 
                 "speqtr.server.extraEnv": {
@@ -63,7 +63,7 @@
                         ]
                     },
                     "default": null,
-                    "markdownDescription": "Extra environment variables that will be passed to the speqtr-lsp executable."
+                    "markdownDescription": "Extra environment variables that will be passed to the speqtr_lsp executable."
                 },
 
                 "modality.url": {
