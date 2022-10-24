@@ -18,6 +18,7 @@ jobs:
       - name: Build package
         run: |
           cd vscode
+          npm install
           vsce package
 
       - name: Upload artifacts
