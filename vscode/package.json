@@ -5,6 +5,7 @@
     "publisher": "auxoncorp",
     "version": "0.1.0",
     "repository": "https://github.com/auxoncorp/speqtr-support",
+    "icon": "images/speqtr-icon.png",
     "engines": {
         "vscode": "^1.69.0"
     },

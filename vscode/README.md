@@ -18,9 +18,3 @@ This extension contributes the following settings:
 * `modality.insecure`: Ignore certificate validation for https connections to the Modality server.
 * `modality.auth_token`: The authentication token to use when connecting to the Modality back end.
 * `modality.workspace`: The name of the workspace to use for Modality data operations, including completions.
-
-## Release Notes
-
-### 0.1.0
-
-Initial release
