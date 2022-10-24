@@ -1,0 +1,28 @@
+name: Publish to VSCode Extension Marketplace
+
+on: [workflow_dispatch]
+
+jobs:
+  publish:
+    name: Publish
+    timeout-minutes: 150
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Install vsce tool
+        run: npm install -g vsce
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build package
+        run: |
+          cd vscode
+          vsce package
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: vscode/*.vsix
+          retention-days: 2
+          if-no-files-found: error
