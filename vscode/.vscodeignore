@@ -3,3 +3,6 @@ node_modules
 src/
 tsconfig.json
 webpack.config.js
+test.rb
+*.zip
+*.vsix

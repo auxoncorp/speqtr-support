@@ -1,4 +1,5 @@
 node_modules
 .vscode
 out
-speqtr.vsix
+*.vsix
+*.zip
