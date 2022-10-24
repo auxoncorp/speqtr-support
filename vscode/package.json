@@ -1,9 +1,10 @@
 {
     "name": "speqtr",
     "displayName": "speqtr",
-    "description": "Support for Auxon's SpeQTr specification and query language",
+    "description": "Syntax Highlighting and Language Server integration for Auxon's SpeQTr specification and query language",
     "publisher": "auxon",
-    "version": "0.0.1",
+    "version": "0.1.0",
+    "repository": "https://github.com/auxoncorp/speqtr-support",
     "engines": {
         "vscode": "^1.69.0"
     },
