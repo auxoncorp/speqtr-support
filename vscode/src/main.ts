@@ -18,8 +18,7 @@ export function activate(context: ExtensionContext) {
     const commandHandler = (args: SpecEvalCommandArgs) => {
         let commandArgs = [
             "spec", "eval",
-            "--file", vscode.Uri.parse(args.document_uri).fsPath,
-            "--no-source-context" // Required for the problemMatcher regex to work
+            "--file", vscode.Uri.parse(args.document_uri).fsPath
         ];
 
         if (args.behavior) {
