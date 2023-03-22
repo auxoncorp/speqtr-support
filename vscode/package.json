@@ -47,15 +47,11 @@
                 "fileLocation": ["autoDetect", "${workspaceRoot}"],
                 "pattern": [
                     {
-                        "regexp": "^(error): Error at (.*):(\\d+,\\d+,\\d+,\\d+)$",
+                        "regexp": "^(error): Error at (.*):(\\d+,\\d+,\\d+,\\d+):\\s+(.*)$",
                         "severity": 1,
                         "file": 2,
-                        "location": 3
-                    },
-                    {
-                        "regexp": "^\\s*\\= (error):\\s+(.*)$",
-                        "severity": 1,
-                        "message": 2
+                        "location": 3,
+                        "message": 4
                     }
                 ]
             }
