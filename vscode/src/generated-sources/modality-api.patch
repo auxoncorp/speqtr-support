@@ -1,0 +1,152 @@
+diff -ruN modality-api-orig/models/AttrVal.ts modality-api-new/models/AttrVal.ts
+--- modality-api-orig/models/AttrVal.ts	2023-03-29 09:02:01.242168339 -0700
++++ modality-api-new/models/AttrVal.ts	2023-03-29 09:01:49.826233509 -0700
+@@ -54,27 +54,6 @@
+     TaggedTimestampFromJSONTyped,
+     TaggedTimestampToJSON,
+ } from './TaggedTimestamp';
+-import {
+-    boolean,
+-    instanceOfboolean,
+-    booleanFromJSON,
+-    booleanFromJSONTyped,
+-    booleanToJSON,
+-} from './boolean';
+-import {
+-    number,
+-    instanceOfnumber,
+-    numberFromJSON,
+-    numberFromJSONTyped,
+-    numberToJSON,
+-} from './number';
+-import {
+-    string,
+-    instanceOfstring,
+-    stringFromJSON,
+-    stringFromJSONTyped,
+-    stringToJSON,
+-} from './string';
+ 
+ /**
+  * @type AttrVal
+@@ -91,7 +70,13 @@
+     if ((json === undefined) || (json === null)) {
+         return json;
+     }
+-    return { ...TaggedBigIntFromJSONTyped(json, true), ...TaggedEventCoordinateFromJSONTyped(json, true), ...TaggedLogicalTimeFromJSONTyped(json, true), ...TaggedNonFiniteFloatFromJSONTyped(json, true), ...TaggedTimelineIdFromJSONTyped(json, true), ...TaggedTimestampFromJSONTyped(json, true), ...booleanFromJSONTyped(json, true), ...numberFromJSONTyped(json, true), ...stringFromJSONTyped(json, true) };
++
++    const ty = typeof(json);
++    if (ty === 'boolean' || ty === 'number' || ty === 'string') {
++        return json;
++    }
++
++    return { ...TaggedBigIntFromJSONTyped(json, true), ...TaggedEventCoordinateFromJSONTyped(json, true), ...TaggedLogicalTimeFromJSONTyped(json, true), ...TaggedNonFiniteFloatFromJSONTyped(json, true), ...TaggedTimelineIdFromJSONTyped(json, true), ...TaggedTimestampFromJSONTyped(json, true) };
+ }
+ 
+ export function AttrValToJSON(value?: AttrVal | null): any {
+@@ -102,6 +87,11 @@
+         return null;
+     }
+ 
++    const ty = typeof(value);
++    if (ty === 'boolean' || ty === 'number' || ty === 'string') {
++        return value;
++    }
++
+     if (instanceOfTaggedBigInt(value)) {
+         return TaggedBigIntToJSON(value as TaggedBigInt);
+     }
+@@ -120,15 +110,6 @@
+     if (instanceOfTaggedTimestamp(value)) {
+         return TaggedTimestampToJSON(value as TaggedTimestamp);
+     }
+-    if (instanceOfboolean(value)) {
+-        return booleanToJSON(value as boolean);
+-    }
+-    if (instanceOfnumber(value)) {
+-        return numberToJSON(value as number);
+-    }
+-    if (instanceOfstring(value)) {
+-        return stringToJSON(value as string);
+-    }
+ 
+     return {};
+ }
+diff -ruN modality-api-orig/models/TaggedBigInt.ts modality-api-new/models/TaggedBigInt.ts
+--- modality-api-orig/models/TaggedBigInt.ts	2023-03-29 09:02:01.254168271 -0700
++++ modality-api-new/models/TaggedBigInt.ts	2023-03-29 09:01:49.826233509 -0700
+@@ -32,6 +32,7 @@
+  */
+ export function instanceOfTaggedBigInt(value: object): boolean {
+     let isInstance = true;
++    isInstance = isInstance && "bigInt" in value;
+ 
+     return isInstance;
+ }
+diff -ruN modality-api-orig/models/TaggedEventCoordinate.ts modality-api-new/models/TaggedEventCoordinate.ts
+--- modality-api-orig/models/TaggedEventCoordinate.ts	2023-03-29 09:02:01.262168225 -0700
++++ modality-api-new/models/TaggedEventCoordinate.ts	2023-03-29 09:01:49.826233509 -0700
+@@ -39,6 +39,7 @@
+  */
+ export function instanceOfTaggedEventCoordinate(value: object): boolean {
+     let isInstance = true;
++    isInstance = isInstance && "eventCoordinate" in value;
+ 
+     return isInstance;
+ }
+diff -ruN modality-api-orig/models/TaggedLogicalTime.ts modality-api-new/models/TaggedLogicalTime.ts
+--- modality-api-orig/models/TaggedLogicalTime.ts	2023-03-29 09:02:01.270168179 -0700
++++ modality-api-new/models/TaggedLogicalTime.ts	2023-03-29 09:01:49.826233509 -0700
+@@ -32,6 +32,7 @@
+  */
+ export function instanceOfTaggedLogicalTime(value: object): boolean {
+     let isInstance = true;
++    isInstance = isInstance && "logicalTime" in value;
+ 
+     return isInstance;
+ }
+diff -ruN modality-api-orig/models/TaggedNonFiniteFloat.ts modality-api-new/models/TaggedNonFiniteFloat.ts
+--- modality-api-orig/models/TaggedNonFiniteFloat.ts	2023-03-29 09:02:01.274168157 -0700
++++ modality-api-new/models/TaggedNonFiniteFloat.ts	2023-03-29 09:01:49.826233509 -0700
+@@ -33,9 +33,9 @@
+  */
+ export const TaggedNonFiniteFloatNonFiniteFloatEnum = {
+     NaN: 'NaN',
+-    NaN: '-NaN',
++    MinusNaN: '-NaN',
+     Infinity: 'Infinity',
+-    Infinity: '-Infinity'
++    MinusInfinity: '-Infinity'
+ } as const;
+ export type TaggedNonFiniteFloatNonFiniteFloatEnum = typeof TaggedNonFiniteFloatNonFiniteFloatEnum[keyof typeof TaggedNonFiniteFloatNonFiniteFloatEnum];
+ 
+@@ -45,6 +45,7 @@
+  */
+ export function instanceOfTaggedNonFiniteFloat(value: object): boolean {
+     let isInstance = true;
++    isInstance = isInstance && "nonFiniteFloat" in value;
+ 
+     return isInstance;
+ }
+diff -ruN modality-api-orig/models/TaggedTimelineId.ts modality-api-new/models/TaggedTimelineId.ts
+--- modality-api-orig/models/TaggedTimelineId.ts	2023-03-29 09:02:01.282168111 -0700
++++ modality-api-new/models/TaggedTimelineId.ts	2023-03-29 09:01:49.826233509 -0700
+@@ -32,6 +32,7 @@
+  */
+ export function instanceOfTaggedTimelineId(value: object): boolean {
+     let isInstance = true;
++    isInstance = isInstance && "timelineId" in value;
+ 
+     return isInstance;
+ }
+diff -ruN modality-api-orig/models/TaggedTimestamp.ts modality-api-new/models/TaggedTimestamp.ts
+--- modality-api-orig/models/TaggedTimestamp.ts	2023-03-29 09:02:01.290168066 -0700
++++ modality-api-new/models/TaggedTimestamp.ts	2023-03-29 09:01:49.826233509 -0700
+@@ -32,6 +32,7 @@
+  */
+ export function instanceOfTaggedTimestamp(value: object): boolean {
+     let isInstance = true;
++    isInstance = isInstance && "timestamp" in value;
+ 
+     return isInstance;
+ }

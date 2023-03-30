@@ -44,7 +44,10 @@
                 "name": "conformEval",
                 "owner": "speqtr",
                 "source": "SpeQTr evaluation",
-                "fileLocation": ["autoDetect", "${workspaceRoot}"],
+                "fileLocation": [
+                    "autoDetect",
+                    "${workspaceRoot}"
+                ],
                 "pattern": [
                     {
                         "regexp": "^(error): Error at (.*):(\\d+,\\d+,\\d+,\\d+):\\s+(.*)$",
@@ -56,21 +59,128 @@
                 ]
             }
         ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "auxon-explorer",
+                    "title": "Auxon",
+                    "icon": "images/Auxon_symbol-whitesquare.svg"
+                }
+            ]
+        },
+        "views": {
+            "auxon-explorer": [
+                {
+                    "id": "modalityWorkspaces",
+                    "name": "Modality Workspaces"
+                }
+            ]
+        },
+        "menus": {
+            "view/item/context": [
+                {
+                    "command": "auxon.modality.log",
+                    "when": "view == modalityWorkspaces"
+                },
+                {
+                    "command": "auxon.modality.workspace.use",
+                    "when": "view == modalityWorkspaces && viewItem == workspace"
+                },
+                {
+                    "command": "auxon.modality.segment.use.whole_workspace",
+                    "when": "view == modalityWorkspaces && viewItem == workspace"
+                },
+                {
+                    "command": "auxon.modality.segment.use.all_segments",
+                    "when": "view == modalityWorkspaces && viewItem == workspace"
+                },
+                {
+                    "command": "auxon.modality.segment.use",
+                    "when": "view == modalityWorkspaces && viewItem == segment"
+                },
+                {
+                    "command": "auxon.modality.timeline.inspect",
+                    "when": "view == modalityWorkspaces && viewItem == timeline"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "auxon.workspace_view.refresh",
+                    "when": "view == modalityWorkspaces"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "auxon.modality.log",
+                "title": "View Log"
+            },
+            {
+                "command": "auxon.modality.workspace.use",
+                "title": "Set this workspace as active"
+            },
+            {
+                "command": "auxon.modality.segment.use",
+                "title": "Set this segment as active data"
+            },
+            {
+                "command": "auxon.modality.segment.use.whole_workspace",
+                "title": "Use workspace content as active data, as a single unit"
+            },
+            {
+                "command": "auxon.modality.segment.use.all_segments",
+                "title": "Use all contained segments as active data, individually"
+            },
+            {
+                "command": "auxon.modality.timeline.inspect",
+                "title": "Inspect Timeline"
+            },
+            {
+                "command": "auxon.workspace_view.refresh",
+                "title": "Refresh Workspace View"
+            }
+        ],
         "configuration": {
             "type": "object",
             "title": "Auxon SpeQTr",
             "properties": {
-                "speqtr.server.path":  {
+                "auxon.tooldir": {
                     "type": [
                         "null",
                         "string"
                     ],
                     "scope": "machine-overridable",
                     "default": null,
-                    "markdownDescription": "Path to the speqtr_lsp executable."
+                    "markdownDescription": "The directory where the Auxon tool binaries (modality, conform, etc) may be found. "
                 },
-
-                "speqtr.server.extraEnv": {
+                "auxon.authToken": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "scope": "machine-overridable",
+                    "default": null,
+                    "markdownDescription": "The user authentication token to use when connecting to the Modality backend. If not given, defaults to the auth token configured in the Modality CLI."
+                },
+                "auxon.modalityUrl": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "scope": "machine-overridable",
+                    "default": null,
+                    "markdownDescription": "The URL of the Auxon Modality backend server. If not given defaults, to the URL configured in the Modality CLI, or else to 'http://localhost:14181'."
+                },
+                "auxon.allowInsecureHttps": {
+                    "type": [
+                        "null",
+                        "boolean"
+                    ],
+                    "scope": "machine-overridable",
+                    "default": null,
+                    "markdownDescription": "Ignore certificate validation for https connections. If not given, defaults to the setting configured in the Modality CLI, or else to false."
+                },
+                "auxon.extraEnv": {
                     "type": [
                         "null",
                         "object"
@@ -82,53 +192,15 @@
                         ]
                     },
                     "default": null,
-                    "markdownDescription": "Extra environment variables that will be passed to the speqtr_lsp executable."
-                },
-
-                "modality.url": {
-                    "type": [
-                        "null",
-                        "string"
-                    ],
-                    "scope": "machine-overridable",
-                    "default": null,
-                    "markdownDescription": "The URL of the Auxon Modality backend server. Defaults to http://localhost:14181/v1/"
-                },
-
-                "modality.insecure": {
-                    "type": [
-                        "null",
-                        "boolean"
-                    ],
-                    "scope": "machine-overridable",
-                    "default": null,
-                    "markdownDescription": "Ignore certificate validation for https connections."
-                },
-
-                "modality.auth_token": {
-                    "type": [
-                        "null",
-                        "string"
-                    ],
-                    "scope": "machine-overridable",
-                    "default": null,
-                    "markdownDescription": "The authentication token to use when connecting to the Modality back end."
-                },
-
-                "modality.workspace": {
-                    "type": [
-                        "null",
-                        "string"
-                    ],
-                    "scope": "machine-overridable",
-                    "default": null,
-                    "markdownDescription": "The name of the workspace to use for Modality data operations, including completions."
-
+                    "markdownDescription": "Extra environment variables that will be passed tool executables, including the SpeQTr LSP server."
                 }
             }
         }
     },
-    "activationEvents": ["onLanguage:speqtr"],
+    "activationEvents": [
+        "onLanguage:speqtr",
+        "onView:modalityWorkspaces"
+    ],
     "main": "out/main.js",
     "scripts": {
         "vscode:prepublish": "npm run build-base -- --minify",
@@ -137,22 +209,26 @@
         "build": "npm run build-base -- --sourcemap",
         "watch": "npm run build-base -- --sourcemap --watch",
         "lint": "prettier --check . && eslint -c .eslintrc.js --ext ts ./src",
-        "fix": "prettier --write . && eslint -c .eslintrc.js --ext ts ./src --fix"
+        "fix": "prettier --write . && eslint -c .eslintrc.js --ext ts ./src --fix",
+        "codegen": "openapi-generator-cli generate -i ./src/modality-api.json -o src/generated-sources/modality-api -g typescript-fetch --additional-properties=supportsES6=true,typescriptThreePlus=true && cd src/generated-sources/modality-api && patch -p1 < ../modality-api.patch"
     },
     "dependencies": {
+        "node-fetch": "^3.3.1",
         "vscode-languageclient": "^7.0.0"
     },
-	"devDependencies": {
-		"@types/mocha": "^9.1.0",
-		"@types/node": "^16.11.7",
-		"@typescript-eslint/eslint-plugin": "^5.30.0",
-		"@typescript-eslint/parser": "^5.30.0",
+    "devDependencies": {
+        "@openapitools/openapi-generator-cli": "^2.5.2",
+        "@types/mocha": "^9.1.0",
+        "@types/node": "^16.11.7",
         "@types/vscode": "^1.63.0",
-
+        "@typescript-eslint/eslint-plugin": "^5.56.0",
+        "@typescript-eslint/parser": "^5.56.0",
         "esbuild": "^0.14.48",
-		"eslint": "^8.13.0",
-		"mocha": "^9.2.1",
-		"typescript": "^4.7.2",
+        "eslint": "^8.13.0",
+        "mocha": "^9.2.1",
+        "prettier": "^2.8.7",
+        "typescript": "^4.7.2",
+        "typescript-eslint-language-service": "^5.0.0",
         "vsce": "^2.9.2"
-	}
+    }
 }
