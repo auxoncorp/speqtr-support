@@ -256,7 +256,7 @@ function runModalityLogCommand(args: ModalityLogCommandArgs | SegmentTreeItemDat
     term.show();
 
     // The `exit` makes the shell close if you hit 'q' in the pager.
-    let command = `${modalityArgs.join(" ")} | less -r; exit\n`;
+    let command = `${modalityArgs.join(" ")}; exit\n`;
     log.appendLine(`Running modality log using command line: ${command}`);
     term.sendText(command);
 }
