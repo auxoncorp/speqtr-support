@@ -231,7 +231,7 @@ function runModalityLogCommand(args: ModalityLogCommandArgs | SegmentTreeItemDat
     }
 
     // We're going to send the text of the command line to the terminal. Build up the args list here.
-    let modalityArgs = [modality, "log"];
+    let modalityArgs = ["LESS=R", modality, "log"];
     if (logCommandArgs.thingToLog) {
         let escapedAndQuotedThingToLog = JSON.stringify(logCommandArgs.thingToLog);
         modalityArgs.push(escapedAndQuotedThingToLog);
@@ -256,7 +256,7 @@ function runModalityLogCommand(args: ModalityLogCommandArgs | SegmentTreeItemDat
     term.show();
 
     // The `exit` makes the shell close if you hit 'q' in the pager.
-    let command = `${modalityArgs.join(" ")}; exit\n`;
+    let command = `${modalityArgs.join(" ")}; exit 0\n`;
     log.appendLine(`Running modality log using command line: ${command}`);
     term.sendText(command);
 }
