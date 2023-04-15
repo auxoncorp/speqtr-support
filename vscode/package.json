@@ -97,9 +97,10 @@
                     "when": "view == auxon.segments || view == auxon.timelines",
                     "group": "inline"
                 },
+
                 {
-                    "command": "auxon.modality.log.selected",
-                    "when": "(view == auxon.segments || view == auxon.timelines) && listMultiSelection"
+                    "command": "auxon.segments.logSelected",
+                    "when": "view == auxon.segments && listMultiSelection"
                 },
                 {
                     "command": "auxon.segments.setActive",
@@ -109,9 +110,14 @@
                     "command": "auxon.segments.setActiveFromSelection",
                     "when": "(view == auxon.segments && viewItem == segment) && listMultiSelection"
                 },
+
                 {
                     "command": "auxon.timelines.inspect",
                     "when": "view == auxon.timelines && viewItem == timeline"
+                },
+                {
+                    "command": "auxon.timelines.logSelected",
+                    "when": "view == auxon.timelines && listMultiSelection"
                 }
             ],
             "view/title": [
@@ -160,9 +166,9 @@
 
             {"command": "auxon.timelines.refresh", "title": "Refresh Timeline List", "icon": "$(refresh)"},
             {"command": "auxon.timelines.inspect", "title": "Inspect Timeline"},
+            {"command": "auxon.timelines.logSelected", "title": "Log selected timelines"},
 
-            {"command": "auxon.modality.log", "title": "View log", "icon": "$(open-preview)"},
-            {"command": "auxon.modality.log.selected", "title": "Log selected"}
+            {"command": "auxon.modality.log", "title": "View log", "icon": "$(open-preview)"}
         ],
         "configuration": {
             "type": "object",

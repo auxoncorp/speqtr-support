@@ -17,7 +17,7 @@ export function register(context: vscode.ExtensionContext) {
 export const MODALITY_LOG_COMMAND: string = "auxon.modality.log";
 
 export class ModalityLogCommandArgs {
-    thingToLog?: string;
+    thingToLog?: string | string[];
     from?: string;
     to?: string;
     around?: string;
@@ -55,10 +55,18 @@ function runModalityLogCommand(args: ModalityLogCommandArgs | segments.SegmentTr
     
     // We're going to send the text of the command line to the terminal. Build up the args list here.
     let modalityArgs = ["LESS=R", modality, "log"];
+
     if (logCommandArgs.thingToLog) {
-        let escapedAndQuotedThingToLog = JSON.stringify(logCommandArgs.thingToLog);
-        modalityArgs.push(escapedAndQuotedThingToLog);
+        if (! Array.isArray(logCommandArgs.thingToLog)) {
+            logCommandArgs.thingToLog = [logCommandArgs.thingToLog];
+        }
+
+        for (const thing of logCommandArgs.thingToLog) {
+            let escapedAndQuotedThingToLog = JSON.stringify(thing);
+            modalityArgs.push(escapedAndQuotedThingToLog);
+        }
     }
+
     if (logCommandArgs.from) { modalityArgs.push("--from", logCommandArgs.from); }
     if (logCommandArgs.to) { modalityArgs.push("--to", logCommandArgs.to); }
     if (logCommandArgs.around) { modalityArgs.push("--around", logCommandArgs.around); }

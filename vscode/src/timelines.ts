@@ -5,13 +5,15 @@
 import * as vscode from 'vscode';
 import * as modality_api from './generated-sources/modality-api';
 import * as cliConfig from './cliConfig';
-import { isDeepStrictEqual } from 'util';
+import * as modalityLog from './modalityLog';
+import { apiClientConfig } from './main';
 
 export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<TimelineTreeItemData> {
     workspacesApi: modality_api.WorkspacesApi;
     activeWorkspaceVersionId: string;
     usedSegmentConfig: cliConfig.ContextSegment;
     activeSegments: modality_api.WorkspaceSegmentId[];
+    view: vscode.TreeView<TimelineTreeItemData>;
 
     private _onDidChangeTreeData: vscode.EventEmitter<TimelineTreeItemData | TimelineTreeItemData[] | undefined> = new vscode.EventEmitter();
     readonly onDidChangeTreeData: vscode.Event<TimelineTreeItemData | TimelineTreeItemData[] | undefined> = this._onDidChangeTreeData.event;
@@ -21,10 +23,13 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     register(context: vscode.ExtensionContext) {
+        this.view = vscode.window.createTreeView("auxon.timelines", { treeDataProvider: this, canSelectMany: true });
+
         context.subscriptions.push(
-            vscode.window.createTreeView("auxon.timelines", { treeDataProvider: this, canSelectMany: true }),
+            this.view,
             vscode.commands.registerCommand("auxon.timelines.refresh", () => this.refresh()),
             vscode.commands.registerCommand("auxon.timelines.inspect", (itemData) => this.inspectTimelineCommand(itemData)),
+            vscode.commands.registerCommand("auxon.timelines.logSelected", () => this.logSelectedCommand()),
         );
     }
 
@@ -62,13 +67,22 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         return timelines.map((timeline_overview) => new TimelineTreeItemData(timeline_overview));
     }
 
-    async inspectTimelineCommand(item: timelines.TimelineTreeItemData) {
-        let timelinesApi = new this.modality_api.TimelinesApi(apiClientConfig);
+    async inspectTimelineCommand(item: TimelineTreeItemData) {
+        let timelinesApi = new modality_api.TimelinesApi(apiClientConfig);
         let timeline = await timelinesApi.getTimeline({timelineId: item.timeline_overview.id });
         let timelineJson = JSON.stringify(timeline, null, 4);
 
         const doc = await vscode.workspace.openTextDocument({ language: "json", content: timelineJson });
         await vscode.window.showTextDocument(doc);
+    }
+
+    logSelectedCommand() {
+        const thingToLog = this.view.selection.map((item) => item.timeline_overview.id);
+
+        vscode.commands.executeCommand(
+            modalityLog.MODALITY_LOG_COMMAND,
+            new modalityLog.ModalityLogCommandArgs({ thingToLog })
+        );
     }
 }
 
@@ -82,8 +96,6 @@ class TimelineTreeItem extends vscode.TreeItem {
     contextValue = 'timeline';
 
     constructor(public readonly data: TimelineTreeItemData) {
-        let marker = "";
-
         const label = data.timeline_overview.name;
         super(label, vscode.TreeItemCollapsibleState.None);
 

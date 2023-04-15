@@ -44,11 +44,6 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
         this._onDidChangeTreeData.fire(undefined);
     }
 
-    setSelectedWorkspace(workspaceVersionId: string): void {
-        this.activeWorkspaceVersionId = workspaceVersionId;
-        this.refresh();
-    }
-
     getTreeItem(element: SegmentTreeItemData): SegmentTreeItem {
         return new SegmentTreeItem(element);
     }

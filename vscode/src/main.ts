@@ -11,8 +11,8 @@ import * as modalityLog from './modalityLog';
 import * as terminalLinkProvider from './terminalLinkProvider';
 
 export let log: vscode.OutputChannel;
+export let apiClientConfig: modality_api.Configuration;
 let lspClient: LanguageClient;
-let apiClientConfig: modality_api.Configuration;
 
 export async function activate(context: vscode.ExtensionContext) {
     log = vscode.window.createOutputChannel("Auxon SpeQTr");
