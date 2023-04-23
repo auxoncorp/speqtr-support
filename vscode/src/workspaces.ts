@@ -2,14 +2,13 @@ import * as vscode from 'vscode';
 import * as util from 'util';
 import * as child_process from 'child_process';
 
-import * as modality_api from './generated-sources/modality-api';
 import * as cliConfig from './cliConfig';
 import * as config from './config';
+import * as api from './modalityApi';
 
 const execFile = util.promisify(child_process.execFile);
 
 export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<WorkspaceTreeItemData> {
-    workspacesApi: modality_api.WorkspacesApi;
     activeWorkspaceVersionId: string;
     activeWorkspaceName: string;
 
@@ -19,9 +18,7 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
     private _onDidChangeActiveWorkspace: vscode.EventEmitter< string | undefined > = new vscode.EventEmitter();
     readonly onDidChangeActiveWorkspace: vscode.Event<string | undefined> = this._onDidChangeActiveWorkspace.event;
 
-    constructor(apiClientConfig: modality_api.Configuration) {
-        this.workspacesApi = new modality_api.WorkspacesApi(apiClientConfig);
-    }
+    constructor(private readonly apiClient: api.Client) { }
 
     register(context: vscode.ExtensionContext) {
         context.subscriptions.push(
@@ -43,7 +40,7 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
         this.activeWorkspaceName = await cliConfig.activeWorkspaceName();
         const usedSegments = await cliConfig.usedSegments();
 
-        let workspaces: modality_api.Workspace[] = await this.workspacesApi.listWorkspaces();
+        const workspaces = await this.apiClient.workspaces().list();
         var children = [];
         var changed = false;
         for (const workspace of workspaces) {
@@ -55,8 +52,8 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
                 )
             );
             if (workspace.name == this.activeWorkspaceName) {
-                if (this.activeWorkspaceVersionId != workspace.versionId) {
-                    this.activeWorkspaceVersionId = workspace.versionId;
+                if (this.activeWorkspaceVersionId != workspace.version_id) {
+                    this.activeWorkspaceVersionId = workspace.version_id;
                     changed = true;
                 }
             }
@@ -81,7 +78,7 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
 
 export class WorkspaceTreeItemData {
     constructor(
-        public workspace: modality_api.Workspace,
+        public workspace: api.Workspace,
         public isActive: boolean,
         public isUsedAsWholeWorkspace: boolean
     ) { }
@@ -94,7 +91,7 @@ class WorkspaceTreeItem extends vscode.TreeItem {
 
     constructor( public readonly data: WorkspaceTreeItemData) {
         let tooltip = `- **Workspace Name**: ${data.workspace.name}`;
-        tooltip += `\n- **Workspace Version**: ${data.workspace.versionId}`;
+        tooltip += `\n- **Workspace Version**: ${data.workspace.version_id}`;
 
         if (data.isActive) {
             tooltip += `\n- **${ACTIVE_ITEM_MARKER}** This is the currently active workspace.`;

@@ -1,32 +1,34 @@
 import * as vscode from "vscode";
 import { LanguageClient } from 'vscode-languageclient/node';
 
-import * as modality_api from './generated-sources/modality-api';
+import * as api from './modalityApi';
 import * as workspaces from './workspaces';
 import * as segments from './segments';
 import * as timelines from './timelines';
-import * as config from './config';
 import * as lsp from './lsp';
 import * as modalityLog from './modalityLog';
 import * as terminalLinkProvider from './terminalLinkProvider';
 import * as transitionGraph from './transitionGraph';
+import { modalityUrl, userAuthToken } from "./config";
 
 export let log: vscode.OutputChannel;
-export let apiClientConfig: modality_api.Configuration;
 let lspClient: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
     log = vscode.window.createOutputChannel("Auxon SpeQTr");
-
-    apiClientConfig = await config.modalityApiClientConfig();
     lspClient = await lsp.activateLspClient(context);
+
+    const apiUrl = await modalityUrl();
+    const token = userAuthToken();
+    const apiClient = new api.Client(apiUrl.toString(), token);
+
     terminalLinkProvider.register(context);
     modalityLog.register(context);
-    transitionGraph.register(context);
+    transitionGraph.register(context, apiClient);
 
-    var workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClientConfig);
-    let segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClientConfig);
-    let timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClientConfig);
+    var workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClient);
+    let segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient);
+    let timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClient);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);

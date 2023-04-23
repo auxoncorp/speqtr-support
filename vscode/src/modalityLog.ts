@@ -38,8 +38,8 @@ function runModalityLogCommand(args: ModalityLogCommandArgs | segments.SegmentTr
     let logCommandArgs: ModalityLogCommandArgs;
     if (args instanceof segments.SegmentTreeItemData) {
         logCommandArgs = new ModalityLogCommandArgs({
-            segmentationRule: args.segment.id.ruleName,
-            segment: args.segment.id.segmentName
+            segmentationRule: args.segment.id.rule_name,
+            segment: args.segment.id.segment_name
         });
     } else if (args instanceof timelines.TimelineTreeItemData) {
         logCommandArgs = new ModalityLogCommandArgs({

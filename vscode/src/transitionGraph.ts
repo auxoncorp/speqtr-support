@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
-import * as modality_api from './generated-sources/modality-api';
-import { apiClientConfig } from './main';
+import * as api from './modalityApi';
 
-export function register(context: vscode.ExtensionContext) {
+export function register(context: vscode.ExtensionContext, apiClient: api.Client) {
     context.subscriptions.push(
-        vscode.workspace.registerTextDocumentContentProvider(URI_SCHEME, new TransitionGraphContentProvider()),
+        vscode.workspace.registerTextDocumentContentProvider(URI_SCHEME, new TransitionGraphContentProvider(apiClient)),
     );
 }
 
@@ -17,7 +16,7 @@ export interface TimelineParams {
 
 export interface SegmentParams {
     type: "segment",
-    segmentId: modality_api.WorkspaceSegmentId,
+    segmentId: api.WorkspaceSegmentId,
     groupBy?: string[]
 }
 
@@ -79,7 +78,7 @@ export function showGraphForTimelines(timelineIds: string[], groupBy?: string[])
     );
 }
 
-export function showGraphForSegment(segmentId: modality_api.WorkspaceSegmentId, groupBy?: string[]) {
+export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy?: string[]) {
     vscode.commands.executeCommand(
         "markdown.showPreview",
         encodeUri({ type: "segment", segmentId, groupBy })
@@ -110,33 +109,24 @@ export function decodeUri(uri: vscode.Uri): TransitionGraphParams {
 }
 
 class TransitionGraphContentProvider implements vscode.TextDocumentContentProvider {
+    constructor(private readonly apiClient: api.Client) { }
+
     async provideTextDocumentContent(uri: vscode.Uri, _token: vscode.CancellationToken): Promise<string> {
         var params = decodeUri(uri);
 
-        var res: modality_api.GroupedGraph;
+        var res: api.GroupedGraph;
         var title = "# Transition graph for ";
 
         if (params.type == "timelines") {
-            let timelinesApi = new modality_api.TimelinesApi(apiClientConfig);
-            res = await timelinesApi.groupedGraph({
-                timelineId: params.timelines,
-                groupBy: params.groupBy
-            });
-
+            res = await this.apiClient.timelines().groupedGraph(params.timelines, params.groupBy);
             if (params.timelines.length > 1) {
                 title += "selected timelines";
             } else {
                 title += params.timelines[0];
             }
         } else if (params.type == "segment") {
-            const workspacesApi = new modality_api.WorkspacesApi(apiClientConfig);
-            res = await workspacesApi.segmentGroupedGraph({
-                workspaceVersionId: params.segmentId.workspaceVersionId,
-                ruleName: params.segmentId.ruleName,
-                segmentName: params.segmentId.segmentName,
-                groupBy: params.groupBy
-            });
-            title += "segment " + params.segmentId.segmentName;
+            res = await this.apiClient.segment(params.segmentId).groupedGraph(params.groupBy);
+            title += "segment " + params.segmentId.segment_name;
         }
 
         if (res.nodes.length == 0) {
@@ -148,10 +138,10 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
         for (var i=0; i<res.nodes.length; i++) {
             const node = res.nodes[i];
             var title: string;
-            if (res.attrKeys[0] == "timeline.name" && res.attrKeys[1] == "event.name") {
-                title = `${node.attrVals[1]}@${node.attrVals[0]}`;
+            if (res.attr_keys[0] == "timeline.name" && res.attr_keys[1] == "event.name") {
+                title = `${node.attr_vals[1]}@${node.attr_vals[0]}`;
             } else {
-                title = node.attrVals.join(", ");
+                title = node.attr_vals.join(", ");
             }
 
             mermaid += `  node${i}("${title} (${node.count})")\n`;

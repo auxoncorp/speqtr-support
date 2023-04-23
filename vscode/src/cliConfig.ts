@@ -9,8 +9,7 @@ import * as vscode from 'vscode';
 import * as util from 'util';
 import * as child_process from 'child_process';
 
-import { WorkspaceSegmentId, WorkspaceSegmentIdFromJSON, WorkspaceSegmentMetadata, WorkspaceSegmentMetadataFromJSONTyped }
-  from './generated-sources/modality-api';
+import * as api from './modalityApi';
 import { toolPath } from './config';
 
 const execFile = util.promisify(child_process.execFile);
@@ -27,7 +26,7 @@ export async function activeWorkspaceName(): Promise<string> {
 export interface AllContextSegment { type: 'All' }
 export interface WholeWorkspaceContextSegment { type: 'WholeWorkspace' }
 export interface LatestContextSegment { type: 'Latest' }
-export interface SetContextSegment { type: 'Set', set: [WorkspaceSegmentId] }
+export interface SetContextSegment { type: 'Set', set: api.WorkspaceSegmentId[] }
 export type ContextSegment = AllContextSegment | WholeWorkspaceContextSegment | LatestContextSegment | SetContextSegment;
 
 /**
@@ -45,7 +44,7 @@ export async function usedSegments(): Promise<ContextSegment> {
     } else if (json == "Latest") {
         return { type: "Latest" };
     } else if (json.Set) {
-        return { type: "Set", set: json.Set.map(WorkspaceSegmentIdFromJSON) };
+        return { type: "Set", set: json.Set as api.WorkspaceSegmentId[] };
     }
 
     return JSON.parse(res.stdout) as ContextSegment;
@@ -55,11 +54,10 @@ export async function usedSegments(): Promise<ContextSegment> {
  * Get the segment metadata for currently used segments, using 'modality segment inspect'.
  * This only works if you've previously 'modality segment use'-ed a single specific segment.
  */
-export async function activeSegments(): Promise<WorkspaceSegmentMetadata[]> {
+export async function activeSegments(): Promise<api.WorkspaceSegmentMetadata[]> {
     const modality = toolPath("modality");
     const res = await execFile(modality, ['segment', 'inspect', '--format', 'json'], { encoding: 'utf8' });
-    const json_arr: any[] = JSON.parse(res.stdout).segments;
-    return json_arr.map((json) => WorkspaceSegmentMetadataFromJSONTyped(json, false));
+    return JSON.parse(res.stdout).segments as api.WorkspaceSegmentMetadata[];
 }
 
 /** Read the modality CLI's auth token. */

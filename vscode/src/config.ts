@@ -4,14 +4,12 @@
  */
 
 import * as cliConfig from "./cliConfig";
-import * as modality_api from './generated-sources/modality-api';
 import * as vscode from "vscode";
 import * as path from 'path';
 import * as fs from 'fs';
 import fetch from 'node-fetch';
 import * as https from 'https';
 import { log } from "./main";
-import { ErrorContext } from "./generated-sources/modality-api";
 
 /**
  * The auth token that should be used to access the modality API, both directly
@@ -83,37 +81,6 @@ async function allowInsecureHttps(): Promise<boolean> {
     }
 
     return false;
-}
-
-export async function modalityApiClientConfig(): Promise<modality_api.Configuration> {
-    var fetchApi = fetch;
-    if (await allowInsecureHttps()) {
-        const httpsAgent = new https.Agent({
-            // TODO test this actually works
-            rejectUnauthorized: false,
-        });
-
-        fetchApi = (url, opts) => {
-            opts.agent = httpsAgent;
-            return fetch(url, opts);
-        }
-    }
-
-    var basePath = (await modalityUrl()).toString();
-    if (basePath.endsWith("/")) {
-        basePath = basePath.slice(0, -1);
-    }
-
-    let apiKey = userAuthToken();
-
-    let middleware = [{
-        onError: async (context: ErrorContext) => {
-            log.appendLine("Failed API request: " + JSON.stringify(context));
-            throw new Error("Failed Modality API request; see log for details.");
-        }
-    }];
-
-    return new modality_api.Configuration({ basePath, apiKey, fetchApi, middleware });
 }
 
 /**
