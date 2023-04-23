@@ -15,11 +15,14 @@
 
 import * as runtime from '../runtime';
 import type {
+  GroupedGraph,
   TimelineOverview,
   Workspace,
   WorkspaceSegmentMetadata,
 } from '../models';
 import {
+    GroupedGraphFromJSON,
+    GroupedGraphToJSON,
     TimelineOverviewFromJSON,
     TimelineOverviewToJSON,
     WorkspaceFromJSON,
@@ -40,6 +43,18 @@ export interface ListWorkspaceSegmentsRequest {
 
 export interface ListWorkspaceTimelinesRequest {
     workspaceVersionId: string;
+}
+
+export interface SegmentGroupedGraphRequest {
+    workspaceVersionId: string;
+    ruleName: string;
+    segmentName: string;
+    groupBy?: Array<string> | null;
+}
+
+export interface WorkspaceGroupedGraphRequest {
+    workspaceVersionId: string;
+    groupBy?: Array<string> | null;
 }
 
 /**
@@ -192,6 +207,94 @@ export class WorkspacesApi extends runtime.BaseAPI {
      */
     async listWorkspaces(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Workspace>> {
         const response = await this.listWorkspacesRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get the contents of the segment as a graph, grouped by event attrbutes.  If no keys are specified using the \'group_by\' query parameter, the graph is grouped by (timeline.name, event.name).
+     * Get the contents of the segment as a graph, grouped by event attrbutes.
+     */
+    async segmentGroupedGraphRaw(requestParameters: SegmentGroupedGraphRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GroupedGraph>> {
+        if (requestParameters.workspaceVersionId === null || requestParameters.workspaceVersionId === undefined) {
+            throw new runtime.RequiredError('workspaceVersionId','Required parameter requestParameters.workspaceVersionId was null or undefined when calling segmentGroupedGraph.');
+        }
+
+        if (requestParameters.ruleName === null || requestParameters.ruleName === undefined) {
+            throw new runtime.RequiredError('ruleName','Required parameter requestParameters.ruleName was null or undefined when calling segmentGroupedGraph.');
+        }
+
+        if (requestParameters.segmentName === null || requestParameters.segmentName === undefined) {
+            throw new runtime.RequiredError('segmentName','Required parameter requestParameters.segmentName was null or undefined when calling segmentGroupedGraph.');
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters.groupBy) {
+            queryParameters['group_by'] = requestParameters.groupBy;
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-Auxon-Auth-Token"] = this.configuration.apiKey("X-Auxon-Auth-Token"); // ApiKeyAuth authentication
+        }
+
+        const response = await this.request({
+            path: `/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped_graph`.replace(`{${"workspace_version_id"}}`, encodeURIComponent(String(requestParameters.workspaceVersionId))).replace(`{${"rule_name"}}`, encodeURIComponent(String(requestParameters.ruleName))).replace(`{${"segment_name"}}`, encodeURIComponent(String(requestParameters.segmentName))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => GroupedGraphFromJSON(jsonValue));
+    }
+
+    /**
+     * Get the contents of the segment as a graph, grouped by event attrbutes.  If no keys are specified using the \'group_by\' query parameter, the graph is grouped by (timeline.name, event.name).
+     * Get the contents of the segment as a graph, grouped by event attrbutes.
+     */
+    async segmentGroupedGraph(requestParameters: SegmentGroupedGraphRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GroupedGraph> {
+        const response = await this.segmentGroupedGraphRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get the contents of the workspace as a graph, grouped by event attrbutes.  If no keys are specified using the \'group_by\' query parameter, the graph is grouped by (timeline.name, event.name).
+     * Get the contents of the workspace as a graph, grouped by event attrbutes.
+     */
+    async workspaceGroupedGraphRaw(requestParameters: WorkspaceGroupedGraphRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GroupedGraph>> {
+        if (requestParameters.workspaceVersionId === null || requestParameters.workspaceVersionId === undefined) {
+            throw new runtime.RequiredError('workspaceVersionId','Required parameter requestParameters.workspaceVersionId was null or undefined when calling workspaceGroupedGraph.');
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters.groupBy) {
+            queryParameters['group_by'] = requestParameters.groupBy;
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-Auxon-Auth-Token"] = this.configuration.apiKey("X-Auxon-Auth-Token"); // ApiKeyAuth authentication
+        }
+
+        const response = await this.request({
+            path: `/v2/workspaces/{workspace_version_id}/grouped_graph`.replace(`{${"workspace_version_id"}}`, encodeURIComponent(String(requestParameters.workspaceVersionId))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => GroupedGraphFromJSON(jsonValue));
+    }
+
+    /**
+     * Get the contents of the workspace as a graph, grouped by event attrbutes.  If no keys are specified using the \'group_by\' query parameter, the graph is grouped by (timeline.name, event.name).
+     * Get the contents of the workspace as a graph, grouped by event attrbutes.
+     */
+    async workspaceGroupedGraph(requestParameters: WorkspaceGroupedGraphRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GroupedGraph> {
+        const response = await this.workspaceGroupedGraphRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

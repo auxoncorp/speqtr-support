@@ -4,6 +4,9 @@ apis/index.ts
 index.ts
 models/AttrVal.ts
 models/EventCoordinate.ts
+models/GroupedGraph.ts
+models/GroupedGraphEdge.ts
+models/GroupedGraphNode.ts
 models/TaggedBigInt.ts
 models/TaggedEventCoordinate.ts
 models/TaggedLogicalTime.ts

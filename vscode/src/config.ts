@@ -108,7 +108,7 @@ export async function modalityApiClientConfig(): Promise<modality_api.Configurat
 
     let middleware = [{
         onError: async (context: ErrorContext) => {
-            log.appendLine("Failed API request: ", context);
+            log.appendLine("Failed API request: " + JSON.stringify(context));
             throw new Error("Failed Modality API request; see log for details.");
         }
     }];

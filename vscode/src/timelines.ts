@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import * as modality_api from './generated-sources/modality-api';
 import * as cliConfig from './cliConfig';
 import * as modalityLog from './modalityLog';
+import * as transitionGraph from './transitionGraph';
 import { apiClientConfig } from './main';
 
 export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<TimelineTreeItemData> {
@@ -30,6 +31,8 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             vscode.commands.registerCommand("auxon.timelines.refresh", () => this.refresh()),
             vscode.commands.registerCommand("auxon.timelines.inspect", (itemData) => this.inspectTimelineCommand(itemData)),
             vscode.commands.registerCommand("auxon.timelines.logSelected", () => this.logSelectedCommand()),
+            vscode.commands.registerCommand("auxon.timelines.transitionGraph", (itemData) => this.transitionGraph(itemData)),
+            vscode.commands.registerCommand("auxon.timelines.transitionGraphForSelection", () => this.transitionGraphForSelection())
         );
     }
 
@@ -84,6 +87,20 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             new modalityLog.ModalityLogCommandArgs({ thingToLog })
         );
     }
+
+    transitionGraph(item: TimelineTreeItemData) {
+        transitionGraph.promptForGraphGrouping((groupBy) => {
+            transitionGraph.showGraphForTimelines([item.timeline_overview.id], groupBy);
+        });
+    }
+
+    transitionGraphForSelection() {
+        const timelineIds = this.view.selection.map((item) => item.timeline_overview.id);
+        transitionGraph.promptForGraphGrouping((groupBy) => {
+            transitionGraph.showGraphForTimelines(timelineIds, groupBy);
+        });
+
+    }
 }
 
 export class TimelineTreeItemData {
@@ -108,3 +125,5 @@ class TimelineTreeItem extends vscode.TreeItem {
         this.iconPath = new vscode.ThemeIcon("git-commit");
     }
 }
+
+

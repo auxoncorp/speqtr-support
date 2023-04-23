@@ -6,6 +6,7 @@ import * as child_process from 'child_process';
 import * as modality_api from './generated-sources/modality-api';
 import * as cliConfig from './cliConfig';
 import * as config from './config';
+import * as transitionGraph from './transitionGraph';
 
 const execFile = util.promisify(child_process.execFile);
 
@@ -37,6 +38,7 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
             vscode.commands.registerCommand("auxon.segments.setLatestActive", () => this.setLatestActiveCommand()),
             vscode.commands.registerCommand("auxon.segments.setAllActive", () => this.setAllActiveCommand()),
             vscode.commands.registerCommand("auxon.segments.setWholeWorkspaceActive", () => this.setWholeWorkspaceActiveCommand()),
+            vscode.commands.registerCommand("auxon.segments.transitionGraph", (itemData) => this.transitionGraph(itemData)),
         );
     }
 
@@ -141,6 +143,11 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
         this.refresh();
     }
 
+    transitionGraph(item: SegmentTreeItemData) {
+        transitionGraph.promptForGraphGrouping((groupBy) => {
+            transitionGraph.showGraphForSegment(item.segment.id, groupBy);
+        });
+    }
 }
 
 

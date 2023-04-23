@@ -9,6 +9,7 @@ import * as config from './config';
 import * as lsp from './lsp';
 import * as modalityLog from './modalityLog';
 import * as terminalLinkProvider from './terminalLinkProvider';
+import * as transitionGraph from './transitionGraph';
 
 export let log: vscode.OutputChannel;
 export let apiClientConfig: modality_api.Configuration;
@@ -21,11 +22,12 @@ export async function activate(context: vscode.ExtensionContext) {
     lspClient = await lsp.activateLspClient(context);
     terminalLinkProvider.register(context);
     modalityLog.register(context);
+    transitionGraph.register(context);
 
     var workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClientConfig);
     let segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClientConfig);
     let timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClientConfig);
--
+
     workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);
         segmentsTreeDataProvider.activeWorkspaceVersionId = ws_ver;

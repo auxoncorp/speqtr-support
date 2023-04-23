@@ -15,15 +15,23 @@
 
 import * as runtime from '../runtime';
 import type {
+  GroupedGraph,
   Timeline,
 } from '../models';
 import {
+    GroupedGraphFromJSON,
+    GroupedGraphToJSON,
     TimelineFromJSON,
     TimelineToJSON,
 } from '../models';
 
 export interface GetTimelineRequest {
     timelineId: string;
+}
+
+export interface GroupedGraphRequest {
+    timelineId: Array<string>;
+    groupBy?: Array<string> | null;
 }
 
 /**
@@ -64,6 +72,50 @@ export class TimelinesApi extends runtime.BaseAPI {
      */
     async getTimeline(requestParameters: GetTimelineRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Timeline> {
         const response = await this.getTimelineRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get the contents of the given timelines as a graph, grouped by event attrbutes.  If no keys are specified using the \'group_by\' query parameter, the graph is grouped by event.name.
+     * Get the contents of the given timelines as a graph, grouped by event attrbutes.
+     */
+    async groupedGraphRaw(requestParameters: GroupedGraphRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GroupedGraph>> {
+        if (requestParameters.timelineId === null || requestParameters.timelineId === undefined) {
+            throw new runtime.RequiredError('timelineId','Required parameter requestParameters.timelineId was null or undefined when calling groupedGraph.');
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters.timelineId) {
+            queryParameters['timeline_id'] = requestParameters.timelineId;
+        }
+
+        if (requestParameters.groupBy) {
+            queryParameters['group_by'] = requestParameters.groupBy;
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-Auxon-Auth-Token"] = this.configuration.apiKey("X-Auxon-Auth-Token"); // ApiKeyAuth authentication
+        }
+
+        const response = await this.request({
+            path: `/v2/timelines/grouped_graph`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => GroupedGraphFromJSON(jsonValue));
+    }
+
+    /**
+     * Get the contents of the given timelines as a graph, grouped by event attrbutes.  If no keys are specified using the \'group_by\' query parameter, the graph is grouped by event.name.
+     * Get the contents of the given timelines as a graph, grouped by event attrbutes.
+     */
+    async groupedGraph(requestParameters: GroupedGraphRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GroupedGraph> {
+        const response = await this.groupedGraphRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

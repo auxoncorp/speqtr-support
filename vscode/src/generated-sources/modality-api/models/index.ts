@@ -2,6 +2,9 @@
 /* eslint-disable */
 export * from './AttrVal';
 export * from './EventCoordinate';
+export * from './GroupedGraph';
+export * from './GroupedGraphEdge';
+export * from './GroupedGraphNode';
 export * from './TaggedBigInt';
 export * from './TaggedEventCoordinate';
 export * from './TaggedLogicalTime';

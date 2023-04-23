@@ -14,6 +14,70 @@
     "version": "2.0"
   },
   "paths": {
+    "/v2/timelines/grouped_graph": {
+      "get": {
+        "tags": [
+          "timelines"
+        ],
+        "summary": "Get the contents of the given timelines as a graph, grouped by event attrbutes.",
+        "description": "Get the contents of the given timelines as a graph, grouped by event attrbutes.\n\nIf no keys are specified using the 'group_by' query parameter,\nthe graph is grouped by event.name.",
+        "operationId": "grouped_graph",
+        "parameters": [
+          {
+            "name": "timeline_id",
+            "in": "query",
+            "description": "Timeline Id",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Grouping attr key",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "nullable": true
+            },
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieve the graph successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupedGraph"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operation not authorized"
+          },
+          "404": {
+            "description": "Timeline Not Found"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [
+              "access"
+            ]
+          }
+        ]
+      }
+    },
     "/v2/timelines/{timeline_id}": {
       "get": {
         "tags": [
@@ -95,6 +159,70 @@
         ]
       }
     },
+    "/v2/workspaces/{workspace_version_id}/grouped_graph": {
+      "get": {
+        "tags": [
+          "workspaces"
+        ],
+        "summary": "Get the contents of the workspace as a graph, grouped by event attrbutes.",
+        "description": "Get the contents of the workspace as a graph, grouped by event attrbutes.\n\nIf no keys are specified using the 'group_by' query parameter,\nthe graph is grouped by (timeline.name, event.name).",
+        "operationId": "workspace_grouped_graph",
+        "parameters": [
+          {
+            "name": "workspace_version_id",
+            "in": "path",
+            "description": "Workspace version id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Grouping attr key",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "nullable": true
+            },
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieve the graph successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupedGraph"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid workspace_version_id"
+          },
+          "403": {
+            "description": "Operation not authorized"
+          },
+          "404": {
+            "description": "Workspace not found"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [
+              "access"
+            ]
+          }
+        ]
+      }
+    },
     "/v2/workspaces/{workspace_version_id}/segments": {
       "get": {
         "tags": [
@@ -134,6 +262,87 @@
           },
           "403": {
             "description": "Operation not authorized"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [
+              "access"
+            ]
+          }
+        ]
+      }
+    },
+    "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped_graph": {
+      "get": {
+        "tags": [
+          "workspaces"
+        ],
+        "summary": "Get the contents of the segment as a graph, grouped by event attrbutes.",
+        "description": "Get the contents of the segment as a graph, grouped by event attrbutes.\n\nIf no keys are specified using the 'group_by' query parameter,\nthe graph is grouped by (timeline.name, event.name).",
+        "operationId": "segment_grouped_graph",
+        "parameters": [
+          {
+            "name": "workspace_version_id",
+            "in": "path",
+            "description": "Workspace Version Id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceVersionId"
+            }
+          },
+          {
+            "name": "rule_name",
+            "in": "path",
+            "description": "Segmentation Rule Name",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SegmentationRuleName"
+            }
+          },
+          {
+            "name": "segment_name",
+            "in": "path",
+            "description": "Segment Name",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceSegmentName"
+            }
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "Grouping attr key",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "nullable": true
+            },
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieve the graph successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupedGraph"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid workspace_version_id"
+          },
+          "403": {
+            "description": "Operation not authorized"
+          },
+          "404": {
+            "description": "Workspace or segment not found"
           }
         },
         "security": [
@@ -367,6 +576,93 @@
           },
           "timeline_id": {
             "$ref": "#/components/schemas/TimelineId"
+          }
+        }
+      },
+      "GroupedGraph": {
+        "type": "object",
+        "description": "A graph created by grouping together events by their attribute values.",
+        "required": [
+          "attr_keys",
+          "nodes",
+          "edges"
+        ],
+        "properties": {
+          "attr_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The grouping keys used to compute this graph"
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupedGraphEdge"
+            },
+            "description": "The edges in the graph; node indices in this collection refer to `nodes`."
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupedGraphNode"
+            },
+            "description": "The nodes in the graph"
+          }
+        }
+      },
+      "GroupedGraphEdge": {
+        "type": "object",
+        "description": "An edge in a `GroupedGraph`",
+        "required": [
+          "source",
+          "destination",
+          "count"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "How many times did this particular transition occur?",
+            "minimum": 0.0
+          },
+          "destination": {
+            "type": "integer",
+            "description": "Corresponds to a position in the `GroupedGraph.nodes` array",
+            "minimum": 0.0
+          },
+          "source": {
+            "type": "integer",
+            "description": "Corresponds to a position in the `GroupedGraph.nodes` array",
+            "minimum": 0.0
+          }
+        }
+      },
+      "GroupedGraphNode": {
+        "type": "object",
+        "description": "A node in a `GroupedGraph`",
+        "required": [
+          "attr_vals"
+        ],
+        "properties": {
+          "attr_vals": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/AttrVal"
+                }
+              ],
+              "nullable": true
+            },
+            "description": "These are the values for this node corresponding to the `attr_keys`\nof the parent `GroupedGraph`"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "How many times did events of this group occur?",
+            "nullable": true,
+            "minimum": 0.0
           }
         }
       },

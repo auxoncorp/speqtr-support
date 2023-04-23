@@ -82,7 +82,6 @@
                     "id": "auxon.timelines",
                     "name": "Timelines"
                 }
-
             ]
         },
         "menus": {
@@ -97,11 +96,6 @@
                     "when": "view == auxon.segments || view == auxon.timelines",
                     "group": "inline"
                 },
-
-                {
-                    "command": "auxon.segments.logSelected",
-                    "when": "view == auxon.segments && listMultiSelection"
-                },
                 {
                     "command": "auxon.segments.setActive",
                     "when": "(view == auxon.segments && viewItem == segment) && !listMultiSelection"
@@ -110,10 +104,21 @@
                     "command": "auxon.segments.setActiveFromSelection",
                     "when": "(view == auxon.segments && viewItem == segment) && listMultiSelection"
                 },
-
+                {
+                    "command": "auxon.segments.transitionGraph",
+                    "when": "view == auxon.segments"
+                },
                 {
                     "command": "auxon.timelines.inspect",
                     "when": "view == auxon.timelines && viewItem == timeline"
+                },
+                {
+                    "command": "auxon.timelines.transitionGraph",
+                    "when": "view == auxon.timelines && viewItem == timeline && !listMultiSelection"
+                },
+                {
+                    "command": "auxon.timelines.transitionGraphForSelection",
+                    "when": "view == auxon.timelines && viewItem == timeline && listMultiSelection"
                 },
                 {
                     "command": "auxon.timelines.logSelected",
@@ -154,21 +159,71 @@
             ]
         },
         "commands": [
-            {"command": "auxon.workspaces.refresh", "title": "Refresh Workspace List", "icon": "$(refresh)"},
-            {"command": "auxon.workspaces.setActive", "title": "Set this workspace as active", "icon": "$(refresh)"},
-
-            {"command": "auxon.segments.refresh", "title": "Refresh Segment List", "icon": "$(refresh)"},
-            {"command": "auxon.segments.setActive", "title": "Set this segment as active"},
-            {"command": "auxon.segments.setActiveFromSelection", "title": "Set selected segments as active"},
-            {"command": "auxon.segments.setLatestActive", "title": "Set latest segment as active data"},
-            {"command": "auxon.segments.setAllActive", "title": "Set all contained segments as active data, individually"},
-            {"command": "auxon.segments.setWholeWorkspaceActive", "title": "Set all workspace content as active data, as a single universe"},
-
-            {"command": "auxon.timelines.refresh", "title": "Refresh Timeline List", "icon": "$(refresh)"},
-            {"command": "auxon.timelines.inspect", "title": "Inspect Timeline"},
-            {"command": "auxon.timelines.logSelected", "title": "Log selected timelines"},
-
-            {"command": "auxon.modality.log", "title": "View log", "icon": "$(open-preview)"}
+            {
+                "command": "auxon.workspaces.refresh",
+                "title": "Refresh Workspace List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.workspaces.setActive",
+                "title": "Set this workspace as active",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.segments.refresh",
+                "title": "Refresh Segment List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.segments.setActive",
+                "title": "Set this segment as active"
+            },
+            {
+                "command": "auxon.segments.setActiveFromSelection",
+                "title": "Set selected segments as active"
+            },
+            {
+                "command": "auxon.segments.setLatestActive",
+                "title": "Set latest segment as active data"
+            },
+            {
+                "command": "auxon.segments.setAllActive",
+                "title": "Set all contained segments as active data, individually"
+            },
+            {
+                "command": "auxon.segments.setWholeWorkspaceActive",
+                "title": "Set all workspace content as active data, as a single universe"
+            },
+            {
+                "command": "auxon.segments.transitionGraph",
+                "title": "View Transition Graph"
+            },
+            {
+                "command": "auxon.timelines.refresh",
+                "title": "Refresh Timeline List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.timelines.inspect",
+                "title": "Inspect Timeline"
+            },
+            {
+                "command": "auxon.timelines.logSelected",
+                "title": "Log Selected Timelines"
+            },
+            {
+                "command": "auxon.timelines.transitionGraph",
+                "title": "View Transition Graph"
+            },
+            {
+                "command": "auxon.timelines.transitionGraphForSelection",
+                "title": "View Transition Graph for Selection"
+            },
+            {
+                "command": "auxon.modality.log",
+                "title": "View log",
+                "icon": "$(open-preview)"
+            }
         ],
         "configuration": {
             "type": "object",
