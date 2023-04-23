@@ -87,11 +87,35 @@ export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy?:
 
 const URI_SCHEME: string = "auxon-transition-graph";
 
-
+// vscode seems to equate the path portion of the document uri with
+// identity pretty strongly, so we're encoding a lot of information
+// into it.
 export function encodeUri(val: TransitionGraphParams): vscode.Uri {
+    var components: string[]
+    if (val.type == "timelines") {
+        components = [
+            "timelines",
+            val.timelines.map(encodeURIComponent).join(","),
+        ];
+        if (val.groupBy && val.groupBy.length > 0) {
+            components.push(val.groupBy.map(encodeURIComponent).join(","))
+        }
+    } else if (val.type == "segment") {
+        components = [
+            "segment",
+            val.segmentId.workspace_version_id,
+            val.segmentId.rule_name,
+            val.segmentId.segment_name,
+        ];
+
+        if (val.groupBy && val.groupBy.length > 0) {
+            components.push(val.groupBy.map(encodeURIComponent).join(","))
+        }
+    }
+
     return vscode.Uri.from({
         scheme: URI_SCHEME,
-        path: btoa(JSON.stringify(val))
+        path: components.join("/")
     });
 }
 
@@ -100,12 +124,32 @@ export function decodeUri(uri: vscode.Uri): TransitionGraphParams {
         throw new Error("Unsupported URI Scheme: " + uri.scheme);
     }
 
-    const val = JSON.parse(atob(uri.path));
-    if (val.type != "timelines" && val.type != "segment") {
-        throw new Error("Unsupported 'type' in transition graph uri: " + val.type);
+    const components = uri.path.split("/");
+    if (components[0] == "timelines") {
+        var tlParams: TimelineParams = {
+            type: "timelines",
+            timelines: components[1].split(",").map(decodeURIComponent)
+        };
+        if (components[2]) {
+            tlParams.groupBy = components[2].split(",").map(decodeURIComponent)
+        }
+        return tlParams;
+    } else if (components[0] == "segment") {
+        var segParams: SegmentParams = {
+            type: "segment",
+            segmentId: {
+                workspace_version_id: components[1],
+                rule_name: components[2],
+                segment_name: components[3],
+            }
+        };
+        if (components[4]) {
+            segParams.groupBy = components[4].split(",").map(decodeURIComponent)
+        }
+        return segParams;
+    } else {
+        throw new Error("Unsupported 'type' in transition graph uri: " + components[0]);
     }
-
-    return val;
 }
 
 class TransitionGraphContentProvider implements vscode.TextDocumentContentProvider {
