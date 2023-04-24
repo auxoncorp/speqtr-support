@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { log } from './main';
 import * as api from './modalityApi';
 
 export function register(context: vscode.ExtensionContext, apiClient: api.Client) {
@@ -32,38 +33,56 @@ interface GraphGroupingItem {
 export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
     function step1() {
         const quickPick: vscode.QuickPick<GraphGroupingItem> = vscode.window.createQuickPick();
-        quickPick.step = 1;
-        quickPick.totalSteps = 2;
+        var disposables: vscode.Disposable[] = [quickPick];
+
+        quickPick.title = "Transition Graph: Select event grouping method";
         quickPick.items = [
             { label: "Group by event and timeline", groupBy: ["event.name", "timeline.name"] },
             { label: "Group by timeline", groupBy: ["timeline.name"] },
             { label: "", kind: vscode.QuickPickItemKind.Separator},
-            { label: "Custom Grouping", custom: true }
+            { label: "Custom Grouping...", custom: true }
         ];
 
-        quickPick.onDidChangeSelection(selection => {
-            if (selection[0]?.groupBy) {
-                quickPick.onDidHide(() => quickPick.dispose());
+        disposables.push(
+            quickPick.onDidHide(() => {
+                disposables.forEach(d => d.dispose());
+            }),
+            quickPick.onDidChangeSelection(selection => {
                 quickPick.hide();
-                picked(selection[0]?.groupBy);
-            } else if (selection[0]?.custom) {
-                quickPick.hide();
-                step2();
-            }
-        });
+                if (selection[0]?.groupBy) {
+                    picked(selection[0]?.groupBy);
+                } else if (selection[0]?.custom) {
+                    step2();
+                }
+            })
+        );
+        
         quickPick.show();
     }
 
     function step2() {
         const manualInput = vscode.window.createInputBox();
-        manualInput.step = 2;
-        manualInput.totalSteps = 2;
-        manualInput.onDidAccept(() => {
-            const val = manualInput.value;
-            manualInput.onDidHide(() => manualInput.dispose());
-            manualInput.hide();
-            picked([val]);
-        });
+        var disposables: vscode.Disposable[] = [manualInput];
+
+        manualInput.title = "Transition Graph: Custom Grouping";
+        manualInput.buttons = [vscode.QuickInputButtons.Back];
+        manualInput.prompt = "Enter one or more attribute keys, separated by commas. For example: `event.name,timeline.name`";
+        disposables.push(
+            manualInput.onDidHide(() => {
+                disposables.forEach(d => d.dispose());
+            }),
+            manualInput.onDidAccept(() => {
+                const val = manualInput.value;
+                manualInput.hide();
+                picked([val]);
+            }),
+            manualInput.onDidTriggerButton(item => {
+                manualInput.hide();
+                if (item === vscode.QuickInputButtons.Back) {
+                    step1();
+                }
+            })
+        );
         manualInput.show();
     }
 
@@ -159,18 +178,18 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
         var params = decodeUri(uri);
 
         var res: api.GroupedGraph;
-        var title = "# Transition graph for ";
+        var docTitle = "# Transition graph for ";
 
         if (params.type == "timelines") {
             res = await this.apiClient.timelines().groupedGraph(params.timelines, params.groupBy);
             if (params.timelines.length > 1) {
-                title += "selected timelines";
+                docTitle += "selected timelines";
             } else {
-                title += params.timelines[0];
+                docTitle += params.timelines[0];
             }
         } else if (params.type == "segment") {
             res = await this.apiClient.segment(params.segmentId).groupedGraph(params.groupBy);
-            title += "segment " + params.segmentId.segment_name;
+            docTitle += "segment " + params.segmentId.segment_name;
         }
 
         if (res.nodes.length == 0) {
@@ -195,10 +214,10 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
             const sourceOccurCount = res.nodes[edge.source].count;
             const percent = (edge.count / sourceOccurCount) * 100;
             const label = `${percent.toFixed(1)}% (${edge.count})`
-            mermaid += `node${edge.source}-- "${label}" -->node${edge.destination}\n`;
+            mermaid += `  node${edge.source}-- "${label}" -->node${edge.destination}\n`;
         }
 
-        const content = `# ${title}\n` + 
+        const content = `# ${docTitle}\n` + 
           "```mermaid\n" + mermaid + "\n```";
         
         return content;

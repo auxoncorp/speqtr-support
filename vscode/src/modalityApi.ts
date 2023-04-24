@@ -124,9 +124,13 @@ export class TimelinesClient {
     constructor(private readonly client: InternalClient) { }
 
     async groupedGraph(timeline_id: string[], group_by: string[]): Promise<GroupedGraph> {
+        const timeline_id_query = timeline_id.map((tid) => ["timeline_id", tid]);
+        const group_by_query = group_by.map((gb) => ["group_by", gb]);
+        const query = timeline_id_query.concat(group_by_query);
+
         const res = await this.client.get(
             "/v2/timelines/grouped_graph",
-            { params: { query: { timeline_id, group_by } } });
+            { params: { query: query as any } });
         return unwrapData(res);
     }
     
