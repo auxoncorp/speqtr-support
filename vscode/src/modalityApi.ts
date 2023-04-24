@@ -1,15 +1,14 @@
 import * as gen from "../generated/src/modality-api";
-import * as nodeFetch from 'node-fetch';
 import createClient from 'openapi-fetch';
 
-// see https://github.com/ajaishankar/openapi-typescript-fetch#readme
+// See https://github.com/ajaishankar/openapi-typescript-fetch#server-side-usage
+import fetch, { Headers, Request, Response } from 'node-fetch'
 if (!globalThis.fetch) {
-    globalThis.fetch = nodeFetch as any
-    globalThis.Headers = nodeFetch.Headers as any
-    globalThis.Request = nodeFetch.Request as any
-    globalThis.Response = nodeFetch.Response as any
+    globalThis.fetch = fetch as any;
+    globalThis.Headers = Headers as any;
+    globalThis.Request = Request as any
+    globalThis.Response = Response as any;
 }
-
 
 export type AttrVal = gen.components["schemas"]["AttrVal"];
 export type GroupedGraph = gen.components["schemas"]["GroupedGraph"];
