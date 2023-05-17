@@ -203,7 +203,11 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
             var title: string;
             if (res.attr_keys[0] == "timeline.name" && res.attr_keys[1] == "event.name") {
                 title = `${node.attr_vals[1]}@${node.attr_vals[0]}`;
-            } else {
+            }
+            else if (res.attr_keys[1] == "timeline.name" && res.attr_keys[0] == "event.name") {
+                title = `${node.attr_vals[0]}@${node.attr_vals[1]}`;
+            }
+            else {
                 title = node.attr_vals.join(", ");
             }
 
