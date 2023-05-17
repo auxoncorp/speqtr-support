@@ -68,7 +68,7 @@ function extraEnv(): null | object {
 /**
  * Should we allow insecure HTTPs connections?
  */
-async function allowInsecureHttps(): Promise<boolean> {
+export async function allowInsecureHttps(): Promise<boolean> {
     const auxonConfig : vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
     let vscodeAllow = auxonConfig.get<null | boolean>("allowInsecureHttps");
     if (vscodeAllow != null) {

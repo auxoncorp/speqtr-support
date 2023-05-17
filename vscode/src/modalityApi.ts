@@ -1,8 +1,10 @@
 import * as gen from "../generated/src/modality-api";
 import createClient from 'openapi-fetch';
+import * as https from 'https';
 
 // See https://github.com/ajaishankar/openapi-typescript-fetch#server-side-usage
 import fetch, { Headers, Request, Response } from 'node-fetch'
+import { Uri } from "vscode";
 if (!globalThis.fetch) {
     globalThis.fetch = fetch as any;
     globalThis.Headers = Headers as any;
@@ -37,20 +39,32 @@ type InternalClient = ReturnType<typeof createClient<gen.paths>>;
 export class Client {
     client: InternalClient;
 
-    constructor(baseUrl: string, userAuthToken: string) {
+    constructor(baseUrl: string, userAuthToken: string, allowInsecureHttps: boolean) {
+
         if (baseUrl.endsWith('/')) {
             baseUrl = baseUrl.slice(0, -1);
         }
 
-        this.client = createClient<gen.paths>({
-            baseUrl,
+        const headers = { 'X-Auxon-Auth-Token': userAuthToken };
 
-            // @ts-ignore The type for this appears to be correct for the browser, but ts can't seem to find
-            // the base interface which allows 'headers' in the node.js context.
-            headers: {
-                'X-Auxon-Auth-Token': userAuthToken
-            },
-        });
+        const baseUri = Uri.parse(baseUrl, false);
+        if (baseUri.scheme == "https") {
+            const agent = new https.Agent({ rejectUnauthorized: !allowInsecureHttps });
+
+            this.client = createClient<gen.paths>({
+                baseUrl,
+                // @ts-ignore
+                agent,
+                // @ts-ignore
+                headers
+            });
+        } else {
+            this.client = createClient<gen.paths>({
+                baseUrl,
+                // @ts-ignore
+                headers
+            });
+        }
     }
 
     workspaces(): WorkspacesClient {

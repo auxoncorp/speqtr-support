@@ -10,7 +10,7 @@ import * as lsp from './lsp';
 import * as modalityLog from './modalityLog';
 import * as terminalLinkProvider from './terminalLinkProvider';
 import * as transitionGraph from './transitionGraph';
-import { modalityUrl, userAuthToken } from "./config";
+import * as config from "./config";
 
 export let log: vscode.OutputChannel;
 let lspClient: LanguageClient;
@@ -19,9 +19,10 @@ export async function activate(context: vscode.ExtensionContext) {
     log = vscode.window.createOutputChannel("Auxon SpeQTr");
     lspClient = await lsp.activateLspClient(context);
 
-    const apiUrl = await modalityUrl();
-    const token = userAuthToken();
-    const apiClient = new api.Client(apiUrl.toString(), token);
+    const apiUrl = await config.modalityUrl();
+    const token = config.userAuthToken();
+    const allowInsecure = await config.allowInsecureHttps();
+    const apiClient = new api.Client(apiUrl.toString(), token, allowInsecure);
 
     terminalLinkProvider.register(context);
     modalityLog.register(context);
