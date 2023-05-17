@@ -1,14 +1,14 @@
 import * as gen from "../generated/src/modality-api";
-import createClient from 'openapi-fetch';
-import * as https from 'https';
+import createClient from "openapi-fetch";
+import * as https from "https";
 
 // See https://github.com/ajaishankar/openapi-typescript-fetch#server-side-usage
-import fetch, { Headers, Request, Response } from 'node-fetch'
+import fetch, { Headers, Request, Response } from "node-fetch";
 import { Uri } from "vscode";
 if (!globalThis.fetch) {
     globalThis.fetch = fetch as any;
     globalThis.Headers = Headers as any;
-    globalThis.Request = Request as any
+    globalThis.Request = Request as any;
     globalThis.Response = Response as any;
 }
 
@@ -40,29 +40,30 @@ export class Client {
     client: InternalClient;
 
     constructor(baseUrl: string, userAuthToken: string, allowInsecureHttps: boolean) {
-
-        if (baseUrl.endsWith('/')) {
+        if (baseUrl.endsWith("/")) {
             baseUrl = baseUrl.slice(0, -1);
         }
 
-        const headers = { 'X-Auxon-Auth-Token': userAuthToken };
+        const headers = { "X-Auxon-Auth-Token": userAuthToken };
 
         const baseUri = Uri.parse(baseUrl, false);
         if (baseUri.scheme == "https") {
-            const agent = new https.Agent({ rejectUnauthorized: !allowInsecureHttps });
+            const agent = new https.Agent({
+                rejectUnauthorized: !allowInsecureHttps,
+            });
 
             this.client = createClient<gen.paths>({
                 baseUrl,
                 // @ts-ignore
                 agent,
                 // @ts-ignore
-                headers
+                headers,
             });
         } else {
             this.client = createClient<gen.paths>({
                 baseUrl,
                 // @ts-ignore
-                headers
+                headers,
             });
         }
     }
@@ -85,7 +86,7 @@ export class Client {
 
     timeline(timelineId: TimelineId): TimelineClient {
         return new TimelineClient(this.client, timelineId);
-    }   
+    }
 
     specs(): SpecsClient {
         return new SpecsClient(this.client);
@@ -97,46 +98,46 @@ export class Client {
 }
 
 export class WorkspacesClient {
-    constructor(private readonly client: InternalClient) { }
+    constructor(private readonly client: InternalClient) {}
 
     async list(): Promise<Workspace[]> {
-        const res = await this.client
-            .get("/v2/workspaces", {});
+        const res = await this.client.get("/v2/workspaces", {});
         return unwrapData(res);
     }
 }
 
 export class WorkspaceClient {
-    constructor(
-        private readonly client: InternalClient,
-        private readonly workspaceVersionId: WorkspaceVersionId)
-    { }
+    constructor(private readonly client: InternalClient, private readonly workspaceVersionId: WorkspaceVersionId) {}
 
     async segments(): Promise<WorkspaceSegmentMetadata[]> {
-        const res = await this.client.get(
-            "/v2/workspaces/{workspace_version_id}/segments",
-            { params: { path: { workspace_version_id: this.workspaceVersionId } } });
+        const res = await this.client.get("/v2/workspaces/{workspace_version_id}/segments", {
+            params: {
+                path: { workspace_version_id: this.workspaceVersionId },
+            },
+        });
         return unwrapData(res);
     }
 
     async timelines(): Promise<TimelineOverview[]> {
-        const res = await this.client.get(
-            "/v2/workspaces/{workspace_version_id}/timelines",
-            { params: { path: { workspace_version_id: this.workspaceVersionId } } });
+        const res = await this.client.get("/v2/workspaces/{workspace_version_id}/timelines", {
+            params: {
+                path: { workspace_version_id: this.workspaceVersionId },
+            },
+        });
         return unwrapData(res);
     }
 }
 
 export class SegmentClient {
-    constructor(
-        private readonly client: InternalClient,
-        private readonly segmentId: WorkspaceSegmentId)
-    { }
+    constructor(private readonly client: InternalClient, private readonly segmentId: WorkspaceSegmentId) {}
 
     async timelines(): Promise<TimelineOverview[]> {
-        const res = await this.client
-            .get("/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timelines",
-                { params: { path: this.segmentId } });
+        const res = await this.client.get(
+            "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timelines",
+            {
+                params: { path: this.segmentId },
+            }
+        );
         return unwrapData(res);
     }
 
@@ -150,8 +151,8 @@ export class SegmentClient {
                     // The actual type is "Something you can pass to the UrlSearchParams constructor".
                     // Here, we use the 'array of tuples' form to get the group_by query parameter
                     // to appear multiple times.
-                    query: groupBy.map(gb => ["group_by", gb])
-                }
+                    query: groupBy.map((gb) => ["group_by", gb]),
+                },
             }
         );
 
@@ -160,37 +161,33 @@ export class SegmentClient {
 }
 
 export class TimelinesClient {
-    constructor(private readonly client: InternalClient) { }
+    constructor(private readonly client: InternalClient) {}
 
     async groupedGraph(timeline_id: string[], group_by: string[]): Promise<GroupedGraph> {
         const timeline_id_query = timeline_id.map((tid) => ["timeline_id", tid]);
         const group_by_query = group_by.map((gb) => ["group_by", gb]);
         const query = timeline_id_query.concat(group_by_query);
 
-        const res = await this.client.get(
-            "/v2/timelines/grouped_graph",
-            { params: { query: query as any } });
+        const res = await this.client.get("/v2/timelines/grouped_graph", {
+            params: { query: query as any },
+        });
         return unwrapData(res);
     }
-    
 }
 
 export class TimelineClient {
-    constructor(
-        private readonly client: InternalClient,
-        private readonly timelineId: TimelineId)
-    { }
+    constructor(private readonly client: InternalClient, private readonly timelineId: TimelineId) {}
 
     async get(): Promise<Timeline> {
-        const res = await this.client.get(
-            "/v2/timelines/{timeline_id}",
-            { params: { path: { timeline_id: this.timelineId } } });
+        const res = await this.client.get("/v2/timelines/{timeline_id}", {
+            params: { path: { timeline_id: this.timelineId } },
+        });
         return unwrapData(res);
     }
 }
 
 export class SpecsClient {
-    constructor(private readonly client: InternalClient) { }
+    constructor(private readonly client: InternalClient) {}
 
     async list(): Promise<SpecVersionMetadata[]> {
         const res = await this.client.get("/v2/specs", {});
@@ -199,27 +196,23 @@ export class SpecsClient {
 }
 
 export class SpecClient {
-    constructor(
-        private readonly client: InternalClient,
-        private readonly specName: string)
-    { }
+    constructor(private readonly client: InternalClient, private readonly specName: string) {}
 
     version(specVersion: SpecVersionId): SpecVersionClient {
         return new SpecVersionClient(this.client, this.specName, specVersion);
     }
 
     async get(): Promise<SpecContent> {
-        const res = await this.client.get(
-            "/v2/specs/{spec_name}",
-            { params: { path: { spec_name: this.specName } } }
-        );
+        const res = await this.client.get("/v2/specs/{spec_name}", {
+            params: { path: { spec_name: this.specName } },
+        });
         return unwrapData(res);
     }
 
     async versions(): Promise<SpecVersionMetadata[]> {
-        const res = await this.client.get(
-            "/v2/specs/{spec_name}/versions",
-            { params: { path: { spec_name: this.specName } } });
+        const res = await this.client.get("/v2/specs/{spec_name}/versions", {
+            params: { path: { spec_name: this.specName } },
+        });
         return unwrapData(res);
     }
 }
@@ -228,33 +221,41 @@ export class SpecVersionClient {
     constructor(
         private readonly client: InternalClient,
         private readonly specName: string,
-        private readonly specVersion: string)
-    { }
+        private readonly specVersion: string
+    ) {}
 
     async get(): Promise<SpecContent> {
-        const res = await this.client.get(
-            "/v2/specs/{spec_name}/versions/{spec_version}",
-            { params: { path: { spec_name: this.specName, spec_version: this.specVersion } } }
-        );
+        const res = await this.client.get("/v2/specs/{spec_name}/versions/{spec_version}", {
+            params: {
+                path: {
+                    spec_name: this.specName,
+                    spec_version: this.specVersion,
+                },
+            },
+        });
         return unwrapData(res);
     }
 
     async results(): Promise<SpecEvalOutcomeHighlights[]> {
-        const res = await this.client.get(
-            "/v2/specs/{spec_name}/versions/{spec_version}/results",
-            { params: { path: { spec_name: this.specName, spec_version: this.specVersion } } });
+        const res = await this.client.get("/v2/specs/{spec_name}/versions/{spec_version}/results", {
+            params: {
+                path: {
+                    spec_name: this.specName,
+                    spec_version: this.specVersion,
+                },
+            },
+        });
         return unwrapData(res);
     }
 }
 
 /**
- * Convert a repsonse to just the data; if it's an error, throw the error. 
+ * Convert a repsonse to just the data; if it's an error, throw the error.
  */
-function unwrapData<T>(res: { data: T, error?: never} | { data?: never, error: any}): T {
+function unwrapData<T>(res: { data: T; error?: never } | { data?: never; error: any }): T {
     if (res.error) {
         throw new Error(res.error);
     } else {
         return res.data;
     }
 }
-

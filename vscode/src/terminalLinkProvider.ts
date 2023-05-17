@@ -1,10 +1,8 @@
 import * as vscode from "vscode";
-import * as modalityLog from './modalityLog';
+import * as modalityLog from "./modalityLog";
 
 export function register(context: vscode.ExtensionContext) {
-    context.subscriptions.push(
-        vscode.window.registerTerminalLinkProvider(EVENT_COORDS_TERMINAL_LINK_PROVIDER),
-    );
+    context.subscriptions.push(vscode.window.registerTerminalLinkProvider(EVENT_COORDS_TERMINAL_LINK_PROVIDER));
 }
 
 const EVENT_COORDS_RE_STR: string = "%[0-9a-f]{32}:[0-9a-f]+";
@@ -25,8 +23,8 @@ const EVENT_COORDS_TERMINAL_LINK_PROVIDER: vscode.TerminalLinkProvider = {
             links.push({
                 startIndex: match.index,
                 length: match[0].length,
-                tooltip: 'View log around this event',
-                data: { around: coord, radius: 5 }
+                tooltip: "View log around this event",
+                data: { around: coord, radius: 5 },
             });
         }
 
@@ -37,8 +35,8 @@ const EVENT_COORDS_TERMINAL_LINK_PROVIDER: vscode.TerminalLinkProvider = {
             links.push({
                 startIndex: match.index,
                 length: match[0].length,
-                tooltip: 'View log of this causal region',
-                data: { from: firstCoord, to: secondCoord }
+                tooltip: "View log of this causal region",
+                data: { from: firstCoord, to: secondCoord },
             });
         }
 
@@ -54,5 +52,5 @@ const EVENT_COORDS_TERMINAL_LINK_PROVIDER: vscode.TerminalLinkProvider = {
                 to: link.data.to,
             })
         );
-    }
+    },
 };

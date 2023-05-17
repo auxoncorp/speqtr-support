@@ -1,15 +1,15 @@
 import * as vscode from "vscode";
-import { LanguageClient } from 'vscode-languageclient/node';
+import { LanguageClient } from "vscode-languageclient/node";
 
-import * as api from './modalityApi';
-import * as workspaces from './workspaces';
-import * as segments from './segments';
-import * as specs from './specs';
-import * as timelines from './timelines';
-import * as lsp from './lsp';
-import * as modalityLog from './modalityLog';
-import * as terminalLinkProvider from './terminalLinkProvider';
-import * as transitionGraph from './transitionGraph';
+import * as api from "./modalityApi";
+import * as workspaces from "./workspaces";
+import * as segments from "./segments";
+import * as specs from "./specs";
+import * as timelines from "./timelines";
+import * as lsp from "./lsp";
+import * as modalityLog from "./modalityLog";
+import * as terminalLinkProvider from "./terminalLinkProvider";
+import * as transitionGraph from "./transitionGraph";
 import * as config from "./config";
 
 export let log: vscode.OutputChannel;
@@ -55,6 +55,8 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate(): Thenable<void> | undefined {
-    if (!lspClient) { return undefined; }
+    if (!lspClient) {
+        return undefined;
+    }
     return lspClient.stop();
 }

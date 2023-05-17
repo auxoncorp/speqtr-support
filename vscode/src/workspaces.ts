@@ -1,10 +1,10 @@
-import * as vscode from 'vscode';
-import * as util from 'util';
-import * as child_process from 'child_process';
+import * as vscode from "vscode";
+import * as util from "util";
+import * as child_process from "child_process";
 
-import * as cliConfig from './cliConfig';
-import * as config from './config';
-import * as api from './modalityApi';
+import * as cliConfig from "./cliConfig";
+import * as config from "./config";
+import * as api from "./modalityApi";
 
 const execFile = util.promisify(child_process.execFile);
 
@@ -12,19 +12,25 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
     activeWorkspaceVersionId: string;
     activeWorkspaceName: string;
 
-    private _onDidChangeTreeData: vscode.EventEmitter<WorkspaceTreeItemData | WorkspaceTreeItemData[] | undefined > = new vscode.EventEmitter();
-    readonly onDidChangeTreeData: vscode.Event<WorkspaceTreeItemData | WorkspaceTreeItemData[] | undefined> = this._onDidChangeTreeData.event;
+    private _onDidChangeTreeData: vscode.EventEmitter<WorkspaceTreeItemData | WorkspaceTreeItemData[] | undefined> =
+        new vscode.EventEmitter();
+    readonly onDidChangeTreeData: vscode.Event<WorkspaceTreeItemData | WorkspaceTreeItemData[] | undefined> =
+        this._onDidChangeTreeData.event;
 
-    private _onDidChangeActiveWorkspace: vscode.EventEmitter< string | undefined > = new vscode.EventEmitter();
+    private _onDidChangeActiveWorkspace: vscode.EventEmitter<string | undefined> = new vscode.EventEmitter();
     readonly onDidChangeActiveWorkspace: vscode.Event<string | undefined> = this._onDidChangeActiveWorkspace.event;
 
-    constructor(private readonly apiClient: api.Client) { }
+    constructor(private readonly apiClient: api.Client) {}
 
     register(context: vscode.ExtensionContext) {
         context.subscriptions.push(
-            vscode.window.createTreeView("auxon.workspaces", { treeDataProvider: this }),
+            vscode.window.createTreeView("auxon.workspaces", {
+                treeDataProvider: this,
+            }),
             vscode.commands.registerCommand("auxon.workspaces.refresh", () => this.refresh()),
-            vscode.commands.registerCommand("auxon.workspaces.setActive", (itemData) => this.setActiveWorkspaceCommand(itemData))
+            vscode.commands.registerCommand("auxon.workspaces.setActive", (itemData) =>
+                this.setActiveWorkspaceCommand(itemData)
+            )
         );
     }
 
@@ -66,30 +72,25 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
         return children;
     }
 
-
     async setActiveWorkspaceCommand(itemData: WorkspaceTreeItemData) {
         let modality = config.toolPath("modality");
         // TODO use workspace version id for this
-        await execFile(modality, ['workspace', 'use', itemData.workspace.name]);
-        await execFile(modality, ['segment', 'use', '--latest']);
+        await execFile(modality, ["workspace", "use", itemData.workspace.name]);
+        await execFile(modality, ["segment", "use", "--latest"]);
         this.refresh();
     }
 }
 
 export class WorkspaceTreeItemData {
-    constructor(
-        public workspace: api.Workspace,
-        public isActive: boolean,
-        public isUsedAsWholeWorkspace: boolean
-    ) { }
+    constructor(public workspace: api.Workspace, public isActive: boolean, public isUsedAsWholeWorkspace: boolean) {}
 }
 
 const ACTIVE_ITEM_MARKER = "✦";
 
 class WorkspaceTreeItem extends vscode.TreeItem {
-    contextValue = 'workspace';
+    contextValue = "workspace";
 
-    constructor( public readonly data: WorkspaceTreeItemData) {
+    constructor(public readonly data: WorkspaceTreeItemData) {
         let tooltip = `- **Workspace Name**: ${data.workspace.name}`;
         tooltip += `\n- **Workspace Version**: ${data.workspace.version_id}`;
 
@@ -110,5 +111,3 @@ class WorkspaceTreeItem extends vscode.TreeItem {
         }
     }
 }
-
-

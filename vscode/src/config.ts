@@ -5,10 +5,10 @@
 
 import * as cliConfig from "./cliConfig";
 import * as vscode from "vscode";
-import * as path from 'path';
-import * as fs from 'fs';
-import fetch from 'node-fetch';
-import * as https from 'https';
+import * as path from "path";
+import * as fs from "fs";
+import fetch from "node-fetch";
+import * as https from "https";
 import { log } from "./main";
 
 /**
@@ -16,7 +16,7 @@ import { log } from "./main";
  * and via the CLI.
  */
 export function userAuthToken(): string | null {
-    const auxonConfig : vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
+    const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
     let vscodeAuthToken = auxonConfig.get<null | string>("authToken");
     if (vscodeAuthToken) {
         return vscodeAuthToken.trim();
@@ -43,7 +43,7 @@ export async function modalityUrlV1(): Promise<vscode.Uri> {
  * the appropriate version component in the generated stubs.
  */
 export async function modalityUrl(): Promise<vscode.Uri> {
-    const auxonConfig : vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
+    const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
     let vscodeModalityUrl = auxonConfig.get<null | string>("modalityUrl");
     if (vscodeModalityUrl) {
         return vscode.Uri.parse(vscodeModalityUrl);
@@ -61,7 +61,7 @@ export async function modalityUrl(): Promise<vscode.Uri> {
  * Extra environment variables to use for all command invocations, including the LSP server.
  */
 function extraEnv(): null | object {
-    const auxonConfig : vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
+    const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
     return auxonConfig.get<null | object>("extraEnv");
 }
 
@@ -69,7 +69,7 @@ function extraEnv(): null | object {
  * Should we allow insecure HTTPs connections?
  */
 export async function allowInsecureHttps(): Promise<boolean> {
-    const auxonConfig : vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
+    const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
     let vscodeAllow = auxonConfig.get<null | boolean>("allowInsecureHttps");
     if (vscodeAllow != null) {
         return vscodeAllow;
@@ -88,10 +88,10 @@ export async function allowInsecureHttps(): Promise<boolean> {
  */
 export async function toolEnv(): Promise<Record<string, string>> {
     var env: Record<string, string> = {
-        "MODALITY_AUTH_TOKEN": userAuthToken(),
+        MODALITY_AUTH_TOKEN: userAuthToken(),
         // TODO implement this in the CLI
-        "MODALITY_ALLOW_INSECURE_TLS": (await allowInsecureHttps()).toString(),
-        "MODALITY_URL": (await modalityUrlV1()).toString(),
+        MODALITY_ALLOW_INSECURE_TLS: (await allowInsecureHttps()).toString(),
+        MODALITY_URL: (await modalityUrlV1()).toString(),
     };
 
     const extra = extraEnv();
@@ -109,7 +109,7 @@ export async function toolEnv(): Promise<Record<string, string>> {
  */
 export async function toolDebugEnv(): Promise<Record<string, string>> {
     var env: Record<string, string> = await toolEnv();
-    env['RUST_LOG'] = 'debug';
+    env["RUST_LOG"] = "debug";
     return env;
 }
 
@@ -121,7 +121,7 @@ export async function toolDebugEnv(): Promise<Record<string, string>> {
  * @throws Throws if the tool cannot be found.
  */
 export function toolPath(tool_name: string): string {
-    var auxonConfig : vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
+    var auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
     var toolDir = auxonConfig.get<null | string>("tooldir");
     var toolPath: string;
 
@@ -155,9 +155,10 @@ export function toolPath(tool_name: string): string {
             customToolMsg = `${toolDir} or `;
         }
 
-        let msg = `${tool_name} executable not found in ${customToolMsg}the default install location. ` +
+        let msg =
+            `${tool_name} executable not found in ${customToolMsg}the default install location. ` +
             "If you have it installed elsewhere, set the 'auxon.tool.path' configuration.";
-        throw new Error(msg)
+        throw new Error(msg);
     }
 
     return toolPath;
@@ -167,7 +168,7 @@ export function toolPath(tool_name: string): string {
  * Return the first given path which exists, or null if none of them do.
  */
 function firstExistingPath(...paths: string[]): string | null {
-    for (var i=0; i<paths.length; i++) {
+    for (var i = 0; i < paths.length; i++) {
         let path = paths[i];
         if (path == null) {
             continue;
