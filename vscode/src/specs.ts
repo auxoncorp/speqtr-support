@@ -25,6 +25,8 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecTreeIt
             return new SpecVersionTreeItem(element);
         } else if (element instanceof SpecResultTreeItemData) {
             return new SpecResultTreeItem(element);
+        } else if (element instanceof NoSpecResultsTreeItemData) {
+            return new NoSpecResultsTreeItem();
         }
     }
 
@@ -38,8 +40,12 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecTreeIt
                 return versions.map(versionMd => new SpecVersionTreeItemData(versionMd.name, versionMd.version));
             } else if (element instanceof SpecVersionTreeItemData) {
                 const results = await this.apiClient.spec(element.specName).version(element.specVersion).results();
-                return results.map(result => new SpecResultTreeItemData(result.spec_name, result.spec_version_id, result.spec_eval_results_id));
-            } else if (element instanceof SpecResultTreeItemData) {
+                if (results.length == 0) {
+                    return [new NoSpecResultsTreeItemData()];
+                } else {
+                    return results.map(result => new SpecResultTreeItemData(result.spec_name, result.spec_version_id, result.spec_eval_results_id));
+                }
+            } else if (element instanceof SpecResultTreeItemData || element instanceof NoSpecResultsTreeItemData) {
                 return [];
             }
         }
@@ -47,8 +53,8 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecTreeIt
 }
 
 
-export type SpecTreeItemData = NamedSpecTreeItemData | SpecVersionTreeItemData | SpecResultTreeItemData;
-export type SpecTreeItem = NamedSpecTreeItem | SpecVersionTreeItem | SpecResultTreeItem;
+export type SpecTreeItemData = NamedSpecTreeItemData | SpecVersionTreeItemData | SpecResultTreeItemData | NoSpecResultsTreeItemData;
+export type SpecTreeItem = NamedSpecTreeItem | SpecVersionTreeItem | SpecResultTreeItem | NoSpecResultsTreeItem;
 
 export class NamedSpecTreeItemData {
     constructor(public specName: string) { }
@@ -92,5 +98,18 @@ class SpecResultTreeItem extends vscode.TreeItem {
 
     constructor( public readonly data: SpecResultTreeItemData) {
         super(`Spec Result: ${data.specEvalResultId}`, vscode.TreeItemCollapsibleState.None);
+    }
+}
+
+
+export class NoSpecResultsTreeItemData {
+    constructor() { }
+}
+
+class NoSpecResultsTreeItem extends vscode.TreeItem {
+    contextValue = 'noSpecResults';
+
+    constructor() {
+        super("No stored results for this spec");
     }
 }
