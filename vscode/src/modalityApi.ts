@@ -140,10 +140,21 @@ export class SegmentClient {
         return unwrapData(res);
     }
 
-    async groupedGraph(group_by: string[]): Promise<GroupedGraph> {
+    async groupedGraph(groupBy: string[]): Promise<GroupedGraph> {
         const res = await this.client.get(
             "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped_graph",
-            { params: { path: this.segmentId, query: { group_by } } });
+            {
+                params: {
+                    path: this.segmentId,
+                    // @ts-ignore The library's stated type for 'query' is inaccurate.
+                    // The actual type is "Something you can pass to the UrlSearchParams constructor".
+                    // Here, we use the 'array of tuples' form to get the group_by query parameter
+                    // to appear multiple times.
+                    query: groupBy.map(gb => ["group_by", gb])
+                }
+            }
+        );
+
         return unwrapData(res);
     }
 }
