@@ -21,7 +21,7 @@ const EVENT_COORDS_TERMINAL_LINK_PROVIDER: vscode.TerminalLinkProvider = {
                 continue;
             }
 
-            const coord = match[2];
+            const coord = match[1];
             links.push({
                 startIndex: match.index,
                 length: match[0].length,
