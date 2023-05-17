@@ -127,6 +127,22 @@
                 {
                     "command": "auxon.timelines.logSelected",
                     "when": "view == auxon.timelines && listMultiSelection"
+                },
+                {
+                    "command": "auxon.specs.eval",
+                    "when": "view == auxon.specs && viewItem == spec"
+                },
+                {
+                    "command": "auxon.specs.eval.dryRun",
+                    "when": "view == auxon.specs && viewItem == spec"
+                },
+                {
+                    "command": "auxon.specs.evalVersion",
+                    "when": "view == auxon.specs && viewItem == specVersion"
+                },
+                {
+                    "command": "auxon.specs.evalVersion.dryRun",
+                    "when": "view == auxon.specs && viewItem == specVersion"
                 }
             ],
             "view/title": [
@@ -232,6 +248,22 @@
                 "command": "auxon.specs.refresh",
                 "title": "Refresh Spec List",
                 "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.specs.eval",
+                "title": "Evaluate spec at latest version"
+            },
+            {
+                "command": "auxon.specs.eval.dryRun",
+                "title": "Evaluate spec at latest version (dry run)"
+            },
+            {
+                "command": "auxon.specs.evalVersion",
+                "title": "Evaluate spec at this verison"
+            },
+            {
+                "command": "auxon.specs.evalVersion.dryRun",
+                "title": "Evaluate spec at this version (dry run)"
             },
             {
                 "command": "auxon.modality.log",
