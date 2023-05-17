@@ -17,6 +17,12 @@ export type GroupedGraphNode = gen.components["schemas"]["GroupedGraphNode"];
 export type LogicalTime = gen.components["schemas"]["LogicalTime"];
 export type Nanoseconds = gen.components["schemas"]["Nanoseconds"];
 export type SegmentationRuleName = gen.components["schemas"]["SegmentationRuleName"];
+export type SpecContent = gen.components["schemas"]["SpecContent"];
+export type SpecEvalResultId = gen.components["schemas"]["SpecEvalResultsId"];
+export type SpecEvalOutcomeHighlights = gen.components["schemas"]["SpecEvalOutcomeHighlights"];
+export type SpecName = gen.components["schemas"]["SpecName"];
+export type SpecVersionMetadata = gen.components["schemas"]["SpecVersionMetadata"];
+export type SpecVersionId = gen.components["schemas"]["SpecVersionId"];
 export type Timeline = gen.components["schemas"]["Timeline"];
 export type TimelineId = gen.components["schemas"]["TimelineId"];
 export type TimelineOverview = gen.components["schemas"]["TimelineOverview"];
@@ -66,6 +72,14 @@ export class Client {
     timeline(timelineId: TimelineId): TimelineClient {
         return new TimelineClient(this.client, timelineId);
     }   
+
+    specs(): SpecsClient {
+        return new SpecsClient(this.client);
+    }
+
+    spec(specName: string): SpecClient {
+        return new SpecClient(this.client, specName);
+    }
 }
 
 export class WorkspacesClient {
@@ -146,6 +160,64 @@ export class TimelineClient {
         const res = await this.client.get(
             "/v2/timelines/{timeline_id}",
             { params: { path: { timeline_id: this.timelineId } } });
+        return unwrapData(res);
+    }
+}
+
+export class SpecsClient {
+    constructor(private readonly client: InternalClient) { }
+
+    async list(): Promise<SpecVersionMetadata[]> {
+        const res = await this.client.get("/v2/specs", {});
+        return unwrapData(res);
+    }
+}
+
+export class SpecClient {
+    constructor(
+        private readonly client: InternalClient,
+        private readonly specName: string)
+    { }
+
+    version(specVersion: SpecVersionId): SpecVersionClient {
+        return new SpecVersionClient(this.client, this.specName, specVersion);
+    }
+
+    async get(): Promise<SpecContent> {
+        const res = await this.client.get(
+            "/v2/specs/{spec_name}",
+            { params: { path: { spec_name: this.specName } } }
+        );
+        return unwrapData(res);
+    }
+
+    async versions(): Promise<SpecVersionMetadata[]> {
+        const res = await this.client.get(
+            "/v2/specs/{spec_name}/versions",
+            { params: { path: { spec_name: this.specName } } });
+        return unwrapData(res);
+    }
+}
+
+export class SpecVersionClient {
+    constructor(
+        private readonly client: InternalClient,
+        private readonly specName: string,
+        private readonly specVersion: string)
+    { }
+
+    async get(): Promise<SpecContent> {
+        const res = await this.client.get(
+            "/v2/specs/{spec_name}/versions/{spec_version}",
+            { params: { path: { spec_name: this.specName, spec_version: this.specVersion } } }
+        );
+        return unwrapData(res);
+    }
+
+    async results(): Promise<SpecEvalOutcomeHighlights[]> {
+        const res = await this.client.get(
+            "/v2/specs/{spec_name}/versions/{spec_version}/results",
+            { params: { path: { spec_name: this.specName, spec_version: this.specVersion } } });
         return unwrapData(res);
     }
 }

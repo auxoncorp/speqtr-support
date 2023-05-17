@@ -14,6 +14,321 @@
     "version": "2.0"
   },
   "paths": {
+    "/v2/specs": {
+      "get": {
+        "tags": [
+          "specs"
+        ],
+        "summary": "List all specs",
+        "description": "List all specs",
+        "operationId": "list_specs",
+        "responses": {
+          "200": {
+            "description": "List all specs successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpecVersionMetadata"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operation not authorized"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecsError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [
+              "access"
+            ]
+          }
+        ]
+      }
+    },
+    "/v2/specs/{spec_name}": {
+      "get": {
+        "tags": [
+          "specs"
+        ],
+        "summary": "Get the current version of the named spec",
+        "description": "Get the current version of the named spec",
+        "operationId": "get_spec",
+        "responses": {
+          "200": {
+            "description": "Get spec successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operation not authorized"
+          },
+          "404": {
+            "description": "Spec not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecsError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecsError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [
+              "access"
+            ]
+          }
+        ]
+      }
+    },
+    "/v2/specs/{spec_name}/versions": {
+      "get": {
+        "tags": [
+          "specs"
+        ],
+        "summary": "List all the versions of the named spec",
+        "description": "List all the versions of the named spec",
+        "operationId": "list_spec_versions",
+        "responses": {
+          "200": {
+            "description": "List spec versions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpecVersionMetadata"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operation not authorized"
+          },
+          "404": {
+            "description": "Spec not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecsError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecsError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [
+              "access"
+            ]
+          }
+        ]
+      }
+    },
+    "/v2/specs/{spec_name}/versions/{spec_version}": {
+      "get": {
+        "tags": [
+          "specs"
+        ],
+        "summary": "Get a specific verison of the named spec",
+        "description": "Get a specific verison of the named spec",
+        "operationId": "get_spec_version",
+        "parameters": [
+          {
+            "name": "spec_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SpecName"
+            }
+          },
+          {
+            "name": "spec_version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SpecVersionId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List spec versions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecContent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid spec version",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operation not authorized"
+          },
+          "404": {
+            "description": "Spec or spec version not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecsError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecsError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [
+              "access"
+            ]
+          }
+        ]
+      }
+    },
+    "/v2/specs/{spec_name}/versions/{spec_version}/results": {
+      "get": {
+        "tags": [
+          "specs"
+        ],
+        "summary": "List stored evaluation results for the given spec version",
+        "description": "List stored evaluation results for the given spec version",
+        "operationId": "list_spec_version_results",
+        "parameters": [
+          {
+            "name": "spec_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SpecName"
+            }
+          },
+          {
+            "name": "spec_version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SpecVersionId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List spec evalutation results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpecEvalOutcomeHighlights"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid spec version",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operation not authorized"
+          },
+          "404": {
+            "description": "Spec or spec version not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecsError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecsError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [
+              "access"
+            ]
+          }
+        ]
+      }
+    },
     "/v2/timelines/grouped_graph": {
       "get": {
         "tags": [
@@ -62,11 +377,28 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid Timeline Id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelinesError"
+                }
+              }
+            }
+          },
           "403": {
             "description": "Operation not authorized"
           },
           "404": {
-            "description": "Timeline Not Found"
+            "description": "Timeline Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelinesError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -108,11 +440,28 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid Timeline Id",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
           "403": {
             "description": "Operation not authorized"
           },
           "404": {
-            "description": "Timeline Not Found"
+            "description": "Timeline Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelinesError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -148,6 +497,16 @@
           },
           "403": {
             "description": "Operation not authorized"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -205,13 +564,37 @@
             }
           },
           "400": {
-            "description": "Invalid workspace_version_id"
+            "description": "Invalid workspace_version_id",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "403": {
             "description": "Operation not authorized"
           },
           "404": {
-            "description": "Workspace not found"
+            "description": "Workspace not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -258,10 +641,37 @@
             }
           },
           "400": {
-            "description": "Invalid workspace_version_id"
+            "description": "Invalid workspace_version_id",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "403": {
             "description": "Operation not authorized"
+          },
+          "404": {
+            "description": "Workspace not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -336,13 +746,37 @@
             }
           },
           "400": {
-            "description": "Invalid workspace_version_id"
+            "description": "Invalid workspace_version_id",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "403": {
             "description": "Operation not authorized"
           },
           "404": {
-            "description": "Workspace or segment not found"
+            "description": "Workspace or segment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -406,13 +840,37 @@
             }
           },
           "400": {
-            "description": "Invalid workspace_version_id"
+            "description": "Invalid workspace_version_id",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "403": {
             "description": "Operation not authorized"
           },
           "404": {
-            "description": "Workspace or segment not found"
+            "description": "Workspace or segment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -459,13 +917,37 @@
             }
           },
           "400": {
-            "description": "Invalid workspace_version_id"
+            "description": "Invalid workspace_version_id",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "403": {
             "description": "Operation not authorized"
           },
           "404": {
-            "description": "Workspace not found"
+            "description": "Workspace not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -681,6 +1163,138 @@
       "SegmentationRuleName": {
         "type": "string"
       },
+      "SpecContent": {
+        "type": "object",
+        "required": [
+          "metadata",
+          "speqtr"
+        ],
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/SpecVersionMetadata"
+          },
+          "speqtr": {
+            "type": "string"
+          }
+        }
+      },
+      "SpecEvalOutcomeHighlights": {
+        "type": "object",
+        "required": [
+          "spec_eval_results_id",
+          "spec_version_id",
+          "spec_name",
+          "behaviors",
+          "regions_passing",
+          "regions_failing",
+          "regions_unknown"
+        ],
+        "properties": {
+          "behaviors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "regions_failing": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0.0
+          },
+          "regions_passing": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0.0
+          },
+          "regions_unknown": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0.0
+          },
+          "spec_eval_results_id": {
+            "$ref": "#/components/schemas/SpecEvalResultsId"
+          },
+          "spec_name": {
+            "type": "string"
+          },
+          "spec_version_id": {
+            "$ref": "#/components/schemas/SpecVersionId"
+          }
+        }
+      },
+      "SpecEvalResultsId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "SpecName": {
+        "type": "string"
+      },
+      "SpecVersionId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "SpecVersionMetadata": {
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "created_at",
+          "created_by"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "$ref": "#/components/schemas/SpecVersionId"
+          }
+        }
+      },
+      "SpecsError": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "SpecNotFound"
+            ],
+            "properties": {
+              "SpecNotFound": {
+                "$ref": "#/components/schemas/SpecName"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "SpecVersionNotFound"
+            ],
+            "properties": {
+              "SpecVersionNotFound": {
+                "$ref": "#/components/schemas/SpecVersionId"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "Internal"
+            ],
+            "properties": {
+              "Internal": {
+                "type": "string",
+                "description": "Internal Server Error"
+              }
+            }
+          }
+        ],
+        "description": "Spec operation errors"
+      },
       "Timeline": {
         "type": "object",
         "required": [
@@ -717,6 +1331,46 @@
             "type": "string"
           }
         }
+      },
+      "TimelinesError": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "InvalidTimelineId"
+            ],
+            "properties": {
+              "InvalidTimelineId": {
+                "type": "string",
+                "description": "Invalid Uuid"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "TimelineNotFound"
+            ],
+            "properties": {
+              "TimelineNotFound": {
+                "$ref": "#/components/schemas/TimelineId"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "Internal"
+            ],
+            "properties": {
+              "Internal": {
+                "type": "string",
+                "description": "Internal Server Error"
+              }
+            }
+          }
+        ],
+        "description": "Timelines operation errors"
       },
       "Workspace": {
         "type": "object",
@@ -779,6 +1433,41 @@
       "WorkspaceVersionId": {
         "type": "string",
         "format": "uuid"
+      },
+      "WorkspacesError": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "WorkspaceNotFound"
+            ],
+            "properties": {
+              "WorkspaceNotFound": {
+                "type": "string",
+                "description": "Workspace not found"
+              }
+            }
+          },
+          {
+            "type": "string",
+            "enum": [
+              "SegmentNotFound"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "Internal"
+            ],
+            "properties": {
+              "Internal": {
+                "type": "string",
+                "description": "Internal Server Error"
+              }
+            }
+          }
+        ],
+        "description": "Workspace operation errors"
       }
     },
     "securitySchemes": {

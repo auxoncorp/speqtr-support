@@ -4,6 +4,7 @@ import { LanguageClient } from 'vscode-languageclient/node';
 import * as api from './modalityApi';
 import * as workspaces from './workspaces';
 import * as segments from './segments';
+import * as specs from './specs';
 import * as timelines from './timelines';
 import * as lsp from './lsp';
 import * as modalityLog from './modalityLog';
@@ -29,6 +30,7 @@ export async function activate(context: vscode.ExtensionContext) {
     var workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClient);
     let segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient);
     let timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClient);
+    let specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);
@@ -48,6 +50,7 @@ export async function activate(context: vscode.ExtensionContext) {
     workspacesTreeDataProvider.register(context);
     segmentsTreeDataProvider.register(context);
     timelinesTreeDataProvider.register(context);
+    specsTreeDataProvider.register(context);
 }
 
 export function deactivate(): Thenable<void> | undefined {

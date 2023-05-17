@@ -81,6 +81,10 @@
                 {
                     "id": "auxon.timelines",
                     "name": "Timelines"
+                },
+                {
+                    "id": "auxon.specs",
+                    "name": "Specs"
                 }
             ]
         },
@@ -155,6 +159,11 @@
                     "command": "auxon.timelines.refresh",
                     "when": "view == auxon.timelines",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.specs.refresh",
+                    "when": "view == auxon.specs",
+                    "group": "navigation@1"
                 }
             ]
         },
@@ -218,6 +227,11 @@
             {
                 "command": "auxon.timelines.transitionGraphForSelection",
                 "title": "View Transition Graph for Selection"
+            },
+            {
+                "command": "auxon.specs.refresh",
+                "title": "Refresh Spec List",
+                "icon": "$(refresh)"
             },
             {
                 "command": "auxon.modality.log",
@@ -295,7 +309,7 @@
         "watch": "npm run build-base -- --sourcemap --watch",
         "pretest": "tsc -p ./",
         "test": "node ./out/src/test/runTest.js",
-        "lint": "prettier --check . && eslint -c .eslintrc.js --ext ts ./src",
+        "lint": "tsc -p ./ && prettier --check . && eslint -c .eslintrc.js --ext ts ./src",
         "fix": "prettier --write . && eslint -c .eslintrc.js --ext ts ./src --fix",
         "codegen": "openapi-typescript src/modality-api.json --output generated/"
     },

@@ -10,6 +10,41 @@ type XOR<T, U> = (T | U) extends object ? (Without<T, U> & U) | (Without<U, T> &
 type OneOf<T extends any[]> = T extends [infer Only] ? Only : T extends [infer A, infer B, ...infer Rest] ? OneOf<[XOR<A, B>, ...Rest]> : never;
 
 export interface paths {
+  "/v2/specs": {
+    /**
+     * List all specs 
+     * @description List all specs
+     */
+    get: operations["list_specs"];
+  };
+  "/v2/specs/{spec_name}": {
+    /**
+     * Get the current version of the named spec 
+     * @description Get the current version of the named spec
+     */
+    get: operations["get_spec"];
+  };
+  "/v2/specs/{spec_name}/versions": {
+    /**
+     * List all the versions of the named spec 
+     * @description List all the versions of the named spec
+     */
+    get: operations["list_spec_versions"];
+  };
+  "/v2/specs/{spec_name}/versions/{spec_version}": {
+    /**
+     * Get a specific verison of the named spec 
+     * @description Get a specific verison of the named spec
+     */
+    get: operations["get_spec_version"];
+  };
+  "/v2/specs/{spec_name}/versions/{spec_version}/results": {
+    /**
+     * List stored evaluation results for the given spec version 
+     * @description List stored evaluation results for the given spec version
+     */
+    get: operations["list_spec_version_results"];
+  };
   "/v2/timelines/grouped_graph": {
     /**
      * Get the contents of the given timelines as a graph, grouped by event attrbutes. 
@@ -136,6 +171,42 @@ export interface components {
     LogicalTime: (number)[];
     Nanoseconds: number;
     SegmentationRuleName: string;
+    SpecContent: {
+      metadata: components["schemas"]["SpecVersionMetadata"];
+      speqtr: string;
+    };
+    SpecEvalOutcomeHighlights: {
+      behaviors: (string)[];
+      /** Format: int32 */
+      regions_failing: number;
+      /** Format: int32 */
+      regions_passing: number;
+      /** Format: int32 */
+      regions_unknown: number;
+      spec_eval_results_id: components["schemas"]["SpecEvalResultsId"];
+      spec_name: string;
+      spec_version_id: components["schemas"]["SpecVersionId"];
+    };
+    /** Format: uuid */
+    SpecEvalResultsId: string;
+    SpecName: string;
+    /** Format: uuid */
+    SpecVersionId: string;
+    SpecVersionMetadata: {
+      created_at: string;
+      created_by: string;
+      name: string;
+      version: components["schemas"]["SpecVersionId"];
+    };
+    /** @description Spec operation errors */
+    SpecsError: OneOf<[{
+      SpecNotFound: components["schemas"]["SpecName"];
+    }, {
+      SpecVersionNotFound: components["schemas"]["SpecVersionId"];
+    }, {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
     Timeline: {
       attributes: {
         [key: string]: components["schemas"]["AttrVal"] | undefined;
@@ -148,6 +219,16 @@ export interface components {
       id: components["schemas"]["TimelineId"];
       name: string;
     };
+    /** @description Timelines operation errors */
+    TimelinesError: OneOf<[{
+      /** @description Invalid Uuid */
+      InvalidTimelineId: string;
+    }, {
+      TimelineNotFound: components["schemas"]["TimelineId"];
+    }, {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
     Workspace: {
       name: string;
       version_id: components["schemas"]["WorkspaceVersionId"];
@@ -166,6 +247,14 @@ export interface components {
     WorkspaceSegmentName: string;
     /** Format: uuid */
     WorkspaceVersionId: string;
+    /** @description Workspace operation errors */
+    WorkspacesError: OneOf<[{
+      /** @description Workspace not found */
+      WorkspaceNotFound: string;
+    }, "SegmentNotFound", {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
   };
   responses: never;
   parameters: never;
@@ -178,6 +267,164 @@ export type external = Record<string, never>;
 
 export interface operations {
 
+  /**
+   * List all specs 
+   * @description List all specs
+   */
+  list_specs: {
+    responses: {
+      /** @description List all specs successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["SpecVersionMetadata"])[];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get the current version of the named spec 
+   * @description Get the current version of the named spec
+   */
+  get_spec: {
+    responses: {
+      /** @description Get spec successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SpecContent"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Spec not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List all the versions of the named spec 
+   * @description List all the versions of the named spec
+   */
+  list_spec_versions: {
+    responses: {
+      /** @description List spec versions */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["SpecVersionMetadata"])[];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Spec not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get a specific verison of the named spec 
+   * @description Get a specific verison of the named spec
+   */
+  get_spec_version: {
+    parameters: {
+      path: {
+        spec_name: components["schemas"]["SpecName"];
+        spec_version: components["schemas"]["SpecVersionId"];
+      };
+    };
+    responses: {
+      /** @description List spec versions */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SpecContent"];
+        };
+      };
+      /** @description Invalid spec version */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Spec or spec version not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List stored evaluation results for the given spec version 
+   * @description List stored evaluation results for the given spec version
+   */
+  list_spec_version_results: {
+    parameters: {
+      path: {
+        spec_name: components["schemas"]["SpecName"];
+        spec_version: components["schemas"]["SpecVersionId"];
+      };
+    };
+    responses: {
+      /** @description List spec evalutation results */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["SpecEvalOutcomeHighlights"])[];
+        };
+      };
+      /** @description Invalid spec version */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Spec or spec version not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+    };
+  };
   /**
    * Get the contents of the given timelines as a graph, grouped by event attrbutes. 
    * @description Get the contents of the given timelines as a graph, grouped by event attrbutes.
@@ -201,10 +448,20 @@ export interface operations {
           "application/json": components["schemas"]["GroupedGraph"];
         };
       };
+      /** @description Invalid Timeline Id */
+      400: {
+        content: {
+          "application/json": components["schemas"]["TimelinesError"];
+        };
+      };
       /** @description Operation not authorized */
       403: never;
       /** @description Timeline Not Found */
-      404: never;
+      404: {
+        content: {
+          "application/json": components["schemas"]["TimelinesError"];
+        };
+      };
     };
   };
   /**
@@ -225,10 +482,20 @@ export interface operations {
           "application/json": components["schemas"]["Timeline"];
         };
       };
+      /** @description Invalid Timeline Id */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
       /** @description Operation not authorized */
       403: never;
       /** @description Timeline Not Found */
-      404: never;
+      404: {
+        content: {
+          "application/json": components["schemas"]["TimelinesError"];
+        };
+      };
     };
   };
   /**
@@ -245,6 +512,12 @@ export interface operations {
       };
       /** @description Operation not authorized */
       403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
     };
   };
   /**
@@ -273,11 +546,25 @@ export interface operations {
         };
       };
       /** @description Invalid workspace_version_id */
-      400: never;
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
       /** @description Operation not authorized */
       403: never;
       /** @description Workspace not found */
-      404: never;
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
     };
   };
   /**
@@ -299,9 +586,25 @@ export interface operations {
         };
       };
       /** @description Invalid workspace_version_id */
-      400: never;
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
       /** @description Operation not authorized */
       403: never;
+      /** @description Workspace not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
     };
   };
   /**
@@ -334,11 +637,25 @@ export interface operations {
         };
       };
       /** @description Invalid workspace_version_id */
-      400: never;
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
       /** @description Operation not authorized */
       403: never;
       /** @description Workspace or segment not found */
-      404: never;
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
     };
   };
   /**
@@ -364,11 +681,25 @@ export interface operations {
         };
       };
       /** @description Invalid workspace_version_id */
-      400: never;
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
       /** @description Operation not authorized */
       403: never;
       /** @description Workspace or segment not found */
-      404: never;
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
     };
   };
   /**
@@ -390,11 +721,25 @@ export interface operations {
         };
       };
       /** @description Invalid workspace_version_id */
-      400: never;
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
       /** @description Operation not authorized */
       403: never;
       /** @description Workspace not found */
-      404: never;
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
     };
   };
 }
