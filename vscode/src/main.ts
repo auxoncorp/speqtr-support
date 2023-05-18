@@ -28,10 +28,10 @@ export async function activate(context: vscode.ExtensionContext) {
     modalityLog.register(context);
     transitionGraph.register(context, apiClient);
 
-    var workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClient);
-    let segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient);
-    let timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClient);
-    let specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient);
+    const workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClient);
+    const segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient);
+    const timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClient);
+    const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);

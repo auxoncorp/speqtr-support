@@ -5,14 +5,28 @@ export function register(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.window.registerTerminalLinkProvider(EVENT_COORDS_TERMINAL_LINK_PROVIDER));
 }
 
-const EVENT_COORDS_RE_STR: string = "%[0-9a-f]{32}:[0-9a-f]+";
+const EVENT_COORDS_RE_STR = "%[0-9a-f]{32}:[0-9a-f]+";
 // Look for '..' ahead and behind, so we don't  match part of a coord..coord range
-const EVENT_COORDS_RE: RegExp = RegExp(`(?<!\\.\\.)(${EVENT_COORDS_RE_STR})(\\.\\.)?`, "g");
-const EVENT_COORDS_RANGE_RE: RegExp = RegExp(`(${EVENT_COORDS_RE_STR})\\.\\.(${EVENT_COORDS_RE_STR})`, "g");
+const EVENT_COORDS_RE = RegExp(`(?<!\\.\\.)(${EVENT_COORDS_RE_STR})(\\.\\.)?`, "g");
+const EVENT_COORDS_RANGE_RE = RegExp(`(${EVENT_COORDS_RE_STR})\\.\\.(${EVENT_COORDS_RE_STR})`, "g");
 
-const EVENT_COORDS_TERMINAL_LINK_PROVIDER: vscode.TerminalLinkProvider = {
-    provideTerminalLinks: (context: vscode.TerminalLinkContext, _token: vscode.CancellationToken) => {
-        var links = [];
+interface EventCoordsTerminalLink {
+    startIndex: number;
+    length: number;
+    tooltip?: string;
+    data: EventCoordsTerminalLinkData;
+}
+
+interface EventCoordsTerminalLinkData {
+    around?: string;
+    radius?: string;
+    from?: string;
+    to?: string;
+}
+
+const EVENT_COORDS_TERMINAL_LINK_PROVIDER: vscode.TerminalLinkProvider<EventCoordsTerminalLink> = {
+    provideTerminalLinks: (context: vscode.TerminalLinkContext) => {
+        const links = [];
 
         for (const match of context.line.matchAll(EVENT_COORDS_RE)) {
             if (match[2] == "..") {
@@ -42,7 +56,8 @@ const EVENT_COORDS_TERMINAL_LINK_PROVIDER: vscode.TerminalLinkProvider = {
 
         return links;
     },
-    handleTerminalLink: (link: any) => {
+
+    handleTerminalLink: (link: EventCoordsTerminalLink) => {
         vscode.commands.executeCommand(
             modalityLog.MODALITY_LOG_COMMAND,
             new modalityLog.ModalityLogCommandArgs({

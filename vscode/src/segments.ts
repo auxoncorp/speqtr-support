@@ -68,16 +68,16 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
 
         const usedSegmentConfig = await cliConfig.usedSegments();
 
-        var activeSegmentIds: api.WorkspaceSegmentId[];
+        let activeSegmentIds: api.WorkspaceSegmentId[];
         if (usedSegmentConfig.type == "Latest" || usedSegmentConfig.type == "Set") {
             activeSegmentIds = (await cliConfig.activeSegments()).map((meta) => meta.id);
         }
 
-        let workspaceSegments = await this.apiClient.workspace(this.activeWorkspaceVersionId).segments();
+        const workspaceSegments = await this.apiClient.workspace(this.activeWorkspaceVersionId).segments();
 
-        var items = [];
+        const items = [];
         for (const segment of workspaceSegments) {
-            var isActive = false;
+            let isActive = false;
             switch (usedSegmentConfig.type) {
                 case "All":
                     isActive = true;
@@ -117,15 +117,15 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     }
 
     async setActiveCommand(item: SegmentTreeItemData) {
-        let modality = config.toolPath("modality");
-        let args = ["segment", "use", "--segmentation-rule", item.segment.id.rule_name, item.segment.id.segment_name];
+        const modality = config.toolPath("modality");
+        const args = ["segment", "use", "--segmentation-rule", item.segment.id.rule_name, item.segment.id.segment_name];
         await execFile(modality, args);
         this.refresh();
     }
 
     async setActiveFromSelectionCommand() {
-        var args = ["segment", "use"];
-        var ruleName: string;
+        const args = ["segment", "use"];
+        let ruleName: string;
         for (const item of this.view.selection) {
             if (!ruleName) {
                 ruleName = item.segment.id.rule_name;
@@ -185,7 +185,7 @@ class SegmentTreeItem extends vscode.TreeItem {
         super(label, vscode.TreeItemCollapsibleState.None);
 
         // js date is millis since the epoch; we have nanos.
-        let segDate = new Date(data.segment.latest_receive_time / 1_000_000);
+        const segDate = new Date(data.segment.latest_receive_time / 1_000_000);
         this.description = segDate.toLocaleString();
 
         let tooltip = `- **Segment Name**: ${data.segment.id.segment_name}`;

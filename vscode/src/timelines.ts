@@ -59,7 +59,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             return [];
         }
 
-        var timelines: api.TimelineOverview[] = [];
+        let timelines: api.TimelineOverview[] = [];
         switch (this.usedSegmentConfig.type) {
             case "All":
             case "WholeWorkspace":
@@ -75,7 +75,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
                     return [];
                 }
                 for (const segmentId of this.activeSegments) {
-                    for (var timeline of await this.apiClient.segment(segmentId).timelines()) {
+                    for (const timeline of await this.apiClient.segment(segmentId).timelines()) {
                         timelines.push(timeline);
                     }
                 }
@@ -86,8 +86,8 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     async inspectTimelineCommand(item: TimelineTreeItemData) {
-        let timeline = await this.apiClient.timeline(item.timeline_overview.id).get();
-        let timelineJson = JSON.stringify(timeline, null, 4);
+        const timeline = await this.apiClient.timeline(item.timeline_overview.id).get();
+        const timelineJson = JSON.stringify(timeline, null, 4);
 
         const doc = await vscode.workspace.openTextDocument({
             language: "json",

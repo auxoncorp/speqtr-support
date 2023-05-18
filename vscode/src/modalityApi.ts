@@ -6,10 +6,10 @@ import * as https from "https";
 import fetch, { Headers, Request, Response } from "node-fetch";
 import { Uri } from "vscode";
 if (!globalThis.fetch) {
-    globalThis.fetch = fetch as any;
-    globalThis.Headers = Headers as any;
-    globalThis.Request = Request as any;
-    globalThis.Response = Response as any;
+    globalThis.fetch = fetch;
+    globalThis.Headers = Headers;
+    globalThis.Request = Request;
+    globalThis.Response = Response;
 }
 
 export type AttrVal = gen.components["schemas"]["AttrVal"];
@@ -54,14 +54,17 @@ export class Client {
 
             this.client = createClient<gen.paths>({
                 baseUrl,
+
                 // @ts-ignore
                 agent,
+
                 // @ts-ignore
                 headers,
             });
         } else {
             this.client = createClient<gen.paths>({
                 baseUrl,
+
                 // @ts-ignore
                 headers,
             });
@@ -147,7 +150,8 @@ export class SegmentClient {
             {
                 params: {
                     path: this.segmentId,
-                    // @ts-ignore The library's stated type for 'query' is inaccurate.
+                    // @ts-ignore
+                    // The library's stated type for 'query' is inaccurate.
                     // The actual type is "Something you can pass to the UrlSearchParams constructor".
                     // Here, we use the 'array of tuples' form to get the group_by query parameter
                     // to appear multiple times.
@@ -163,13 +167,19 @@ export class SegmentClient {
 export class TimelinesClient {
     constructor(private readonly client: InternalClient) {}
 
-    async groupedGraph(timeline_id: string[], group_by: string[]): Promise<GroupedGraph> {
-        const timeline_id_query = timeline_id.map((tid) => ["timeline_id", tid]);
-        const group_by_query = group_by.map((gb) => ["group_by", gb]);
-        const query = timeline_id_query.concat(group_by_query);
+    async groupedGraph(timeline_id: string[], groupBy: string[]): Promise<GroupedGraph> {
+        const timelineIdQuery = timeline_id.map((tid) => ["timeline_id", tid]);
+        const groupByQuery = groupBy.map((gb) => ["group_by", gb]);
+        const query = timelineIdQuery.concat(groupByQuery);
 
         const res = await this.client.get("/v2/timelines/grouped_graph", {
-            params: { query: query as any },
+            params: {
+                // @ts-ignore
+                // The library's stated type for 'query' is inaccurate.
+                // The actual type is "Something you can pass to the UrlSearchParams constructor".
+                // Here, we use the 'array of tuples' form.
+                query,
+            },
         });
         return unwrapData(res);
     }
@@ -252,9 +262,9 @@ export class SpecVersionClient {
 /**
  * Convert a repsonse to just the data; if it's an error, throw the error.
  */
-function unwrapData<T>(res: { data: T; error?: never } | { data?: never; error: any }): T {
+function unwrapData<T, E>(res: { data: T; error?: never } | { data?: never; error: E }): T {
     if (res.error) {
-        throw new Error(res.error);
+        throw new Error(res.error.toString());
     } else {
         return res.data;
     }

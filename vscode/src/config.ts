@@ -7,9 +7,6 @@ import * as cliConfig from "./cliConfig";
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
-import fetch from "node-fetch";
-import * as https from "https";
-import { log } from "./main";
 
 /**
  * The auth token that should be used to access the modality API, both directly
@@ -17,12 +14,12 @@ import { log } from "./main";
  */
 export function userAuthToken(): string | null {
     const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
-    let vscodeAuthToken = auxonConfig.get<null | string>("authToken");
+    const vscodeAuthToken = auxonConfig.get<null | string>("authToken");
     if (vscodeAuthToken) {
         return vscodeAuthToken.trim();
     }
 
-    let cliAuthToken = cliConfig.userAuthToken();
+    const cliAuthToken = cliConfig.userAuthToken();
     if (cliAuthToken) {
         return cliAuthToken.trim();
     }
@@ -44,12 +41,12 @@ export async function modalityUrlV1(): Promise<vscode.Uri> {
  */
 export async function modalityUrl(): Promise<vscode.Uri> {
     const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
-    let vscodeModalityUrl = auxonConfig.get<null | string>("modalityUrl");
+    const vscodeModalityUrl = auxonConfig.get<null | string>("modalityUrl");
     if (vscodeModalityUrl) {
         return vscode.Uri.parse(vscodeModalityUrl);
     }
 
-    let cliModalityUrl = await cliConfig.backendApiUrl();
+    const cliModalityUrl = await cliConfig.backendApiUrl();
     if (cliModalityUrl) {
         return cliModalityUrl;
     }
@@ -70,12 +67,12 @@ function extraEnv(): null | object {
  */
 export async function allowInsecureHttps(): Promise<boolean> {
     const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
-    let vscodeAllow = auxonConfig.get<null | boolean>("allowInsecureHttps");
+    const vscodeAllow = auxonConfig.get<null | boolean>("allowInsecureHttps");
     if (vscodeAllow != null) {
         return vscodeAllow;
     }
 
-    let cliAllow = await cliConfig.allowInsecureHttps();
+    const cliAllow = await cliConfig.allowInsecureHttps();
     if (cliAllow != null) {
         return cliAllow;
     }
@@ -87,7 +84,7 @@ export async function allowInsecureHttps(): Promise<boolean> {
  * The environment used for tool invocations, include the LSP server.
  */
 export async function toolEnv(): Promise<Record<string, string>> {
-    var env: Record<string, string> = {
+    const env: Record<string, string> = {
         MODALITY_AUTH_TOKEN: userAuthToken(),
         // TODO implement this in the CLI
         MODALITY_ALLOW_INSECURE_TLS: (await allowInsecureHttps()).toString(),
@@ -108,7 +105,7 @@ export async function toolEnv(): Promise<Record<string, string>> {
  * The environment used for tool invocations, with diagnostics enabled.
  */
 export async function toolDebugEnv(): Promise<Record<string, string>> {
-    var env: Record<string, string> = await toolEnv();
+    const env: Record<string, string> = await toolEnv();
     env["RUST_LOG"] = "debug";
     return env;
 }
@@ -121,12 +118,12 @@ export async function toolDebugEnv(): Promise<Record<string, string>> {
  * @throws Throws if the tool cannot be found.
  */
 export function toolPath(tool_name: string): string {
-    var auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
-    var toolDir = auxonConfig.get<null | string>("tooldir");
-    var toolPath: string;
+    const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
+    const toolDir = auxonConfig.get<null | string>("tooldir");
+    let toolPath: string;
 
     if (process.platform == "win32") {
-        var customPath = null;
+        let customPath = null;
         if (toolDir != null) {
             customPath = path.join(toolDir, tool_name + ".exe");
         }
@@ -137,7 +134,7 @@ export function toolPath(tool_name: string): string {
             "C:\\Program Files\\Auxon\\SpeqtrLsp\\" + tool_name + ".exe"
         );
     } else {
-        var customPath = null;
+        let customPath = null;
         if (toolDir != null) {
             customPath = path.join(toolDir, tool_name);
         }
@@ -155,7 +152,7 @@ export function toolPath(tool_name: string): string {
             customToolMsg = `${toolDir} or `;
         }
 
-        let msg =
+        const msg =
             `${tool_name} executable not found in ${customToolMsg}the default install location. ` +
             "If you have it installed elsewhere, set the 'auxon.tool.path' configuration.";
         throw new Error(msg);
@@ -168,8 +165,8 @@ export function toolPath(tool_name: string): string {
  * Return the first given path which exists, or null if none of them do.
  */
 function firstExistingPath(...paths: string[]): string | null {
-    for (var i = 0; i < paths.length; i++) {
-        let path = paths[i];
+    for (let i = 0; i < paths.length; i++) {
+        const path = paths[i];
         if (path == null) {
             continue;
         }

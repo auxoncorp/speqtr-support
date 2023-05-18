@@ -5,7 +5,7 @@ import * as config from "./config";
 import { log } from "./main";
 
 export async function activateLspClient(context: vscode.ExtensionContext): Promise<LanguageClient> {
-    var serverPath = config.toolPath("speqtr_lsp");
+    const serverPath = config.toolPath("speqtr_lsp");
     log.appendLine(`Using lsp executable at ${serverPath}`);
 
     // If the extension is launched in debug mode then the debug server options are used
@@ -27,7 +27,12 @@ export async function activateLspClient(context: vscode.ExtensionContext): Promi
         documentSelector: [{ scheme: "file", language: "speqtr" }],
     };
 
-    var lspClient = new LanguageClient("speqtrLanguageServer", "SpeQTr Language Server", serverOptions, clientOptions);
+    const lspClient = new LanguageClient(
+        "speqtrLanguageServer",
+        "SpeQTr Language Server",
+        serverOptions,
+        clientOptions
+    );
 
     context.subscriptions.push(vscode.commands.registerCommand("auxon.conform.eval", runConformEvalCommand));
 
@@ -45,7 +50,7 @@ type SpecEvalCommandArgs = {
 function runConformEvalCommand(args: SpecEvalCommandArgs) {
     const conformPath = config.toolPath("conform");
 
-    let commandArgs = ["spec", "eval", "--file", vscode.Uri.parse(args.document_uri).fsPath];
+    const commandArgs = ["spec", "eval", "--file", vscode.Uri.parse(args.document_uri).fsPath];
 
     if (args.behavior) {
         commandArgs.push("--behavior", args.behavior);
@@ -61,12 +66,18 @@ function runConformEvalCommand(args: SpecEvalCommandArgs) {
         args: commandArgs,
     };
 
-    let problemMatchers = ["$conformEval"];
-    const scope = vscode.workspace.workspaceFolders![0];
-    const exec = new vscode.ProcessExecution(taskDef.command, taskDef.args);
-    const target = vscode.workspace.workspaceFolders![0];
+    const problemMatchers = ["$conformEval"];
 
-    let task = new vscode.Task(taskDef, scope, "conform", "conform source", exec, problemMatchers);
+    let scope: vscode.WorkspaceFolder;
+    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+        scope = vscode.workspace.workspaceFolders[0];
+    } else {
+        throw Error("Can't run 'conform eval' without a workspace");
+    }
+
+    const exec = new vscode.ProcessExecution(taskDef.command, taskDef.args);
+
+    const task = new vscode.Task(taskDef, scope, "conform", "conform source", exec, problemMatchers);
 
     task.group = vscode.TaskGroup.Build;
     task.presentationOptions = {

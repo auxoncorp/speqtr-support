@@ -42,13 +42,13 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
         return new WorkspaceTreeItem(element);
     }
 
-    async getChildren(_element?: WorkspaceTreeItemData): Promise<WorkspaceTreeItemData[]> {
+    async getChildren(): Promise<WorkspaceTreeItemData[]> {
         this.activeWorkspaceName = await cliConfig.activeWorkspaceName();
         const usedSegments = await cliConfig.usedSegments();
 
         const workspaces = await this.apiClient.workspaces().list();
-        var children = [];
-        var changed = false;
+        const children = [];
+        let changed = false;
         for (const workspace of workspaces) {
             children.push(
                 new WorkspaceTreeItemData(
@@ -73,7 +73,7 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
     }
 
     async setActiveWorkspaceCommand(itemData: WorkspaceTreeItemData) {
-        let modality = config.toolPath("modality");
+        const modality = config.toolPath("modality");
         // TODO use workspace version id for this
         await execFile(modality, ["workspace", "use", itemData.workspace.name]);
         await execFile(modality, ["segment", "use", "--latest"]);

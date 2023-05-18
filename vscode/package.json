@@ -341,8 +341,8 @@
         "watch": "npm run build-base -- --sourcemap --watch",
         "pretest": "tsc -p ./",
         "test": "node ./out/src/test/runTest.js",
-        "lint": "tsc -p ./ && prettier --check . && eslint -c .eslintrc.js --ext ts ./src",
-        "fix": "prettier --write . && eslint -c .eslintrc.js --ext ts ./src --fix",
+        "lint": "tsc -p ./ --noemit && eslint ./src && prettier --check .",
+        "fix": "prettier --write . && eslint ./src --fix",
         "codegen": "openapi-typescript src/modality-api.json --output generated/"
     },
     "dependencies": {

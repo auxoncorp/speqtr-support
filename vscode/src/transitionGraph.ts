@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import { log } from "./main";
 import * as api from "./modalityApi";
 
 export function register(context: vscode.ExtensionContext, apiClient: api.Client) {
@@ -33,7 +32,7 @@ interface GraphGroupingItem {
 export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
     function step1() {
         const quickPick: vscode.QuickPick<GraphGroupingItem> = vscode.window.createQuickPick();
-        var disposables: vscode.Disposable[] = [quickPick];
+        const disposables: vscode.Disposable[] = [quickPick];
 
         quickPick.title = "Transition Graph: Select event grouping method";
         quickPick.items = [
@@ -65,7 +64,7 @@ export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
 
     function step2() {
         const manualInput = vscode.window.createInputBox();
-        var disposables: vscode.Disposable[] = [manualInput];
+        const disposables: vscode.Disposable[] = [manualInput];
 
         manualInput.title = "Transition Graph: Custom Grouping";
         manualInput.buttons = [vscode.QuickInputButtons.Back];
@@ -104,13 +103,13 @@ export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy?:
     vscode.commands.executeCommand("markdown.showPreview", encodeUri({ type: "segment", segmentId, groupBy }));
 }
 
-const URI_SCHEME: string = "auxon-transition-graph";
+const URI_SCHEME = "auxon-transition-graph";
 
 // vscode seems to equate the path portion of the document uri with
 // identity pretty strongly, so we're encoding a lot of information
 // into it.
 export function encodeUri(val: TransitionGraphParams): vscode.Uri {
-    var components: string[];
+    let components: string[];
     if (val.type == "timelines") {
         components = ["timelines", val.timelines.map(encodeURIComponent).join(",")];
         if (val.groupBy && val.groupBy.length > 0) {
@@ -142,7 +141,7 @@ export function decodeUri(uri: vscode.Uri): TransitionGraphParams {
 
     const components = uri.path.split("/");
     if (components[0] == "timelines") {
-        var tlParams: TimelineParams = {
+        const tlParams: TimelineParams = {
             type: "timelines",
             timelines: components[1].split(",").map(decodeURIComponent),
         };
@@ -151,7 +150,7 @@ export function decodeUri(uri: vscode.Uri): TransitionGraphParams {
         }
         return tlParams;
     } else if (components[0] == "segment") {
-        var segParams: SegmentParams = {
+        const segParams: SegmentParams = {
             type: "segment",
             segmentId: {
                 workspace_version_id: components[1],
@@ -171,11 +170,11 @@ export function decodeUri(uri: vscode.Uri): TransitionGraphParams {
 class TransitionGraphContentProvider implements vscode.TextDocumentContentProvider {
     constructor(private readonly apiClient: api.Client) {}
 
-    async provideTextDocumentContent(uri: vscode.Uri, _token: vscode.CancellationToken): Promise<string> {
-        var params = decodeUri(uri);
+    async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+        const params = decodeUri(uri);
 
-        var res: api.GroupedGraph;
-        var docTitle = "# Transition graph for ";
+        let res: api.GroupedGraph;
+        let docTitle = "# Transition graph for ";
 
         if (params.type == "timelines") {
             res = await this.apiClient.timelines().groupedGraph(params.timelines, params.groupBy);
@@ -193,11 +192,11 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
             return "No content";
         }
 
-        var mermaid = "";
+        let mermaid = "";
         mermaid += "flowchart TB\n";
-        for (var i = 0; i < res.nodes.length; i++) {
+        for (let i = 0; i < res.nodes.length; i++) {
             const node = res.nodes[i];
-            var title: string;
+            let title: string;
             if (res.attr_keys[0] == "timeline.name" && res.attr_keys[1] == "event.name") {
                 title = `${node.attr_vals[1]}@${node.attr_vals[0]}`;
             } else if (res.attr_keys[1] == "timeline.name" && res.attr_keys[0] == "event.name") {

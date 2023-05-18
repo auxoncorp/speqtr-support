@@ -50,7 +50,9 @@ export async function usedSegments(): Promise<ContextSegment> {
     const res = await execFile(modality, ["segment", "use", "--format", "json"], {
         encoding: "utf8",
     });
-    const json: any = JSON.parse(res.stdout);
+
+    type SegmentUseOutput = "All" | "WholeWorkspace" | "Latest" | { Set: api.WorkspaceSegmentId[] };
+    const json: SegmentUseOutput = JSON.parse(res.stdout);
 
     if (json == "All") {
         return { type: "All" };
@@ -93,14 +95,18 @@ export async function backendApiUrl(): Promise<vscode.Uri | null> {
     const res = await execFile(modality, ["config", "--format", "json"], {
         encoding: "utf8",
     });
-    const res_json: any = JSON.parse(res.stdout);
+
+    interface ConfigOutput {
+        modalityd?: string;
+    }
+    const res_json: ConfigOutput = JSON.parse(res.stdout);
 
     if (!res_json.modalityd) {
         return null;
     }
     const modalityd_url = vscode.Uri.parse(res_json.modalityd);
 
-    var path = modalityd_url.path;
+    let path = modalityd_url.path;
     if (path.endsWith("/")) {
         path = path.slice(0, -1);
     }
@@ -122,7 +128,11 @@ export async function allowInsecureHttps(): Promise<boolean | null> {
     const res = await execFile(modality, ["config", "--format", "json"], {
         encoding: "utf8",
     });
-    const res_json: any = JSON.parse(res.stdout);
+
+    interface ConfigOutput {
+        insecure?: boolean;
+    }
+    const res_json: ConfigOutput = JSON.parse(res.stdout);
 
     if (!res_json.insecure) {
         return null;

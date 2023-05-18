@@ -12,7 +12,7 @@ export function register(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(MODALITY_LOG_COMMAND, runModalityLogCommand));
 }
 
-export const MODALITY_LOG_COMMAND: string = "auxon.modality.log";
+export const MODALITY_LOG_COMMAND = "auxon.modality.log";
 
 export class ModalityLogCommandArgs {
     thingToLog?: string | string[];
@@ -23,10 +23,8 @@ export class ModalityLogCommandArgs {
     segmentationRule?: string;
     segment?: string;
 
-    constructor(args: any) {
-        for (const k of Object.keys(args)) {
-            this[k] = args[k];
-        }
+    public constructor(init?: Partial<ModalityLogCommandArgs>) {
+        Object.assign(this, init);
     }
 }
 
@@ -43,7 +41,6 @@ function runModalityLogCommand(
         });
     } else if (args instanceof timelines.TimelineTreeItemData) {
         logCommandArgs = new ModalityLogCommandArgs({
-            type: "LogCommandArgs",
             thingToLog: args.timeline_overview.id,
         });
     } else if (args instanceof ModalityLogCommandArgs) {
@@ -54,7 +51,7 @@ function runModalityLogCommand(
     }
 
     // We're going to send the text of the command line to the terminal. Build up the args list here.
-    let modalityArgs = ["LESS=R", modality, "log"];
+    const modalityArgs = ["LESS=R", modality, "log"];
 
     if (logCommandArgs.thingToLog) {
         if (!Array.isArray(logCommandArgs.thingToLog)) {
@@ -62,7 +59,7 @@ function runModalityLogCommand(
         }
 
         for (const thing of logCommandArgs.thingToLog) {
-            let escapedAndQuotedThingToLog = JSON.stringify(thing);
+            const escapedAndQuotedThingToLog = JSON.stringify(thing);
             modalityArgs.push(escapedAndQuotedThingToLog);
         }
     }
@@ -80,22 +77,22 @@ function runModalityLogCommand(
         modalityArgs.push("--radius", logCommandArgs.radius);
     }
     if (logCommandArgs.segmentationRule) {
-        let escapedAndQuotedSegmentationRule = JSON.stringify(logCommandArgs.segmentationRule);
+        const escapedAndQuotedSegmentationRule = JSON.stringify(logCommandArgs.segmentationRule);
         modalityArgs.push("--segmentation-rule", escapedAndQuotedSegmentationRule);
     }
     if (logCommandArgs.segment) {
-        let escapedAndQuotedSegment = JSON.stringify(logCommandArgs.segment);
+        const escapedAndQuotedSegment = JSON.stringify(logCommandArgs.segment);
         modalityArgs.push("--segment", escapedAndQuotedSegment);
     }
 
-    let term: vscode.Terminal = vscode.window.createTerminal({
+    const term: vscode.Terminal = vscode.window.createTerminal({
         name: "modality log",
         location: vscode.TerminalLocation.Editor,
     });
     term.show();
 
     // The `exit` makes the shell close if you hit 'q' in the pager.
-    let command = `${modalityArgs.join(" ")}; exit 0\n`;
+    const command = `${modalityArgs.join(" ")}; exit 0\n`;
     log.appendLine(`Running modality log using command line: ${command}`);
     term.sendText(command);
 }

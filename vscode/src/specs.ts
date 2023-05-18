@@ -110,9 +110,7 @@ class SpecResultTreeItem extends vscode.TreeItem {
     }
 }
 
-export class NoSpecResultsTreeItemData {
-    constructor() {}
-}
+export class NoSpecResultsTreeItemData {}
 
 class NoSpecResultsTreeItem extends vscode.TreeItem {
     contextValue = "noSpecResults";
