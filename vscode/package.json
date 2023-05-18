@@ -7,7 +7,7 @@
     "repository": "https://github.com/auxoncorp/speqtr-support",
     "icon": "images/speqtr-icon.png",
     "engines": {
-        "vscode": "^1.69.0"
+        "vscode": "^1.77.0"
     },
     "categories": [
         "Programming Languages"
@@ -71,73 +71,204 @@
         "views": {
             "auxon-explorer": [
                 {
-                    "id": "modalityWorkspaces",
-                    "name": "Modality Workspaces"
+                    "id": "auxon.workspaces",
+                    "name": "Workspaces"
+                },
+                {
+                    "id": "auxon.segments",
+                    "name": "Segments"
+                },
+                {
+                    "id": "auxon.timelines",
+                    "name": "Timelines"
+                },
+                {
+                    "id": "auxon.specs",
+                    "name": "Specs"
                 }
             ]
         },
         "menus": {
             "view/item/context": [
                 {
+                    "command": "auxon.workspaces.setActive",
+                    "when": "view == auxon.workspaces && viewItem == workspace",
+                    "group": "navigation@1"
+                },
+                {
                     "command": "auxon.modality.log",
-                    "when": "view == modalityWorkspaces"
+                    "when": "view == auxon.segments || view == auxon.timelines",
+                    "group": "inline"
                 },
                 {
-                    "command": "auxon.modality.workspace.use",
-                    "when": "view == modalityWorkspaces && viewItem == workspace"
+                    "command": "auxon.segments.setActive",
+                    "when": "(view == auxon.segments && viewItem == segment) && !listMultiSelection"
                 },
                 {
-                    "command": "auxon.modality.segment.use.whole_workspace",
-                    "when": "view == modalityWorkspaces && viewItem == workspace"
+                    "command": "auxon.segments.setActiveFromSelection",
+                    "when": "(view == auxon.segments && viewItem == segment) && listMultiSelection"
                 },
                 {
-                    "command": "auxon.modality.segment.use.all_segments",
-                    "when": "view == modalityWorkspaces && viewItem == workspace"
+                    "command": "auxon.segments.transitionGraph",
+                    "when": "view == auxon.segments"
                 },
                 {
-                    "command": "auxon.modality.segment.use",
-                    "when": "view == modalityWorkspaces && viewItem == segment"
+                    "command": "auxon.timelines.inspect",
+                    "when": "view == auxon.timelines && viewItem == timeline"
                 },
                 {
-                    "command": "auxon.modality.timeline.inspect",
-                    "when": "view == modalityWorkspaces && viewItem == timeline"
+                    "command": "auxon.timelines.transitionGraph",
+                    "when": "view == auxon.timelines && viewItem == timeline && !listMultiSelection"
+                },
+                {
+                    "command": "auxon.timelines.transitionGraphForSelection",
+                    "when": "view == auxon.timelines && viewItem == timeline && listMultiSelection"
+                },
+                {
+                    "command": "auxon.timelines.logSelected",
+                    "when": "view == auxon.timelines && listMultiSelection"
+                },
+                {
+                    "command": "auxon.specs.eval",
+                    "when": "view == auxon.specs && viewItem == spec"
+                },
+                {
+                    "command": "auxon.specs.eval.dryRun",
+                    "when": "view == auxon.specs && viewItem == spec"
+                },
+                {
+                    "command": "auxon.specs.evalVersion",
+                    "when": "view == auxon.specs && viewItem == specVersion"
+                },
+                {
+                    "command": "auxon.specs.evalVersion.dryRun",
+                    "when": "view == auxon.specs && viewItem == specVersion"
                 }
             ],
             "view/title": [
                 {
-                    "command": "auxon.workspace_view.refresh",
-                    "when": "view == modalityWorkspaces"
+                    "command": "auxon.workspaces.refresh",
+                    "when": "view == auxon.workspaces",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.segments.refresh",
+                    "when": "view == auxon.segments",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.segments.setLatestActive",
+                    "when": "view == auxon.segments",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.segments.setAllActive",
+                    "when": "view == auxon.segments",
+                    "group": "7_modification@2"
+                },
+                {
+                    "command": "auxon.segments.setWholeWorkspaceActive",
+                    "when": "view == auxon.segments",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.timelines.refresh",
+                    "when": "view == auxon.timelines",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.specs.refresh",
+                    "when": "view == auxon.specs",
+                    "group": "navigation@1"
                 }
             ]
         },
         "commands": [
             {
-                "command": "auxon.modality.log",
-                "title": "View Log"
+                "command": "auxon.workspaces.refresh",
+                "title": "Refresh Workspace List",
+                "icon": "$(refresh)"
             },
             {
-                "command": "auxon.modality.workspace.use",
-                "title": "Set this workspace as active"
+                "command": "auxon.workspaces.setActive",
+                "title": "Set this workspace as active",
+                "icon": "$(refresh)"
             },
             {
-                "command": "auxon.modality.segment.use",
-                "title": "Set this segment as active data"
+                "command": "auxon.segments.refresh",
+                "title": "Refresh Segment List",
+                "icon": "$(refresh)"
             },
             {
-                "command": "auxon.modality.segment.use.whole_workspace",
-                "title": "Use workspace content as active data, as a single unit"
+                "command": "auxon.segments.setActive",
+                "title": "Set this segment as active"
             },
             {
-                "command": "auxon.modality.segment.use.all_segments",
-                "title": "Use all contained segments as active data, individually"
+                "command": "auxon.segments.setActiveFromSelection",
+                "title": "Set selected segments as active"
             },
             {
-                "command": "auxon.modality.timeline.inspect",
+                "command": "auxon.segments.setLatestActive",
+                "title": "Set latest segment as active data"
+            },
+            {
+                "command": "auxon.segments.setAllActive",
+                "title": "Set all contained segments as active data, individually"
+            },
+            {
+                "command": "auxon.segments.setWholeWorkspaceActive",
+                "title": "Set all workspace content as active data, as a single universe"
+            },
+            {
+                "command": "auxon.segments.transitionGraph",
+                "title": "View Transition Graph"
+            },
+            {
+                "command": "auxon.timelines.refresh",
+                "title": "Refresh Timeline List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.timelines.inspect",
                 "title": "Inspect Timeline"
             },
             {
-                "command": "auxon.workspace_view.refresh",
-                "title": "Refresh Workspace View"
+                "command": "auxon.timelines.logSelected",
+                "title": "Log Selected Timelines"
+            },
+            {
+                "command": "auxon.timelines.transitionGraph",
+                "title": "View Transition Graph"
+            },
+            {
+                "command": "auxon.timelines.transitionGraphForSelection",
+                "title": "View Transition Graph for Selection"
+            },
+            {
+                "command": "auxon.specs.refresh",
+                "title": "Refresh Spec List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.specs.eval",
+                "title": "Evaluate spec at latest version"
+            },
+            {
+                "command": "auxon.specs.eval.dryRun",
+                "title": "Evaluate spec at latest version (dry run)"
+            },
+            {
+                "command": "auxon.specs.evalVersion",
+                "title": "Evaluate spec at this verison"
+            },
+            {
+                "command": "auxon.specs.evalVersion.dryRun",
+                "title": "Evaluate spec at this version (dry run)"
+            },
+            {
+                "command": "auxon.modality.log",
+                "title": "View log",
+                "icon": "$(open-preview)"
             }
         ],
         "configuration": {
@@ -199,7 +330,7 @@
     },
     "activationEvents": [
         "onLanguage:speqtr",
-        "onView:modalityWorkspaces"
+        "onView:auxon.workspaces"
     ],
     "main": "out/main.js",
     "scripts": {
@@ -208,27 +339,35 @@
         "build-base": "esbuild ./src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node16",
         "build": "npm run build-base -- --sourcemap",
         "watch": "npm run build-base -- --sourcemap --watch",
-        "lint": "prettier --check . && eslint -c .eslintrc.js --ext ts ./src",
-        "fix": "prettier --write . && eslint -c .eslintrc.js --ext ts ./src --fix",
-        "codegen": "openapi-generator-cli generate -i ./src/modality-api.json -o src/generated-sources/modality-api -g typescript-fetch --additional-properties=supportsES6=true,typescriptThreePlus=true && cd src/generated-sources/modality-api && patch -p1 < ../modality-api.patch"
+        "pretest": "tsc -p ./",
+        "test": "node ./out/src/test/runTest.js",
+        "lint": "tsc -p ./ --noemit && eslint ./src && prettier --check .",
+        "fix": "prettier --write . && eslint ./src --fix",
+        "codegen": "openapi-typescript src/modality-api.json --output generated/"
     },
     "dependencies": {
         "node-fetch": "^3.3.1",
+        "openapi-fetch": "^0.0.8",
         "vscode-languageclient": "^7.0.0"
     },
     "devDependencies": {
-        "@openapitools/openapi-generator-cli": "^2.5.2",
         "@types/mocha": "^9.1.0",
         "@types/node": "^16.11.7",
-        "@types/vscode": "^1.63.0",
+        "@types/vscode": "^1.77.0",
         "@typescript-eslint/eslint-plugin": "^5.56.0",
         "@typescript-eslint/parser": "^5.56.0",
+        "@vscode/test-electron": "^1.6.1",
         "esbuild": "^0.14.48",
         "eslint": "^8.13.0",
         "mocha": "^9.2.1",
+        "openapi-typescript": "^6.2.1",
         "prettier": "^2.8.7",
         "typescript": "^4.7.2",
         "typescript-eslint-language-service": "^5.0.0",
-        "vsce": "^2.9.2"
+        "@vscode/vsce": "^2.9.2"
+    },
+    "prettier": {
+        "tabWidth": 4,
+        "printWidth": 120
     }
 }

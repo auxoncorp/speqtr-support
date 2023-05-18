@@ -2,16 +2,15 @@
  * Access to configuration and state from the Modality CLI's view of the world.
  */
 
-import * as path from 'path';
-import * as os from 'os';
-import * as fs from 'fs';
-import * as vscode from 'vscode';
-import * as util from 'util';
-import * as child_process from 'child_process';
+import * as path from "path";
+import * as os from "os";
+import * as fs from "fs";
+import * as vscode from "vscode";
+import * as util from "util";
+import * as child_process from "child_process";
 
-import { WorkspaceSegmentId, WorkspaceSegmentIdFromJSON, WorkspaceSegmentMetadata, WorkspaceSegmentMetadataFromJSONTyped }
-  from './generated-sources/modality-api';
-import { toolPath } from './config';
+import * as api from "./modalityApi";
+import { toolPath } from "./config";
 
 const execFile = util.promisify(child_process.execFile);
 
@@ -20,23 +19,40 @@ const execFile = util.promisify(child_process.execFile);
  */
 export async function activeWorkspaceName(): Promise<string> {
     const modality = toolPath("modality");
-    const res = await execFile(modality, ['workspace', 'use', '--format', 'json'], { encoding: 'utf8' });
+    const res = await execFile(modality, ["workspace", "use", "--format", "json"], { encoding: "utf8" });
     return JSON.parse(res.stdout) as string;
 }
 
-export interface AllContextSegment { type: 'All' }
-export interface WholeWorkspaceContextSegment { type: 'WholeWorkspace' }
-export interface LatestContextSegment { type: 'Latest' }
-export interface SetContextSegment { type: 'Set', set: [WorkspaceSegmentId] }
-export type ContextSegment = AllContextSegment | WholeWorkspaceContextSegment | LatestContextSegment | SetContextSegment;
+export interface AllContextSegment {
+    type: "All";
+}
+export interface WholeWorkspaceContextSegment {
+    type: "WholeWorkspace";
+}
+export interface LatestContextSegment {
+    type: "Latest";
+}
+export interface SetContextSegment {
+    type: "Set";
+    set: api.WorkspaceSegmentId[];
+}
+export type ContextSegment =
+    | AllContextSegment
+    | WholeWorkspaceContextSegment
+    | LatestContextSegment
+    | SetContextSegment;
 
 /**
  * Get the current status of 'modality segment use'
  */
 export async function usedSegments(): Promise<ContextSegment> {
     const modality = toolPath("modality");
-    const res = await execFile(modality, ['segment', 'use', '--format', 'json'], { encoding: 'utf8' });
-    const json: any = JSON.parse(res.stdout);
+    const res = await execFile(modality, ["segment", "use", "--format", "json"], {
+        encoding: "utf8",
+    });
+
+    type SegmentUseOutput = "All" | "WholeWorkspace" | "Latest" | { Set: api.WorkspaceSegmentId[] };
+    const json: SegmentUseOutput = JSON.parse(res.stdout);
 
     if (json == "All") {
         return { type: "All" };
@@ -45,28 +61,27 @@ export async function usedSegments(): Promise<ContextSegment> {
     } else if (json == "Latest") {
         return { type: "Latest" };
     } else if (json.Set) {
-        return { type: "Set", set: json.Set.map(WorkspaceSegmentIdFromJSON) };
+        return { type: "Set", set: json.Set as api.WorkspaceSegmentId[] };
     }
 
     return JSON.parse(res.stdout) as ContextSegment;
 }
 
-/** 
+/**
  * Get the segment metadata for currently used segments, using 'modality segment inspect'.
  * This only works if you've previously 'modality segment use'-ed a single specific segment.
  */
-export async function activeSegments(): Promise<WorkspaceSegmentMetadata[]> {
+export async function activeSegments(): Promise<api.WorkspaceSegmentMetadata[]> {
     const modality = toolPath("modality");
-    const res = await execFile(modality, ['segment', 'inspect', '--format', 'json'], { encoding: 'utf8' });
-    const json_arr: any[] = JSON.parse(res.stdout).segments;
-    return json_arr.map((json) => WorkspaceSegmentMetadataFromJSONTyped(json, false));
+    const res = await execFile(modality, ["segment", "inspect", "--format", "json"], { encoding: "utf8" });
+    return JSON.parse(res.stdout).segments as api.WorkspaceSegmentMetadata[];
 }
 
 /** Read the modality CLI's auth token. */
 export function userAuthToken(): string | null {
     const authTokenPath = path.join(cliConfigDir(), ".user_auth_token");
     if (fs.statSync(authTokenPath)) {
-        return fs.readFileSync(authTokenPath, 'utf8');
+        return fs.readFileSync(authTokenPath, "utf8");
     } else {
         return null;
     }
@@ -77,16 +92,30 @@ export function userAuthToken(): string | null {
  */
 export async function backendApiUrl(): Promise<vscode.Uri | null> {
     const modality = toolPath("modality");
-    const res = await execFile(modality, ['config', '--format', 'json'], { encoding: 'utf8' });
-    const res_json: any = JSON.parse(res.stdout);
+    const res = await execFile(modality, ["config", "--format", "json"], {
+        encoding: "utf8",
+    });
 
-    if (!res_json.modalityd) { return null; }
+    interface ConfigOutput {
+        modalityd?: string;
+    }
+    const res_json: ConfigOutput = JSON.parse(res.stdout);
+
+    if (!res_json.modalityd) {
+        return null;
+    }
     const modalityd_url = vscode.Uri.parse(res_json.modalityd);
 
-    var path = modalityd_url.path;
-    if (path.endsWith("/")) { path = path.slice(0, -1); }
-    if (path.endsWith("v1")) { path = path.slice(0, -2); }
-    if (path.endsWith("/")) { path = path.slice(0, -1); }
+    let path = modalityd_url.path;
+    if (path.endsWith("/")) {
+        path = path.slice(0, -1);
+    }
+    if (path.endsWith("v1")) {
+        path = path.slice(0, -2);
+    }
+    if (path.endsWith("/")) {
+        path = path.slice(0, -1);
+    }
 
     return modalityd_url.with({ path });
 }
@@ -96,27 +125,33 @@ export async function backendApiUrl(): Promise<vscode.Uri | null> {
  */
 export async function allowInsecureHttps(): Promise<boolean | null> {
     const modality = toolPath("modality");
-    const res = await execFile(modality, ['config', '--format', 'json'], { encoding: 'utf8' });
-    const res_json: any = JSON.parse(res.stdout);
+    const res = await execFile(modality, ["config", "--format", "json"], {
+        encoding: "utf8",
+    });
 
-    if (!res_json.insecure) { return null; }
+    interface ConfigOutput {
+        insecure?: boolean;
+    }
+    const res_json: ConfigOutput = JSON.parse(res.stdout);
+
+    if (!res_json.insecure) {
+        return null;
+    }
     return res_json.insecure;
 }
-
 
 /**
  * Get the user-specific modality_cli config dir, for the platform
  */
 function cliConfigDir(): string {
     let appConfigDir: string;
-    if (os.platform() === 'win32') {
+    if (os.platform() === "win32") {
         // TODO is this right for what we do on windows?
         appConfigDir = process.env.APPDATA;
-    } else if (os.platform() === 'darwin') {
-        appConfigDir = path.join(os.homedir(), 'Library', 'Application Support');
+    } else if (os.platform() === "darwin") {
+        appConfigDir = path.join(os.homedir(), "Library", "Application Support");
     } else {
-        appConfigDir = path.join(os.homedir(), '.config');
+        appConfigDir = path.join(os.homedir(), ".config");
     }
     return path.join(appConfigDir, "modality_cli");
 }
-

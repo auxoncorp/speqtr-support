@@ -1,0 +1,37 @@
+name: VSCode Extension CI
+on:
+  pull_request:
+  push:
+    branches: ['main']
+
+
+jobs:
+  vscodeci:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: vscode
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install vsce tool
+        run: npm install -g @vscode/vsce
+
+      - run: npm install
+      - run: npm run lint
+
+      - run: xvfb-run -a npm test
+        if: runner.os == 'Linux'
+      - run: npm test
+        if: runner.os != 'Linux'
+
+      - run: vsce package
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: vscode/*.vsix
+          retention-days: 2
+          if-no-files-found: error
