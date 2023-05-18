@@ -7,7 +7,7 @@
     "repository": "https://github.com/auxoncorp/speqtr-support",
     "icon": "images/speqtr-icon.png",
     "engines": {
-        "vscode": "^1.69.0"
+        "vscode": "^1.77.0"
     },
     "categories": [
         "Programming Languages"
