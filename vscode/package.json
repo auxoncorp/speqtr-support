@@ -346,10 +346,11 @@
         "codegen": "openapi-typescript src/modality-api.json --output generated/"
     },
     "dependencies": {
-        "node-fetch": "^3.3.1",
+        "node-fetch": "https://github.com/mullr/node-fetch",
         "openapi-fetch": "^0.0.8",
         "vscode-languageclient": "^7.0.0"
     },
+    "postinstall": "cd ./node_modules/node-fetch && npm install && npm run build",
     "devDependencies": {
         "@types/mocha": "^9.1.0",
         "@types/node": "^16.11.7",

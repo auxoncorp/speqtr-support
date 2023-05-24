@@ -1,6 +1,5 @@
 import * as gen from "../generated/src/modality-api";
 import createClient from "openapi-fetch";
-import * as https from "https";
 
 // See https://github.com/ajaishankar/openapi-typescript-fetch#server-side-usage
 import fetch, { Headers, Request, Response } from "node-fetch";
@@ -48,15 +47,13 @@ export class Client {
 
         const baseUri = Uri.parse(baseUrl, false);
         if (baseUri.scheme == "https") {
-            const agent = new https.Agent({
-                rejectUnauthorized: !allowInsecureHttps,
-            });
-
             this.client = createClient<gen.paths>({
-                baseUrl,
-
+                // This is allowed by my fork of node-fetch. The commently recommended way of doing this by setting an 'agent'
+                // doesn't work in vscode, seemingly by design: https://github.com/microsoft/vscode/issues/173314
                 // @ts-ignore
-                agent,
+                rejectUnauthorized: !allowInsecureHttps,
+
+                baseUrl,
 
                 // @ts-ignore
                 headers,
