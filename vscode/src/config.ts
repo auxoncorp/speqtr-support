@@ -106,7 +106,10 @@ export async function toolEnv(): Promise<Record<string, string>> {
  */
 export async function toolDebugEnv(): Promise<Record<string, string>> {
     const env: Record<string, string> = await toolEnv();
-    env["RUST_LOG"] = "debug";
+    if (!env["RUST_LOG"]) {
+        env["RUST_LOG"] = "debug";
+    }
+
     return env;
 }
 
