@@ -192,8 +192,10 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
             return "No content";
         }
 
+        const hideSelfEdges = params.groupBy.length == 1 && params.groupBy[0] == "timeline.name";
+
         let mermaid = "";
-        mermaid += "flowchart TB\n";
+        mermaid += "flowchart LR\n";
         for (let i = 0; i < res.nodes.length; i++) {
             const node = res.nodes[i];
             let title: string;
@@ -209,6 +211,10 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
         }
 
         for (const edge of res.edges) {
+            if (edge.source == edge.destination && hideSelfEdges) {
+                continue;
+            }
+
             const sourceOccurCount = res.nodes[edge.source].count;
             const percent = (edge.count / sourceOccurCount) * 100;
             const label = `${percent.toFixed(1)}% (${edge.count})`;

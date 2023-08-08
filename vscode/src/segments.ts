@@ -7,6 +7,7 @@ import * as api from "./modalityApi";
 import * as cliConfig from "./cliConfig";
 import * as config from "./config";
 import * as transitionGraph from "./transitionGraph";
+import { ModalityLogCommandArgs } from "./modalityLog";
 
 const execFile = util.promisify(child_process.execFile);
 
@@ -175,6 +176,13 @@ const ACTIVE_ITEM_MARKER = "✦";
 
 export class SegmentTreeItemData {
     constructor(public segment: api.WorkspaceSegmentMetadata, public isActive: boolean) {}
+
+    getModalityLogCommandArgs(): ModalityLogCommandArgs {
+        return new ModalityLogCommandArgs({
+            segmentationRule: this.segment.id.rule_name,
+            segment: this.segment.id.segment_name,
+        });
+    }
 }
 
 class SegmentTreeItem extends vscode.TreeItem {

@@ -118,11 +118,11 @@
                 },
                 {
                     "command": "auxon.timelines.transitionGraph",
-                    "when": "view == auxon.timelines && viewItem == timeline && !listMultiSelection"
+                    "when": "view == auxon.timelines && !listMultiSelection"
                 },
                 {
                     "command": "auxon.timelines.transitionGraphForSelection",
-                    "when": "view == auxon.timelines && viewItem == timeline && listMultiSelection"
+                    "when": "view == auxon.timelines && listMultiSelection"
                 },
                 {
                     "command": "auxon.timelines.logSelected",
@@ -177,6 +177,11 @@
                     "group": "navigation@1"
                 },
                 {
+                    "command": "auxon.timelines.setGroupingAttrs",
+                    "when": "view == auxon.timelines",
+                    "group": "7_modification@1"
+                },
+                {
                     "command": "auxon.specs.refresh",
                     "when": "view == auxon.specs",
                     "group": "navigation@1"
@@ -226,6 +231,11 @@
             {
                 "command": "auxon.timelines.refresh",
                 "title": "Refresh Timeline List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.timelines.setGroupingAttrs",
+                "title": "Group timelines by attribute",
                 "icon": "$(refresh)"
             },
             {
@@ -346,6 +356,7 @@
         "codegen": "openapi-typescript src/modality-api.json --output generated/"
     },
     "dependencies": {
+        "@viz-js/viz": "^3.0.1",
         "node-fetch": "https://github.com/mullr/node-fetch",
         "openapi-fetch": "^0.0.8",
         "vscode-languageclient": "^7.0.0"
@@ -358,14 +369,14 @@
         "@typescript-eslint/eslint-plugin": "^5.56.0",
         "@typescript-eslint/parser": "^5.56.0",
         "@vscode/test-electron": "^1.6.1",
+        "@vscode/vsce": "^2.9.2",
         "esbuild": "^0.14.48",
         "eslint": "^8.13.0",
         "mocha": "^9.2.1",
         "openapi-typescript": "^6.2.1",
         "prettier": "^2.8.7",
         "typescript": "^4.7.2",
-        "typescript-eslint-language-service": "^5.0.0",
-        "@vscode/vsce": "^2.9.2"
+        "typescript-eslint-language-service": "^5.0.5"
     },
     "prettier": {
         "tabWidth": 4,

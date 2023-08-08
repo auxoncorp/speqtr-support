@@ -6,7 +6,10 @@
         "outDir": "out",
         "rootDir": ".",
         "sourceMap": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "plugins": [{
+            "name": "typescript-eslint-language-service"
+        }]
     },
     "include": ["src"],
     "exclude": ["node_modules", "src/generated-sources"],

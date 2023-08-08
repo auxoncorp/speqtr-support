@@ -79,6 +79,13 @@ export interface paths {
      */
     get: operations["workspace_grouped_graph"];
   };
+  "/v2/workspaces/{workspace_version_id}/grouped_timelines": {
+    /**
+     * List workspace timelines, grouped by the givven attr keys 
+     * @description List workspace timelines, grouped by the givven attr keys
+     */
+    get: operations["list_grouped_workspace_timelines"];
+  };
   "/v2/workspaces/{workspace_version_id}/segments": {
     /**
      * List all workspace segments 
@@ -88,13 +95,27 @@ export interface paths {
   };
   "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped_graph": {
     /**
-     * Get the contents of the segment as a graph, grouped by event attrbutes. 
-     * @description Get the contents of the segment as a graph, grouped by event attrbutes.
+     * Get the contents of the segment as a graph, grouped by event attributes. 
+     * @description Get the contents of the segment as a graph, grouped by event attributes.
      * 
      * If no keys are specified using the 'group_by' query parameter,
      * the graph is grouped by (timeline.name, event.name).
      */
     get: operations["segment_grouped_graph"];
+  };
+  "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped_timelines": {
+    /**
+     * List all timelines in a specific segment, grouped by the given attr keys 
+     * @description List all timelines in a specific segment, grouped by the given attr keys
+     */
+    get: operations["list_grouped_segment_timelines"];
+  };
+  "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timeline_attr_keys": {
+    /**
+     * List all timeline attr keys in a specific segment 
+     * @description List all timeline attr keys in a specific segment
+     */
+    get: operations["list_segment_timeline_attr_keys"];
   };
   "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timelines": {
     /**
@@ -102,6 +123,13 @@ export interface paths {
      * @description List all timelines in a specific segment
      */
     get: operations["list_segment_timelines"];
+  };
+  "/v2/workspaces/{workspace_version_id}/timeline_attr_keys": {
+    /**
+     * List the attr keys found on all timelines in this workspace 
+     * @description List the attr keys found on all timelines in this workspace
+     */
+    get: operations["list_workspace_timeline_attr_keys"];
   };
   "/v2/workspaces/{workspace_version_id}/timelines": {
     /**
@@ -169,6 +197,13 @@ export interface components {
       count?: number | null;
     };
     LogicalTime: (number)[];
+    /**
+     * @description A serialization helper type, for when you actually want Option<AttrVal>. (We're
+     * not allowed to implement ToSchema on that...)
+     */
+    MaybeAttrVal: OneOf<["None", {
+      Some: components["schemas"]["AttrVal"];
+    }]>;
     Nanoseconds: number;
     SegmentationRuleName: string;
     SpecContent: {
@@ -213,6 +248,12 @@ export interface components {
       };
       id: components["schemas"]["TimelineId"];
     };
+    TimelineGroup: {
+      group_attributes: {
+        [key: string]: components["schemas"]["MaybeAttrVal"] | undefined;
+      };
+      timelines: (components["schemas"]["TimelineOverview"])[];
+    };
     /** Format: uuid */
     TimelineId: string;
     TimelineOverview: {
@@ -251,7 +292,7 @@ export interface components {
     WorkspacesError: OneOf<[{
       /** @description Workspace not found */
       WorkspaceNotFound: string;
-    }, "SegmentNotFound", {
+    }, "SegmentNotFound", "NoGroupsSpecified", {
       /** @description Internal Server Error */
       Internal: string;
     }]>;
@@ -568,6 +609,50 @@ export interface operations {
     };
   };
   /**
+   * List workspace timelines, grouped by the givven attr keys 
+   * @description List workspace timelines, grouped by the givven attr keys
+   */
+  list_grouped_workspace_timelines: {
+    parameters: {
+      query: {
+        /** @description Grouping attr key */
+        group_by?: (string)[] | null;
+      };
+      path: {
+        /** @description Workspace version id */
+        workspace_version_id: string;
+      };
+    };
+    responses: {
+      /** @description List grouped timelines successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["TimelineGroup"])[];
+        };
+      };
+      /** @description Invalid workspace_version_id */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Workspace not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+    };
+  };
+  /**
    * List all workspace segments 
    * @description List all workspace segments
    */
@@ -608,8 +693,8 @@ export interface operations {
     };
   };
   /**
-   * Get the contents of the segment as a graph, grouped by event attrbutes. 
-   * @description Get the contents of the segment as a graph, grouped by event attrbutes.
+   * Get the contents of the segment as a graph, grouped by event attributes. 
+   * @description Get the contents of the segment as a graph, grouped by event attributes.
    * 
    * If no keys are specified using the 'group_by' query parameter,
    * the graph is grouped by (timeline.name, event.name).
@@ -634,6 +719,98 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["GroupedGraph"];
+        };
+      };
+      /** @description Invalid workspace_version_id */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Workspace or segment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+    };
+  };
+  /**
+   * List all timelines in a specific segment, grouped by the given attr keys 
+   * @description List all timelines in a specific segment, grouped by the given attr keys
+   */
+  list_grouped_segment_timelines: {
+    parameters: {
+      query: {
+        /** @description Grouping attr key */
+        group_by?: (string)[] | null;
+      };
+      path: {
+        /** @description Workspace Version Id */
+        workspace_version_id: components["schemas"]["WorkspaceVersionId"];
+        /** @description Segmentation Rule Name */
+        rule_name: components["schemas"]["SegmentationRuleName"];
+        /** @description Segment Name */
+        segment_name: components["schemas"]["WorkspaceSegmentName"];
+      };
+    };
+    responses: {
+      /** @description List grouped timelines successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["TimelineGroup"])[];
+        };
+      };
+      /** @description No grouping attrs specified */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Workspace or segment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+    };
+  };
+  /**
+   * List all timeline attr keys in a specific segment 
+   * @description List all timeline attr keys in a specific segment
+   */
+  list_segment_timeline_attr_keys: {
+    parameters: {
+      path: {
+        /** @description Workspace Version Id */
+        workspace_version_id: components["schemas"]["WorkspaceVersionId"];
+        /** @description Segmentation Rule Name */
+        rule_name: components["schemas"]["SegmentationRuleName"];
+        /** @description Segment Name */
+        segment_name: components["schemas"]["WorkspaceSegmentName"];
+      };
+    };
+    responses: {
+      /** @description List all timelineattr_keys successfully */
+      200: {
+        content: {
+          "application/json": (string)[];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -689,6 +866,46 @@ export interface operations {
       /** @description Operation not authorized */
       403: never;
       /** @description Workspace or segment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+    };
+  };
+  /**
+   * List the attr keys found on all timelines in this workspace 
+   * @description List the attr keys found on all timelines in this workspace
+   */
+  list_workspace_timeline_attr_keys: {
+    parameters: {
+      path: {
+        /** @description Workspace version id */
+        workspace_version_id: string;
+      };
+    };
+    responses: {
+      /** @description List all timeline attr keys successfully */
+      200: {
+        content: {
+          "application/json": (string)[];
+        };
+      };
+      /** @description Invalid workspace_version_id */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Workspace not found */
       404: {
         content: {
           "application/json": components["schemas"]["WorkspacesError"];

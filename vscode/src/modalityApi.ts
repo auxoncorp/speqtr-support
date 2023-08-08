@@ -27,6 +27,7 @@ export type SpecVersionId = gen.components["schemas"]["SpecVersionId"];
 export type Timeline = gen.components["schemas"]["Timeline"];
 export type TimelineId = gen.components["schemas"]["TimelineId"];
 export type TimelineOverview = gen.components["schemas"]["TimelineOverview"];
+export type TimelineGroup = gen.components["schemas"]["TimelineGroup"];
 export type Workspace = gen.components["schemas"]["Workspace"];
 export type WorkspaceSegmentId = gen.components["schemas"]["WorkspaceSegmentId"];
 export type WorkspaceSegmentMetadata = gen.components["schemas"]["WorkspaceSegmentMetadata"];
@@ -126,6 +127,34 @@ export class WorkspaceClient {
         });
         return unwrapData(res);
     }
+
+    async groupedTimelines(groupBy: string[]): Promise<TimelineGroup[]> {
+        const res = await this.client.get(
+            "/v2/workspaces/{workspace_version_id}/grouped_timelines",
+            {
+                params: {
+                    path: { workspace_version_id: this.workspaceVersionId },
+                    // @ts-ignore
+                    // The library's stated type for 'query' is inaccurate.
+                    // The actual type is "Something you can pass to the UrlSearchParams constructor".
+                    // Here, we use the 'array of tuples' form to get the group_by query parameter
+                    // to appear multiple times.
+                    query: groupBy.map((gb) => ["group_by", gb]),
+                },
+            }
+        );
+        return unwrapData(res);
+    }
+
+
+    async timelineAttrKeys(): Promise<string[]> {
+        const res = await this.client.get("/v2/workspaces/{workspace_version_id}/timeline_attr_keys", {
+            params: {
+                path: { workspace_version_id: this.workspaceVersionId },
+            },
+        });
+        return unwrapData(res);
+    }
 }
 
 export class SegmentClient {
@@ -140,6 +169,36 @@ export class SegmentClient {
         );
         return unwrapData(res);
     }
+
+    async groupedTimelines(groupBy: string[]): Promise<TimelineGroup[]> {
+        const res = await this.client.get(
+            "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped_timelines",
+            {
+                params: {
+                    path: this.segmentId,
+
+                    // @ts-ignore
+                    // The library's stated type for 'query' is inaccurate.
+                    // The actual type is "Something you can pass to the UrlSearchParams constructor".
+                    // Here, we use the 'array of tuples' form to get the group_by query parameter
+                    // to appear multiple times.
+                    query: groupBy.map((gb) => ["group_by", gb]),
+                },
+            }
+        );
+        return unwrapData(res);
+    }
+
+    async timelineAttrKeys(): Promise<string[]> {
+        const res = await this.client.get(
+            "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timeline_attr_keys",
+            {
+                params: { path: this.segmentId },
+            }
+        );
+        return unwrapData(res);
+    }
+
 
     async groupedGraph(groupBy: string[]): Promise<GroupedGraph> {
         const res = await this.client.get(

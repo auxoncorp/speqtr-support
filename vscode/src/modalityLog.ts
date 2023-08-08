@@ -3,8 +3,6 @@
  */
 
 import * as vscode from "vscode";
-import * as segments from "./segments";
-import * as timelines from "./timelines";
 import * as config from "./config";
 import { log } from "./main";
 
@@ -13,6 +11,10 @@ export function register(context: vscode.ExtensionContext) {
 }
 
 export const MODALITY_LOG_COMMAND = "auxon.modality.log";
+
+interface ToLogCommandArgs {
+    getModalityLogCommandArgs(): ModalityLogCommandArgs;
+}
 
 export class ModalityLogCommandArgs {
     thingToLog?: string | string[];
@@ -26,29 +28,15 @@ export class ModalityLogCommandArgs {
     public constructor(init?: Partial<ModalityLogCommandArgs>) {
         Object.assign(this, init);
     }
+
+    getModalityLogCommandArgs(): ModalityLogCommandArgs {
+        return this;
+    }
 }
 
-function runModalityLogCommand(
-    args: ModalityLogCommandArgs | segments.SegmentTreeItemData | timelines.TimelineTreeItemData
-) {
+function runModalityLogCommand(args: ToLogCommandArgs) {
     const modality = config.toolPath("modality");
-
-    let logCommandArgs: ModalityLogCommandArgs;
-    if (args instanceof segments.SegmentTreeItemData) {
-        logCommandArgs = new ModalityLogCommandArgs({
-            segmentationRule: args.segment.id.rule_name,
-            segment: args.segment.id.segment_name,
-        });
-    } else if (args instanceof timelines.TimelineTreeItemData) {
-        logCommandArgs = new ModalityLogCommandArgs({
-            thingToLog: args.timeline_overview.id,
-        });
-    } else if (args instanceof ModalityLogCommandArgs) {
-        logCommandArgs = args as ModalityLogCommandArgs;
-    } else {
-        log.appendLine("Unsupported param for 'modality log'");
-        return;
-    }
+    const logCommandArgs: ModalityLogCommandArgs = args.getModalityLogCommandArgs();
 
     // We're going to send the text of the command line to the terminal. Build up the args list here.
     const modalityArgs = ["LESS=R", modality, "log"];
