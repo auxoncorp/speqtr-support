@@ -54,9 +54,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             vscode.commands.registerCommand("auxon.timelines.transitionGraphForSelection", () =>
                 this.transitionGraphForSelection()
             ),
-            vscode.commands.registerCommand("auxon.timelines.setGroupingAttrs", () =>
-                this.setGroupingAttrs()
-            )
+            vscode.commands.registerCommand("auxon.timelines.setGroupingAttrs", () => this.setGroupingAttrs())
         );
     }
 
@@ -93,14 +91,18 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
                     if (!this.activeWorkspaceVersionId) {
                         return [];
                     }
-                    groups = await this.apiClient.workspace(this.activeWorkspaceVersionId).groupedTimelines(groupingAttrKeys);
+                    groups = await this.apiClient
+                        .workspace(this.activeWorkspaceVersionId)
+                        .groupedTimelines(groupingAttrKeys);
                     break;
 
                 case "Latest":
                 case "Set":
                     if (this.activeSegments) {
                         for (const segmentId of this.activeSegments) {
-                            const api_groups = await this.apiClient.segment(segmentId).groupedTimelines(groupingAttrKeys);
+                            const api_groups = await this.apiClient
+                                .segment(segmentId)
+                                .groupedTimelines(groupingAttrKeys);
                             for (const tl_group of api_groups) {
                                 groups.push(tl_group);
                             }
@@ -152,7 +154,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     logSelectedCommand() {
-        let timelineIds = this.view.selection.flatMap(data => data.getTimelinesIds());
+        let timelineIds = this.view.selection.flatMap((data) => data.getTimelinesIds());
         timelineIds = [...new Set(timelineIds)]; // dedupe
 
         vscode.commands.executeCommand(
@@ -168,7 +170,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     transitionGraphForSelection() {
-        let timelineIds = this.view.selection.flatMap(data => data.getTimelinesIds());
+        let timelineIds = this.view.selection.flatMap((data) => data.getTimelinesIds());
         timelineIds = [...new Set(timelineIds)]; // dedupe
 
         transitionGraph.promptForGraphGrouping((groupBy) => {
@@ -179,14 +181,14 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     async setGroupingAttrs() {
         const tlAttrs = await this.getAvailableTimelineAttrKeys();
         const groupingAttrKeys = this.workspaceState.getGroupingAttrKeys();
-        const pickItems: vscode.QuickPickItem[] = tlAttrs.map(tlAttr => {
-            const picked = groupingAttrKeys.find(el => el == tlAttr) !== undefined;
+        const pickItems: vscode.QuickPickItem[] = tlAttrs.map((tlAttr) => {
+            const picked = groupingAttrKeys.find((el) => el == tlAttr) !== undefined;
             const label = tlAttr;
             return { label, picked };
         });
 
         const pickedItems = await vscode.window.showQuickPick(pickItems, { canPickMany: true });
-        this.workspaceState.setGroupingAttrKeys(pickedItems.map(pi => pi.label).sort());
+        this.workspaceState.setGroupingAttrKeys(pickedItems.map((pi) => pi.label).sort());
         this.refresh();
     }
 
@@ -227,12 +229,12 @@ export class TimelineGroupTreeItemData {
     }
 
     getTimelinesIds(): api.TimelineId[] {
-        return this.timeline_group.timelines.map(tl => tl.id);
+        return this.timeline_group.timelines.map((tl) => tl.id);
     }
 
     getModalityLogCommandArgs(): modalityLog.ModalityLogCommandArgs {
         return new modalityLog.ModalityLogCommandArgs({
-            thingToLog: this.timeline_group.timelines.map(tl => tl.id)
+            thingToLog: this.timeline_group.timelines.map((tl) => tl.id),
         });
     }
 }
@@ -269,12 +271,12 @@ export class TimelineLeafTreeItemData {
     }
 
     getTimelinesIds(): api.TimelineId[] {
-        return [this.timeline_overview.id]
+        return [this.timeline_overview.id];
     }
 
     getModalityLogCommandArgs(): modalityLog.ModalityLogCommandArgs {
         return new modalityLog.ModalityLogCommandArgs({
-            thingToLog: this.timeline_overview.id
+            thingToLog: this.timeline_overview.id,
         });
     }
 }

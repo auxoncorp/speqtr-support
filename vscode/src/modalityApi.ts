@@ -129,23 +129,19 @@ export class WorkspaceClient {
     }
 
     async groupedTimelines(groupBy: string[]): Promise<TimelineGroup[]> {
-        const res = await this.client.get(
-            "/v2/workspaces/{workspace_version_id}/grouped_timelines",
-            {
-                params: {
-                    path: { workspace_version_id: this.workspaceVersionId },
-                    // @ts-ignore
-                    // The library's stated type for 'query' is inaccurate.
-                    // The actual type is "Something you can pass to the UrlSearchParams constructor".
-                    // Here, we use the 'array of tuples' form to get the group_by query parameter
-                    // to appear multiple times.
-                    query: groupBy.map((gb) => ["group_by", gb]),
-                },
-            }
-        );
+        const res = await this.client.get("/v2/workspaces/{workspace_version_id}/grouped_timelines", {
+            params: {
+                path: { workspace_version_id: this.workspaceVersionId },
+                // @ts-ignore
+                // The library's stated type for 'query' is inaccurate.
+                // The actual type is "Something you can pass to the UrlSearchParams constructor".
+                // Here, we use the 'array of tuples' form to get the group_by query parameter
+                // to appear multiple times.
+                query: groupBy.map((gb) => ["group_by", gb]),
+            },
+        });
         return unwrapData(res);
     }
-
 
     async timelineAttrKeys(): Promise<string[]> {
         const res = await this.client.get("/v2/workspaces/{workspace_version_id}/timeline_attr_keys", {
@@ -198,7 +194,6 @@ export class SegmentClient {
         );
         return unwrapData(res);
     }
-
 
     async groupedGraph(groupBy: string[]): Promise<GroupedGraph> {
         const res = await this.client.get(
