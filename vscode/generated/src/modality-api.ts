@@ -258,7 +258,7 @@ export interface components {
     TimelineId: string;
     TimelineOverview: {
       id: components["schemas"]["TimelineId"];
-      name: string;
+      name?: string | null;
     };
     /** @description Timelines operation errors */
     TimelinesError: OneOf<[{

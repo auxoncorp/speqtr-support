@@ -1625,13 +1625,14 @@
             },
             "TimelineOverview": {
                 "type": "object",
-                "required": ["id", "name"],
+                "required": ["id"],
                 "properties": {
                     "id": {
                         "$ref": "#/components/schemas/TimelineId"
                     },
                     "name": {
-                        "type": "string"
+                        "type": "string",
+                        "nullable": true
                     }
                 }
             },

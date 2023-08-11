@@ -284,7 +284,10 @@ export class TimelineLeafTreeItemData {
 class TimelineLeafTreeItem extends vscode.TreeItem {
     contextValue = "timeline";
     constructor(public readonly data: TimelineLeafTreeItemData) {
-        const label = data.timeline_overview.name;
+        let label = data.timeline_overview.name;
+        if (label === null) {
+            label = "<unnamed>";
+        }
         super(label, vscode.TreeItemCollapsibleState.None);
 
         this.description = data.timeline_overview.id;
