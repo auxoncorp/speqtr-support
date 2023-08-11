@@ -77,7 +77,8 @@ export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
             manualInput.onDidAccept(() => {
                 const val = manualInput.value;
                 manualInput.hide();
-                picked([val]);
+                const groupBy = val.split(",").map((s) => s.trim());
+                picked(groupBy);
             }),
             manualInput.onDidTriggerButton((item) => {
                 manualInput.hide();
