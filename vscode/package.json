@@ -3,7 +3,7 @@
     "displayName": "speqtr",
     "description": "Syntax Highlighting and Language Server integration for Auxon's SpeQTr specification and query language",
     "publisher": "auxoncorp",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "repository": "https://github.com/auxoncorp/speqtr-support",
     "icon": "images/speqtr-icon.png",
     "engines": {
