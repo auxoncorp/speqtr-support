@@ -349,7 +349,9 @@
         "fix": "prettier --write . && eslint ./src --fix",
         "codegen": "openapi-typescript src/modality-api.json --output generated/"
     },
-    "extensionDependencies": ["bierner.markdown-mermaid"],
+    "extensionDependencies": [
+        "bierner.markdown-mermaid"
+    ],
     "dependencies": {
         "@viz-js/viz": "^3.0.1",
         "node-fetch": "https://github.com/mullr/node-fetch",
