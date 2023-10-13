@@ -11,6 +11,14 @@ import * as transitionGraph from "./transitionGraph";
 class TimelinesTreeMemento {
     constructor(private readonly memento: vscode.Memento) {}
 
+    getGroupByTimelineNameComponents(): boolean {
+        return this.memento.get("timelinesTree_groupByTimelineNameComponents", false);
+    }
+
+    async setGroupByTimelineNameComponents(val: boolean): Promise<void> {
+        return this.memento.update("timelinesTree_groupByTimelineNameComponents", val);
+    }
+
     getGroupingAttrKeys(): string[] {
         return this.memento.get("timelinesTree_groupingAttrKeys", []);
     }
@@ -54,7 +62,10 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             vscode.commands.registerCommand("auxon.timelines.transitionGraphForSelection", () =>
                 this.transitionGraphForSelection()
             ),
-            vscode.commands.registerCommand("auxon.timelines.setGroupingAttrs", () => this.setGroupingAttrs())
+            vscode.commands.registerCommand("auxon.timelines.setGroupingAttrs", () => this.setGroupingAttrs()),
+            vscode.commands.registerCommand("auxon.timelines.groupTimelinesByNameComponents", () =>
+                this.groupTimelinesByNameComponents()
+            )
         );
     }
 
@@ -73,16 +84,12 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         }
 
         if (element) {
-            if (element instanceof TimelineGroupTreeItemData) {
-                const timelines = element.timeline_group.timelines.sort();
-                return timelines.map((timeline_overview) => new TimelineLeafTreeItemData(timeline_overview));
-            } else if (element instanceof TimelineLeafTreeItemData) {
-                return [];
-            }
+            return element.children();
         }
 
         // root element
         const groupingAttrKeys = this.workspaceState.getGroupingAttrKeys();
+        const groupByTimelineNameComponents = this.workspaceState.getGroupByTimelineNameComponents();
         if (groupingAttrKeys.length > 0) {
             let groups: api.TimelineGroup[] = [];
             switch (this.usedSegmentConfig.type) {
@@ -113,7 +120,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
 
             return groups.map((tl_group) => new TimelineGroupTreeItemData(tl_group));
         } else {
-            // no grouping
+            // Not grouping by attr keys; just get the timelines
             let timelines: api.TimelineOverview[] = [];
             switch (this.usedSegmentConfig.type) {
                 case "All":
@@ -135,8 +142,22 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
                     }
                     break;
             }
+            timelines.sort((a, b) => a.name.localeCompare(b.name));
 
-            return timelines.map((timeline_overview) => new TimelineLeafTreeItemData(timeline_overview));
+            if (groupByTimelineNameComponents) {
+                const root = new TimelineGroupByNameTreeItemData("", []);
+                for (const timeline of timelines) {
+                    let timelineNamePath = [];
+                    if (timeline.name) {
+                        timelineNamePath = timeline.name.split(".");
+                    }
+                    root.insertNode(timeline, timelineNamePath);
+                }
+                root.updateDescriptions();
+                return root.children();
+            } else {
+                return timelines.map((timeline_overview) => new TimelineLeafTreeItemData(timeline_overview));
+            }
         }
     }
 
@@ -154,7 +175,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     logSelectedCommand() {
-        let timelineIds = this.view.selection.flatMap((data) => data.getTimelinesIds());
+        let timelineIds = this.view.selection.flatMap((data) => data.getTimelineIds());
         timelineIds = [...new Set(timelineIds)]; // dedupe
 
         vscode.commands.executeCommand(
@@ -165,17 +186,23 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
 
     transitionGraph(item: TimelineTreeItemData) {
         transitionGraph.promptForGraphGrouping((groupBy) => {
-            transitionGraph.showGraphForTimelines(item.getTimelinesIds(), groupBy);
+            transitionGraph.showGraphForTimelines(item.getTimelineIds(), groupBy);
         });
     }
 
     transitionGraphForSelection() {
-        let timelineIds = this.view.selection.flatMap((data) => data.getTimelinesIds());
+        let timelineIds = this.view.selection.flatMap((data) => data.getTimelineIds());
         timelineIds = [...new Set(timelineIds)]; // dedupe
 
         transitionGraph.promptForGraphGrouping((groupBy) => {
             transitionGraph.showGraphForTimelines(timelineIds, groupBy);
         });
+    }
+
+    groupTimelinesByNameComponents() {
+        this.workspaceState.setGroupingAttrKeys([]);
+        this.workspaceState.setGroupByTimelineNameComponents(true);
+        this.refresh();
     }
 
     async setGroupingAttrs() {
@@ -219,31 +246,119 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 }
 
-type TimelineTreeItemData = TimelineGroupTreeItemData | TimelineLeafTreeItemData;
-
-export class TimelineGroupTreeItemData {
-    constructor(public timeline_group: api.TimelineGroup) {}
+// This is the base of all the tree item data classes
+abstract class TimelineTreeItemData {
+    abstract name: string;
+    abstract contextValue: string;
+    timelineId?: api.TimelineId = undefined;
+    description?: string = undefined;
+    tooltip?: vscode.MarkdownString = undefined;
+    iconPath?: vscode.ThemeIcon = undefined;
 
     treeItem(): vscode.TreeItem {
-        return new TimelineGroupTreeItem(this);
+        let state = vscode.TreeItemCollapsibleState.Collapsed;
+        if (this.children().length == 0) {
+            state = vscode.TreeItemCollapsibleState.None;
+        }
+
+        const item = new vscode.TreeItem(this.name, state);
+        item.contextValue = this.contextValue;
+        item.description = this.description;
+        item.tooltip = this.tooltip;
+        item.iconPath = this.iconPath;
+        return item;
     }
 
-    getTimelinesIds(): api.TimelineId[] {
-        return this.timeline_group.timelines.map((tl) => tl.id);
+    children(): TimelineTreeItemData[] {
+        return [];
+    }
+
+    postwalk(f: (n: TimelineTreeItemData) => void) {
+        for (const child of this.children()) {
+            child.postwalk(f);
+        }
+        f(this);
+    }
+
+    getTimelineIds(): api.TimelineId[] {
+        const ids = [];
+        this.postwalk((n: TimelineTreeItemData) => {
+            if (n.timelineId) {
+                ids.push(n.timelineId);
+            }
+        });
+        return ids;
     }
 
     getModalityLogCommandArgs(): modalityLog.ModalityLogCommandArgs {
         return new modalityLog.ModalityLogCommandArgs({
-            thingToLog: this.timeline_group.timelines.map((tl) => tl.id),
+            thingToLog: this.getTimelineIds(),
+        });
+    }
+
+    updateDescriptions() {
+        this.postwalk((n) => {
+            if (n.children().length > 0) {
+                const timelineCount = n.getTimelineIds().length;
+                n.description = `${timelineCount} timeline`;
+                if (timelineCount > 1) {
+                    n.description += "s";
+                }
+            }
         });
     }
 }
 
-class TimelineGroupTreeItem extends vscode.TreeItem {
+export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
+    constructor(public name: string, private childItems: TimelineTreeItemData[]) {
+        super();
+    }
+
     contextValue = "timelineGroup";
-    constructor(public readonly data: TimelineGroupTreeItemData) {
+
+    override children(): TimelineTreeItemData[] {
+        return this.childItems;
+    }
+
+    insertNode(timeline: api.TimelineOverview, timelineNamePath: string[]) {
+        if (timelineNamePath.length == 0) {
+            this.childItems.push(new TimelineLeafTreeItemData(timeline));
+        } else {
+            const nextNodeName = timelineNamePath.shift();
+
+            let nextNodeIndex = this.childItems.findIndex((item) => item.name == nextNodeName);
+            if (nextNodeIndex == -1) {
+                this.childItems.push(new TimelineGroupByNameTreeItemData(nextNodeName, []));
+                nextNodeIndex = this.childItems.length - 1;
+            }
+
+            let nextNode = this.childItems[nextNodeIndex];
+            if (!(nextNode instanceof TimelineGroupByNameTreeItemData)) {
+                // Some non-namegroup node is there, with the same name. Replace it with a namegroup,
+                // and insert the old node as a child.
+                const newNode = new TimelineGroupByNameTreeItemData(nextNodeName, [nextNode]);
+                nextNode = newNode;
+                this.childItems[nextNodeIndex] = nextNode;
+            }
+
+            // nextNode is now definitely a namegroup node. Convince typescript.
+            if (!(nextNode instanceof TimelineGroupByNameTreeItemData)) {
+                throw new Error("Internal error: timeline tree node not of expected type");
+            }
+            nextNode.insertNode(timeline, timelineNamePath);
+        }
+    }
+}
+
+export class TimelineGroupTreeItemData extends TimelineTreeItemData {
+    name = "";
+    contextValue = "timelineGroup";
+
+    constructor(public timeline_group: api.TimelineGroup) {
+        super();
+
         let name = null;
-        for (const val of Object.values(data.timeline_group.group_attributes)) {
+        for (const val of Object.values(this.timeline_group.group_attributes)) {
             if (val != "None") {
                 if (name == null) {
                     name = "";
@@ -258,44 +373,33 @@ class TimelineGroupTreeItem extends vscode.TreeItem {
         if (name == null) {
             name = "<non-matching timelines>";
         }
+        this.name = name;
+    }
 
-        super(name, vscode.TreeItemCollapsibleState.Collapsed);
+    override children(): TimelineTreeItemData[] {
+        const timelines = this.timeline_group.timelines.sort();
+        return timelines.map((timeline_overview) => new TimelineLeafTreeItemData(timeline_overview));
     }
 }
 
-export class TimelineLeafTreeItemData {
-    constructor(public timeline_overview: api.TimelineOverview) {}
-
-    treeItem(): vscode.TreeItem {
-        return new TimelineLeafTreeItem(this);
-    }
-
-    getTimelinesIds(): api.TimelineId[] {
-        return [this.timeline_overview.id];
-    }
-
-    getModalityLogCommandArgs(): modalityLog.ModalityLogCommandArgs {
-        return new modalityLog.ModalityLogCommandArgs({
-            thingToLog: this.timeline_overview.id,
-        });
-    }
-}
-
-class TimelineLeafTreeItem extends vscode.TreeItem {
+export class TimelineLeafTreeItemData extends TimelineTreeItemData {
+    name = "";
     contextValue = "timeline";
-    constructor(public readonly data: TimelineLeafTreeItemData) {
-        let label = data.timeline_overview.name;
+    iconPath = new vscode.ThemeIcon("git-commit");
+
+    constructor(public timeline_overview: api.TimelineOverview) {
+        super();
+
+        this.timelineId = this.timeline_overview.id;
+        let label = this.timeline_overview.name;
         if (label === null) {
             label = "<unnamed>";
         }
-        super(label, vscode.TreeItemCollapsibleState.None);
+        this.name = label;
+        this.description = this.timeline_overview.id;
 
-        this.description = data.timeline_overview.id;
-
-        let tooltip = `- **Timeline Name**: ${data.timeline_overview.name}`;
-        tooltip += `\n- **Timeline Id**: ${data.timeline_overview.id}`;
+        let tooltip = `- **Timeline Name**: ${this.timeline_overview.name}`;
+        tooltip += `\n- **Timeline Id**: ${this.timeline_overview.id}`;
         this.tooltip = new vscode.MarkdownString(tooltip);
-
-        this.iconPath = new vscode.ThemeIcon("git-commit");
     }
 }

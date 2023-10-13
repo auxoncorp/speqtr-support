@@ -171,6 +171,11 @@
                     "group": "navigation@1"
                 },
                 {
+                    "command": "auxon.timelines.groupTimelinesByNameComponents",
+                    "when": "view == auxon.timelines",
+                    "group": "7_modification@1"
+                },
+                {
                     "command": "auxon.timelines.setGroupingAttrs",
                     "when": "view == auxon.timelines",
                     "group": "7_modification@1"
@@ -225,6 +230,11 @@
             {
                 "command": "auxon.timelines.refresh",
                 "title": "Refresh Timeline List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.timelines.groupTimelinesByNameComponents",
+                "title": "Group timelines by name components",
                 "icon": "$(refresh)"
             },
             {

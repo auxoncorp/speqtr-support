@@ -24,3 +24,4 @@ This extension contributes the following settings:
 
 -   Start the background build process: `npm run watch`
 -   Regenerate the api stubs: `npm run codegen`
+-   Do typechecking: `npm lint`
