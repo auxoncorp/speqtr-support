@@ -77,6 +77,10 @@
                     "name": "Timelines"
                 },
                 {
+                    "id": "auxon.events",
+                    "name": "Events"
+                },
+                {
                     "id": "auxon.specs",
                     "name": "Specs"
                 }
@@ -181,6 +185,11 @@
                     "group": "7_modification@1"
                 },
                 {
+                    "command": "auxon.events.refresh",
+                    "when": "view == auxon.events",
+                    "group": "navigation@1"
+                },
+                {
                     "command": "auxon.specs.refresh",
                     "when": "view == auxon.specs",
                     "group": "navigation@1"
@@ -257,6 +266,15 @@
             {
                 "command": "auxon.timelines.transitionGraphForSelection",
                 "title": "View Transition Graph for Selection"
+            },
+            {
+                "command": "auxon.events.refresh",
+                "title": "Refresh Event List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.events.setSelectedTimelineId",
+                "title": "Update events summary for the selected timeline"
             },
             {
                 "command": "auxon.specs.refresh",
