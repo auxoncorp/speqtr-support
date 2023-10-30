@@ -271,8 +271,8 @@ abstract class TimelineTreeItemData {
         if (this.contextValue == "timeline") {
             const command = {
                 title: "Update events summary for the selected timeline",
-                command: "auxon.events.setSelectedTimelineId",
-                arguments: [this.timelineId],
+                command: "auxon.events.setSelectedTimeline",
+                arguments: [this.timelineId, this.name],
             };
             item.command = command;
         }

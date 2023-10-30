@@ -7,13 +7,14 @@
         "rootDir": ".",
         "sourceMap": true,
         "skipLibCheck": true,
+        "resolveJsonModule": true,
         "plugins": [
             {
                 "name": "typescript-eslint-language-service"
             }
         ]
     },
-    "include": ["src"],
+    "include": ["src", "templates"],
     "exclude": ["node_modules", "src/generated-sources"],
     "references": []
 }

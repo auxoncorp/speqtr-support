@@ -127,6 +127,10 @@
                     "when": "view == auxon.timelines && listMultiSelection"
                 },
                 {
+                    "command": "auxon.events.createEventTimingNotebook",
+                    "when": "view == auxon.events && viewItem == event"
+                },
+                {
                     "command": "auxon.specs.eval",
                     "when": "view == auxon.specs && viewItem == spec"
                 },
@@ -273,8 +277,12 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "auxon.events.setSelectedTimelineId",
+                "command": "auxon.events.setSelectedTimeline",
                 "title": "Update events summary for the selected timeline"
+            },
+            {
+                "command": "auxon.events.createEventTimingNotebook",
+                "title": "View Event Timing Plots in a Jupyter Notebook"
             },
             {
                 "command": "auxon.specs.refresh",
@@ -381,7 +389,9 @@
         "tintinweb.graphviz-interactive-preview"
     ],
     "dependencies": {
+        "@types/lodash": "^4.14.200",
         "@viz-js/viz": "^3.0.1",
+        "lodash": "^4.17.21",
         "node-fetch": "https://github.com/mullr/node-fetch",
         "openapi-fetch": "^0.0.8",
         "vscode-languageclient": "^7.0.0"

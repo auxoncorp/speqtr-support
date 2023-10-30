@@ -42,12 +42,18 @@ export async function activate(context: vscode.ExtensionContext) {
 
         timelinesTreeDataProvider.activeWorkspaceVersionId = ws_ver;
         timelinesTreeDataProvider.refresh();
+
+        eventsTreeDataProvider.activeWorkspaceVersionId = ws_ver;
+        eventsTreeDataProvider.refresh();
     });
 
     segmentsTreeDataProvider.onDidChangeUsedSegments((ev) => {
         timelinesTreeDataProvider.usedSegmentConfig = ev.usedSegmentConfig;
         timelinesTreeDataProvider.activeSegments = ev.activeSegmentIds;
         timelinesTreeDataProvider.refresh();
+
+        eventsTreeDataProvider.activeSegments = ev.activeSegmentIds;
+        eventsTreeDataProvider.refresh();
     });
 
     workspacesTreeDataProvider.register(context);

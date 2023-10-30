@@ -1,8 +1,17 @@
+import * as lodash from "lodash";
 import * as vscode from "vscode";
 import * as api from "./modalityApi";
+import * as commonNotebookCells from "../templates/common.json";
+import * as eventTimingNotebookCells from "../templates/eventTiming.json";
 
 export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTreeItemData> {
     selectedTimelineId?: api.TimelineId = undefined;
+    selectedTimelineName?: string = undefined;
+    view: vscode.TreeView<EventsTreeItemData>;
+
+    // Need these to generate the Jupyter notebooks
+    activeWorkspaceVersionId: string;
+    activeSegments: api.WorkspaceSegmentId[];
 
     private _onDidChangeTreeData: vscode.EventEmitter<EventsTreeItemData | EventsTreeItemData[] | undefined> =
         new vscode.EventEmitter();
@@ -12,13 +21,18 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
     constructor(private readonly apiClient: api.Client) {}
 
     register(context: vscode.ExtensionContext) {
+        this.view = vscode.window.createTreeView("auxon.events", {
+            treeDataProvider: this,
+            canSelectMany: false,
+        });
         context.subscriptions.push(
-            vscode.window.createTreeView("auxon.events", {
-                treeDataProvider: this,
-            }),
+            this.view,
             vscode.commands.registerCommand("auxon.events.refresh", () => this.refresh()),
-            vscode.commands.registerCommand("auxon.events.setSelectedTimelineId", (itemData) =>
-                this.setSelectedTimelineId(itemData)
+            vscode.commands.registerCommand("auxon.events.setSelectedTimeline", (timelineId, timelineName) =>
+                this.setSelectedTimeline(timelineId, timelineName)
+            ),
+            vscode.commands.registerCommand("auxon.events.createEventTimingNotebook", async (itemData) =>
+                this.createEventTimingNotebook(itemData)
             )
         );
     }
@@ -66,11 +80,84 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
         }
     }
 
-    setSelectedTimelineId(timelineId?: api.TimelineId) {
-        if (timelineId) {
+    setSelectedTimeline(timelineId?: api.TimelineId, timelineName?: string) {
+        if (timelineId && timelineName) {
             this.selectedTimelineId = timelineId;
+            this.selectedTimelineName = timelineName;
             this.refresh();
         }
+    }
+
+    async createEventTimingNotebook(item: EventNameTreeItemData) {
+        const varMap = this.templateVariableMap();
+        varMap["event_name"] = item.eventName;
+        await this.createJupyterNotebook(eventTimingNotebookCells.cells, varMap);
+    }
+
+    async createJupyterNotebook(notebookSrcCells: object[], templateVarMap: object) {
+        const cells = [];
+
+        // Use a custom delimiter ${ }
+        lodash.templateSettings.interpolate = /\${([\s\S]+?)}/g;
+
+        const notebookCells = this.convertNotebookCells(notebookSrcCells).map((cell) => {
+            const template = lodash.template(cell.value);
+            const compiled = template(templateVarMap);
+            cell.value = compiled;
+            return cell;
+        });
+
+        // Prefix with common cells, followed by the notebook cells
+        for (const cell of this.convertNotebookCells(commonNotebookCells.cells)) {
+            cells.push(cell);
+        }
+        for (const cell of notebookCells) {
+            cells.push(cell);
+        }
+
+        const data = new vscode.NotebookData(cells);
+        data.metadata = {
+            custom: {
+                cells: [],
+                metadata: commonNotebookCells.metadata,
+                nbformat: 4,
+                nbformat_minor: 2,
+            },
+        };
+
+        const doc = await vscode.workspace.openNotebookDocument("jupyter-notebook", data);
+        await vscode.window.showNotebookDocument(doc);
+
+        vscode.commands.executeCommand("notebook.cell.collapseAllCellInputs", {
+            ranges: [],
+            document: doc.uri,
+        });
+    }
+
+    convertNotebookCells(inputCells: object[]): vscode.NotebookCellData[] {
+        const cells = [];
+        for (const cell of inputCells) {
+            const src = cell["source"].join("");
+            if (cell["cell_type"] === "markdown") {
+                cells.push(new vscode.NotebookCellData(vscode.NotebookCellKind.Markup, src, "markdown"));
+            } else {
+                cells.push(new vscode.NotebookCellData(vscode.NotebookCellKind.Code, src, "python"));
+            }
+        }
+        return cells;
+    }
+
+    templateVariableMap(): object {
+        return {
+            workspace_version_id: this.activeWorkspaceVersionId,
+            segments: this.activeSegments
+                .map((seg) => {
+                    return "'" + seg.segment_name + "'";
+                })
+                .join(","),
+            timeline_id: "%" + this.selectedTimelineId.replace(/-/g, ""),
+            timeline_name: this.selectedTimelineName,
+        };
     }
 }
 
