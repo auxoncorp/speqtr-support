@@ -10,10 +10,10 @@
                 "modality = Modality()\n",
                 "\n",
                 "df = modality.events_data_frame(\n",
-                "    workspace_version_id='${workspace_version_id}',\n",
+                "    workspace_version_id='${workspaceVersionId}',\n",
                 "    segments=[${segments}],\n",
-                "    timeline_filter='_.timeline.id = ${timeline_id}',\n",
-                "    event_filter='_.name = \"${event_name}\"',\n",
+                "    timeline_filter='_.timeline.id = ${timelineId}',\n",
+                "    event_filter='_.name = \"${eventName}\"',\n",
                 "    include_attrs=['event.timestamp'])\n",
                 "\n",
                 "df['timestamp_delta'] = df['event.timestamp'].diff()\n",
@@ -27,10 +27,10 @@
             "outputs": [],
             "source": [
                 "# Bar chart\n",
-                "fig = px.bar(df, x='event.timestamp', y='timestamp_delta_sec')\n",
-                "fig.update_layout(title='Event Timing Difference: ${event_name} @ ${timeline_name}')\n",
-                "fig.update_xaxes(title_text='event.timestamp')\n",
-                "fig.update_yaxes(title_text='Difference (seconds)', secondary_y=False)\n",
+                "fig = px.bar(df, y='timestamp_delta_sec')\n",
+                "fig.update_layout(title='Event Timing Delta By Index<br>${eventName} @ ${timelineName}')\n",
+                "fig.update_xaxes(title_text='Message Index')\n",
+                "fig.update_yaxes(title_text='Delta (seconds)', secondary_y=False)\n",
                 "fig.show()"
             ]
         },
@@ -42,8 +42,8 @@
             "source": [
                 "# Histogram\n",
                 "fig = px.histogram(df, x='timestamp_delta_sec')\n",
-                "fig.update_layout(title='Event Timing Difference Histogram: ${event_name} @ ${timeline_name}')\n",
-                "fig.update_xaxes(title_text='Difference (seconds)')\n",
+                "fig.update_layout(title='Event Timing Delta Histogram<br>${eventName} @ ${timelineName}')\n",
+                "fig.update_xaxes(title_text='Delta (seconds)')\n",
                 "fig.update_yaxes(title_text='', secondary_y=False)\n",
                 "fig.show()"
             ]
@@ -56,9 +56,9 @@
             "source": [
                 "# Box plot\n",
                 "fig = px.box(df, y='timestamp_delta_sec')\n",
-                "fig.update_layout(title='Event Timing Difference Box Plot: ${event_name} @ ${timeline_name}')\n",
+                "fig.update_layout(title='Event Timing Delta Box Plot<br>${eventName} @ ${timelineName}')\n",
                 "fig.update_xaxes(title_text='')\n",
-                "fig.update_yaxes(title_text='Difference (seconds)', secondary_y=False)\n",
+                "fig.update_yaxes(title_text='Delta (seconds)', secondary_y=False)\n",
                 "fig.show()"
             ]
         }

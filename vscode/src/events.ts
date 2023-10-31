@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import * as api from "./modalityApi";
 import * as commonNotebookCells from "../templates/common.json";
 import * as eventTimingNotebookCells from "../templates/eventTiming.json";
+import * as eventAttributeValuesNotebookCells from "../templates/eventAttributeValues.json";
 
 export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTreeItemData> {
     selectedTimelineId?: api.TimelineId = undefined;
@@ -33,6 +34,9 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
             ),
             vscode.commands.registerCommand("auxon.events.createEventTimingNotebook", async (itemData) =>
                 this.createEventTimingNotebook(itemData)
+            ),
+            vscode.commands.registerCommand("auxon.events.createEventAttrNotebook", async (itemData) =>
+                this.createEventAttrNotebook(itemData)
             )
         );
     }
@@ -90,8 +94,15 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
 
     async createEventTimingNotebook(item: EventNameTreeItemData) {
         const varMap = this.templateVariableMap();
-        varMap["event_name"] = item.eventName;
+        varMap["eventName"] = item.eventName;
         await this.createJupyterNotebook(eventTimingNotebookCells.cells, varMap);
+    }
+
+    async createEventAttrNotebook(item: EventAttributeTreeItemData) {
+        const varMap = this.templateVariableMap();
+        varMap["eventName"] = item.eventName;
+        varMap["eventAttribute"] = item.attribute;
+        await this.createJupyterNotebook(eventAttributeValuesNotebookCells.cells, varMap);
     }
 
     async createJupyterNotebook(notebookSrcCells: object[], templateVarMap: object) {
@@ -149,14 +160,14 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
 
     templateVariableMap(): object {
         return {
-            workspace_version_id: this.activeWorkspaceVersionId,
+            workspaceVersionId: this.activeWorkspaceVersionId,
             segments: this.activeSegments
                 .map((seg) => {
                     return "'" + seg.segment_name + "'";
                 })
                 .join(","),
-            timeline_id: "%" + this.selectedTimelineId.replace(/-/g, ""),
-            timeline_name: this.selectedTimelineName,
+            timelineId: "%" + this.selectedTimelineId.replace(/-/g, ""),
+            timelineName: this.selectedTimelineName,
         };
     }
 }

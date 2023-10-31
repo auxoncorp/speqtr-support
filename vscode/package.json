@@ -131,6 +131,10 @@
                     "when": "view == auxon.events && viewItem == event"
                 },
                 {
+                    "command": "auxon.events.createEventAttrNotebook",
+                    "when": "view == auxon.events && viewItem == eventAttribute"
+                },
+                {
                     "command": "auxon.specs.eval",
                     "when": "view == auxon.specs && viewItem == spec"
                 },
@@ -283,6 +287,10 @@
             {
                 "command": "auxon.events.createEventTimingNotebook",
                 "title": "View Event Timing Plots in a Jupyter Notebook"
+            },
+            {
+                "command": "auxon.events.createEventAttrNotebook",
+                "title": "View Attribute Plots in a Jupyter Notebook"
             },
             {
                 "command": "auxon.specs.refresh",
