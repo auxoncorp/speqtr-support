@@ -14,7 +14,7 @@
         "version": "2.0"
     },
     "paths": {
-        "/v2/events/{timeline_id}": {
+        "/v2/events/{timeline_id}/summary": {
             "get": {
                 "tags": ["events"],
                 "summary": "Get an event summary for a single timeline",
@@ -33,7 +33,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Retrieve Events Summary Successfully",
+                        "description": "Retrieved Events Summary Successfully",
                         "content": {
                             "application/json": {
                                 "schema": {

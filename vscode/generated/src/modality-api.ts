@@ -10,7 +10,7 @@ type XOR<T, U> = (T | U) extends object ? (Without<T, U> & U) | (Without<U, T> &
 type OneOf<T extends any[]> = T extends [infer Only] ? Only : T extends [infer A, infer B, ...infer Rest] ? OneOf<[XOR<A, B>, ...Rest]> : never;
 
 export interface paths {
-  "/v2/events/{timeline_id}": {
+  "/v2/events/{timeline_id}/summary": {
     /**
      * Get an event summary for a single timeline 
      * @description Get an event summary for a single timeline
@@ -346,7 +346,7 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Retrieve Events Summary Successfully */
+      /** @description Retrieved Events Summary Successfully */
       200: {
         content: {
           "application/json": components["schemas"]["EventsSummary"];

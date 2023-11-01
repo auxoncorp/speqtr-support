@@ -257,7 +257,7 @@ export class EventsClient {
     constructor(private readonly client: InternalClient) {}
 
     async eventsSummaryForTimeline(timelineId: string): Promise<EventsSummary> {
-        const res = await this.client.get("/v2/events/{timeline_id}", {
+        const res = await this.client.get("/v2/events/{timeline_id}/summary", {
             params: { path: { timeline_id: timelineId } },
         });
         return unwrapData(res);
