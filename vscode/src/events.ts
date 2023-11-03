@@ -4,6 +4,7 @@ import * as api from "./modalityApi";
 import * as commonNotebookCells from "../templates/common.json";
 import * as eventTimingNotebookCells from "../templates/eventTiming.json";
 import * as eventAttributeValuesNotebookCells from "../templates/eventAttributeValues.json";
+import * as eventMultiAttributeValuesNotebookCells from "../templates/eventMultiAttributeValues.json";
 
 export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTreeItemData> {
     selectedTimelineId?: api.TimelineId = undefined;
@@ -24,7 +25,7 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
     register(context: vscode.ExtensionContext) {
         this.view = vscode.window.createTreeView("auxon.events", {
             treeDataProvider: this,
-            canSelectMany: false,
+            canSelectMany: true,
         });
         context.subscriptions.push(
             this.view,
@@ -32,8 +33,8 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
             vscode.commands.registerCommand("auxon.events.setSelectedTimeline", (timelineId, timelineName) =>
                 this.setSelectedTimeline(timelineId, timelineName)
             ),
-            vscode.commands.registerCommand("auxon.events.createEventTimingNotebook", async (itemData) =>
-                this.createEventTimingNotebook(itemData)
+            vscode.commands.registerCommand("auxon.events.createEventTimingNotebook", async (item) =>
+                this.createEventTimingNotebook(item)
             ),
             vscode.commands.registerCommand("auxon.events.createEventAttrNotebook", async (itemData) =>
                 this.createEventAttrNotebook(itemData)
@@ -93,16 +94,62 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
     }
 
     async createEventTimingNotebook(item: EventNameTreeItemData) {
-        const varMap = this.templateVariableMap();
-        varMap["eventName"] = item.eventName;
-        await this.createJupyterNotebook(eventTimingNotebookCells.cells, varMap);
+        let selectedEventNames = this.view.selection.map((data) => data.eventName);
+        // Add the item the command was executed on, it may not be in the selection
+        selectedEventNames.push(item.eventName);
+        selectedEventNames = [...new Set(selectedEventNames)]; // dedupe
+        for (const eventName of selectedEventNames) {
+            const varMap = this.templateVariableMap();
+            varMap["eventName"] = eventName;
+            await this.createJupyterNotebook(eventTimingNotebookCells.cells, varMap);
+        }
     }
 
     async createEventAttrNotebook(item: EventAttributeTreeItemData) {
-        const varMap = this.templateVariableMap();
-        varMap["eventName"] = item.eventName;
-        varMap["eventAttribute"] = item.attribute;
-        await this.createJupyterNotebook(eventAttributeValuesNotebookCells.cells, varMap);
+        if (this.view.selection.length == 1) {
+            const varMap = this.templateVariableMap();
+            varMap["eventName"] = item.eventName;
+            varMap["eventAttribute"] = item.attribute;
+            await this.createJupyterNotebook(eventAttributeValuesNotebookCells.cells, varMap);
+        } else {
+            let selectedEventAttrs = [...this.view.selection, ...[item]];
+            selectedEventAttrs = [...new Set(selectedEventAttrs)]; // dedupe
+
+            const attributesByEvent = new Map<string, string[]>();
+            for (const ev of selectedEventAttrs) {
+                if (!(ev instanceof EventAttributeTreeItemData)) {
+                    throw new Error("Internal error: event tree node not of expected type");
+                }
+                if (attributesByEvent.has(ev.eventName)) {
+                    const attributes = attributesByEvent.get(ev.eventName);
+                    attributes.push(ev.attribute);
+                } else {
+                    const attributes = [];
+                    attributes.push(ev.attribute);
+                    attributesByEvent.set(ev.eventName, attributes);
+                }
+            }
+
+            attributesByEvent.forEach(async (attributes: string[], eventName: string) => {
+                const varMap = this.templateVariableMap();
+                varMap["eventName"] = eventName;
+                const cells = lodash.cloneDeep(eventMultiAttributeValuesNotebookCells.cells.slice(0, 2));
+                const srcCell = eventMultiAttributeValuesNotebookCells.cells[2];
+                const figShowCell = eventMultiAttributeValuesNotebookCells.cells[3];
+                const eventAttributesList = [];
+                for (let i = 0; i < attributes.length; i++) {
+                    eventAttributesList.push("'event." + attributes[i] + "'");
+                    varMap["eventAttribute" + i] = attributes[i];
+                    const newSrc = srcCell.source[0].replace(/eventAttribute/g, "eventAttribute" + i);
+                    cells[1].source.push(newSrc);
+                }
+                cells[1].source.push(figShowCell.source[0]);
+
+                varMap["eventAttributes"] = eventAttributesList.join(", ");
+
+                await this.createJupyterNotebook(cells, varMap);
+            });
+        }
     }
 
     async createJupyterNotebook(notebookSrcCells: object[], templateVarMap: object) {
