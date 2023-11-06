@@ -94,14 +94,67 @@ export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
 }
 
 export function showGraphForTimelines(timelineIds: string[], groupBy?: string[]) {
-    vscode.commands.executeCommand(
-        "markdown.showPreview",
-        encodeUri({ type: "timelines", timelines: timelineIds, groupBy })
-    );
+    showGraph({ type: "timelines", timelines: timelineIds, groupBy });
 }
 
 export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy?: string[]) {
-    vscode.commands.executeCommand("markdown.showPreview", encodeUri({ type: "segment", segmentId, groupBy }));
+    showGraph({ type: "segment", segmentId, groupBy });
+}
+
+function showGraph(params: TransitionGraphParams) {
+    let docTitle = "Transition graph for ";
+
+    if (params.type == "timelines") {
+        if (params.timelines.length > 1) {
+            docTitle += "selected timelines";
+        } else {
+            docTitle += params.timelines[0];
+        }
+    } else if (params.type == "segment") {
+        docTitle += "segment " + params.segmentId.segment_name;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const callback = (webpanel: any) => interactivePreviewWebpanelCallback(webpanel);
+
+    vscode.workspace.openTextDocument(encodeUri(params)).then((doc) => {
+        const options = {
+            document: doc,
+            title: docTitle,
+            callback,
+        };
+
+        vscode.languages.setTextDocumentLanguage(doc, "dot");
+        vscode.commands.executeCommand("graphviz-interactive-preview.preview.beside", options);
+    });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function interactivePreviewWebpanelCallback(webpanel: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = (message: any) => {
+        return interactivePreviewMessageHandler(message);
+    };
+    webpanel.handleMessage = handler;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+function interactivePreviewMessageHandler(message: any) {
+    // TODO: enable some basic interaction with the graph
+    /*
+    console.log(JSON.stringify(message));
+
+    switch (message.command) {
+        case "onClick":
+            console.log("onClick");
+            break;
+        case "onDblClick":
+            console.log("onDblClick");
+            break;
+        default:
+            console.warn("Unexpected command: " + message.command);
+    }
+    */
 }
 
 const URI_SCHEME = "auxon-transition-graph";
@@ -169,34 +222,34 @@ export function decodeUri(uri: vscode.Uri): TransitionGraphParams {
 }
 
 class TransitionGraphContentProvider implements vscode.TextDocumentContentProvider {
+    private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
+
     constructor(private readonly apiClient: api.Client) {}
+
+    get onDidChange() {
+        return this._onDidChange.event;
+    }
 
     async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
         const params = decodeUri(uri);
 
         let res: api.GroupedGraph;
-        let docTitle = "# Transition graph for ";
 
         if (params.type == "timelines") {
             res = await this.apiClient.timelines().groupedGraph(params.timelines, params.groupBy);
-            if (params.timelines.length > 1) {
-                docTitle += "selected timelines";
-            } else {
-                docTitle += params.timelines[0];
-            }
         } else if (params.type == "segment") {
             res = await this.apiClient.segment(params.segmentId).groupedGraph(params.groupBy);
-            docTitle += "segment " + params.segmentId.segment_name;
         }
 
         if (res.nodes.length == 0) {
-            return "No content";
+            // No content
+            return "digraph TransitionGraph{}\n";
         }
 
         const hideSelfEdges = params.groupBy.length == 1 && params.groupBy[0] == "timeline.name";
 
-        let mermaid = "";
-        mermaid += "flowchart LR\n";
+        let dot = "";
+        dot += "digraph TransitionGraph{\n";
         for (let i = 0; i < res.nodes.length; i++) {
             const node = res.nodes[i];
             let title: string;
@@ -208,7 +261,7 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
                 title = node.attr_vals.join(", ");
             }
 
-            mermaid += `  node${i}("${title} (${node.count})")\n`;
+            dot += `  node${i} [label="${title} (${node.count})"];\n`;
         }
 
         for (const edge of res.edges) {
@@ -219,10 +272,12 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
             const sourceOccurCount = res.nodes[edge.source].count;
             const percent = (edge.count / sourceOccurCount) * 100;
             const label = `${percent.toFixed(1)}% (${edge.count})`;
-            mermaid += `  node${edge.source}-- "${label}" -->node${edge.destination}\n`;
+            dot += `  node${edge.source} -> node${edge.destination} [label="${label}"];\n`;
         }
 
-        const content = `# ${docTitle}\n` + "```mermaid\n" + mermaid + "\n```";
+        dot += "}\n";
+
+        const content = dot;
 
         return content;
     }

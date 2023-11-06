@@ -360,7 +360,7 @@
         "codegen": "openapi-typescript src/modality-api.json --output generated/"
     },
     "extensionDependencies": [
-        "bierner.markdown-mermaid"
+        "tintinweb.graphviz-interactive-preview"
     ],
     "dependencies": {
         "@viz-js/viz": "^3.0.1",
