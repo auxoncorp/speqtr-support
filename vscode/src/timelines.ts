@@ -62,6 +62,9 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             vscode.commands.registerCommand("auxon.timelines.transitionGraphForSelection", () =>
                 this.transitionGraphForSelection()
             ),
+            vscode.commands.registerCommand("auxon.timelines.disableTimelineGrouping", () =>
+                this.disableTimelineGrouping()
+            ),
             vscode.commands.registerCommand("auxon.timelines.setGroupingAttrs", () => this.setGroupingAttrs()),
             vscode.commands.registerCommand("auxon.timelines.groupTimelinesByNameComponents", () =>
                 this.groupTimelinesByNameComponents()
@@ -199,9 +202,9 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         });
     }
 
-    groupTimelinesByNameComponents() {
+    async disableTimelineGrouping() {
         this.workspaceState.setGroupingAttrKeys([]);
-        this.workspaceState.setGroupByTimelineNameComponents(true);
+        this.workspaceState.setGroupByTimelineNameComponents(false);
         this.refresh();
     }
 
@@ -216,6 +219,12 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
 
         const pickedItems = await vscode.window.showQuickPick(pickItems, { canPickMany: true });
         this.workspaceState.setGroupingAttrKeys(pickedItems.map((pi) => pi.label).sort());
+        this.refresh();
+    }
+
+    groupTimelinesByNameComponents() {
+        this.workspaceState.setGroupingAttrKeys([]);
+        this.workspaceState.setGroupByTimelineNameComponents(true);
         this.refresh();
     }
 
