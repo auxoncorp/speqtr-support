@@ -6,6 +6,7 @@ import * as workspaces from "./workspaces";
 import * as segments from "./segments";
 import * as specs from "./specs";
 import * as timelines from "./timelines";
+import * as events from "./events";
 import * as lsp from "./lsp";
 import * as modalityLog from "./modalityLog";
 import * as terminalLinkProvider from "./terminalLinkProvider";
@@ -31,6 +32,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClient);
     const segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient);
     const timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClient);
+    const eventsTreeDataProvider = new events.EventsTreeDataProvider(apiClient);
     const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
@@ -40,17 +42,24 @@ export async function activate(context: vscode.ExtensionContext) {
 
         timelinesTreeDataProvider.activeWorkspaceVersionId = ws_ver;
         timelinesTreeDataProvider.refresh();
+
+        eventsTreeDataProvider.activeWorkspaceVersionId = ws_ver;
+        eventsTreeDataProvider.refresh();
     });
 
     segmentsTreeDataProvider.onDidChangeUsedSegments((ev) => {
         timelinesTreeDataProvider.usedSegmentConfig = ev.usedSegmentConfig;
         timelinesTreeDataProvider.activeSegments = ev.activeSegmentIds;
         timelinesTreeDataProvider.refresh();
+
+        eventsTreeDataProvider.activeSegments = ev.activeSegmentIds;
+        eventsTreeDataProvider.refresh();
     });
 
     workspacesTreeDataProvider.register(context);
     segmentsTreeDataProvider.register(context);
     timelinesTreeDataProvider.register(context);
+    eventsTreeDataProvider.register(context);
     specsTreeDataProvider.register(context);
 }
 

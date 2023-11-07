@@ -77,6 +77,10 @@
                     "name": "Timelines"
                 },
                 {
+                    "id": "auxon.events",
+                    "name": "Events"
+                },
+                {
                     "id": "auxon.specs",
                     "name": "Specs"
                 }
@@ -121,6 +125,14 @@
                 {
                     "command": "auxon.timelines.logSelected",
                     "when": "view == auxon.timelines && listMultiSelection"
+                },
+                {
+                    "command": "auxon.events.createEventTimingNotebook",
+                    "when": "view == auxon.events && viewItem == event"
+                },
+                {
+                    "command": "auxon.events.createEventAttrNotebook",
+                    "when": "view == auxon.events && viewItem == eventAttribute"
                 },
                 {
                     "command": "auxon.specs.eval",
@@ -179,6 +191,11 @@
                     "command": "auxon.timelines.setGroupingAttrs",
                     "when": "view == auxon.timelines",
                     "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.events.refresh",
+                    "when": "view == auxon.events",
+                    "group": "navigation@1"
                 },
                 {
                     "command": "auxon.specs.refresh",
@@ -257,6 +274,23 @@
             {
                 "command": "auxon.timelines.transitionGraphForSelection",
                 "title": "View Transition Graph for Selection"
+            },
+            {
+                "command": "auxon.events.refresh",
+                "title": "Refresh Event List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.events.setSelectedTimeline",
+                "title": "Update events summary for the selected timeline"
+            },
+            {
+                "command": "auxon.events.createEventTimingNotebook",
+                "title": "View Event Timing Plots in a Jupyter Notebook"
+            },
+            {
+                "command": "auxon.events.createEventAttrNotebook",
+                "title": "View Attribute Plots in a Jupyter Notebook"
             },
             {
                 "command": "auxon.specs.refresh",
@@ -363,7 +397,9 @@
         "tintinweb.graphviz-interactive-preview"
     ],
     "dependencies": {
+        "@types/lodash": "^4.14.200",
         "@viz-js/viz": "^3.0.1",
+        "lodash": "^4.17.21",
         "node-fetch": "https://github.com/mullr/node-fetch",
         "openapi-fetch": "^0.0.8",
         "vscode-languageclient": "^7.0.0"

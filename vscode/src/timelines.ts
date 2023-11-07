@@ -266,6 +266,17 @@ abstract class TimelineTreeItemData {
         item.description = this.description;
         item.tooltip = this.tooltip;
         item.iconPath = this.iconPath;
+
+        // Timeline selection updates the events summary view
+        if (this.contextValue == "timeline") {
+            const command = {
+                title: "Update events summary for the selected timeline",
+                command: "auxon.events.setSelectedTimeline",
+                arguments: [this.timelineId, this.name],
+            };
+            item.command = command;
+        }
+
         return item;
     }
 

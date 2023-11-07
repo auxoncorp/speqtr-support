@@ -10,6 +10,13 @@ type XOR<T, U> = (T | U) extends object ? (Without<T, U> & U) | (Without<U, T> &
 type OneOf<T extends any[]> = T extends [infer Only] ? Only : T extends [infer A, infer B, ...infer Rest] ? OneOf<[XOR<A, B>, ...Rest]> : never;
 
 export interface paths {
+  "/v2/events/{timeline_id}/summary": {
+    /**
+     * Get an event summary for a single timeline 
+     * @description Get an event summary for a single timeline
+     */
+    get: operations["get_events_summary_for_timeline"];
+  };
   "/v2/specs": {
     /**
      * List all specs 
@@ -162,6 +169,25 @@ export interface components {
       opaque_event_id?: (number)[];
       timeline_id?: components["schemas"]["TimelineId"];
     };
+    EventSummary: {
+      attributes: (string)[];
+      /** Format: int32 */
+      n_instances: number;
+      name?: string | null;
+    };
+    /** @description Events operation errors */
+    EventsError: OneOf<[{
+      /** @description Invalid Uuid */
+      InvalidTimelineId: string;
+    }, {
+      TimelineNotFound: components["schemas"]["TimelineId"];
+    }, {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
+    EventsSummary: {
+      events: (components["schemas"]["EventSummary"])[];
+    };
     /** @description A graph created by grouping together events by their attribute values. */
     GroupedGraph: {
       /** @description The grouping keys used to compute this graph */
@@ -308,6 +334,40 @@ export type external = Record<string, never>;
 
 export interface operations {
 
+  /**
+   * Get an event summary for a single timeline 
+   * @description Get an event summary for a single timeline
+   */
+  get_events_summary_for_timeline: {
+    parameters: {
+      path: {
+        /** @description Timeline id */
+        timeline_id: string;
+      };
+    };
+    responses: {
+      /** @description Retrieved Events Summary Successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["EventsSummary"];
+        };
+      };
+      /** @description Invalid Timeline Id */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Timeline Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["EventsError"];
+        };
+      };
+    };
+  };
   /**
    * List all specs 
    * @description List all specs

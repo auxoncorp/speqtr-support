@@ -28,6 +28,8 @@ export type Timeline = gen.components["schemas"]["Timeline"];
 export type TimelineId = gen.components["schemas"]["TimelineId"];
 export type TimelineOverview = gen.components["schemas"]["TimelineOverview"];
 export type TimelineGroup = gen.components["schemas"]["TimelineGroup"];
+export type EventsSummary = gen.components["schemas"]["EventsSummary"];
+export type EventSummary = gen.components["schemas"]["EventSummary"];
 export type Workspace = gen.components["schemas"]["Workspace"];
 export type WorkspaceSegmentId = gen.components["schemas"]["WorkspaceSegmentId"];
 export type WorkspaceSegmentMetadata = gen.components["schemas"]["WorkspaceSegmentMetadata"];
@@ -49,7 +51,7 @@ export class Client {
         const baseUri = Uri.parse(baseUrl, false);
         if (baseUri.scheme == "https") {
             this.client = createClient<gen.paths>({
-                // This is allowed by my fork of node-fetch. The commently recommended way of doing this by setting an 'agent'
+                // This is allowed by my fork of node-fetch. The commonly recommended way of doing this by setting an 'agent'
                 // doesn't work in vscode, seemingly by design: https://github.com/microsoft/vscode/issues/173314
                 // @ts-ignore
                 rejectUnauthorized: !allowInsecureHttps,
@@ -87,6 +89,10 @@ export class Client {
 
     timeline(timelineId: TimelineId): TimelineClient {
         return new TimelineClient(this.client, timelineId);
+    }
+
+    events(): EventsClient {
+        return new EventsClient(this.client);
     }
 
     specs(): SpecsClient {
@@ -242,6 +248,17 @@ export class TimelineClient {
     async get(): Promise<Timeline> {
         const res = await this.client.get("/v2/timelines/{timeline_id}", {
             params: { path: { timeline_id: this.timelineId } },
+        });
+        return unwrapData(res);
+    }
+}
+
+export class EventsClient {
+    constructor(private readonly client: InternalClient) {}
+
+    async eventsSummaryForTimeline(timelineId: string): Promise<EventsSummary> {
+        const res = await this.client.get("/v2/events/{timeline_id}/summary", {
+            params: { path: { timeline_id: timelineId } },
         });
         return unwrapData(res);
     }

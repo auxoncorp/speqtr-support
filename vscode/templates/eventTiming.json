@@ -1,0 +1,87 @@
+{
+    "cells": [
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Request data frame\n",
+                "modality = Modality()\n",
+                "\n",
+                "df = modality.events_data_frame(\n",
+                "    workspace_version_id='${workspaceVersionId}',\n",
+                "    segments=[${segments}],\n",
+                "    timeline_filter='_.timeline.id = ${timelineId}',\n",
+                "    event_filter='_.name = \"${eventName}\"',\n",
+                "    include_attrs=['event.timestamp'])\n",
+                "\n",
+                "df['timestamp_delta'] = df['event.timestamp'].diff()\n",
+                "df['timestamp_delta_sec'] = df['timestamp_delta'].dt.total_seconds()\n"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Bar chart\n",
+                "fig = px.bar(df, y='timestamp_delta_sec')\n",
+                "fig.update_layout(title='Event Timing Delta By Index<br>${eventName} @ ${timelineName}')\n",
+                "fig.update_xaxes(title_text='Message Index')\n",
+                "fig.update_yaxes(title_text='Delta (seconds)', secondary_y=False)\n",
+                "fig.show()"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Histogram\n",
+                "fig = px.histogram(df, x='timestamp_delta_sec')\n",
+                "fig.update_layout(title='Event Timing Delta Histogram<br>${eventName} @ ${timelineName}')\n",
+                "fig.update_xaxes(title_text='Delta (seconds)')\n",
+                "fig.update_yaxes(title_text='', secondary_y=False)\n",
+                "fig.show()"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Box plot\n",
+                "fig = px.box(df, y='timestamp_delta_sec')\n",
+                "fig.update_layout(title='Event Timing Delta Box Plot<br>${eventName} @ ${timelineName}')\n",
+                "fig.update_xaxes(title_text='')\n",
+                "fig.update_yaxes(title_text='Delta (seconds)', secondary_y=False)\n",
+                "fig.show()"
+            ]
+        }
+    ],
+    "metadata": {
+        "kernelspec": {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3"
+        },
+        "language_info": {
+            "codemirror_mode": {
+                "name": "ipython",
+                "version": 3
+            },
+            "file_extension": ".py",
+            "mimetype": "text/x-python",
+            "name": "python",
+            "nbconvert_exporter": "python",
+            "pygments_lexer": "ipython3",
+            "version": "3.10.12"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 2
+}

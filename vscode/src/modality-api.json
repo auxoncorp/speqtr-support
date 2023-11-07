@@ -14,6 +14,65 @@
         "version": "2.0"
     },
     "paths": {
+        "/v2/events/{timeline_id}/summary": {
+            "get": {
+                "tags": ["events"],
+                "summary": "Get an event summary for a single timeline",
+                "description": "Get an event summary for a single timeline",
+                "operationId": "get_events_summary_for_timeline",
+                "parameters": [
+                    {
+                        "name": "timeline_id",
+                        "in": "path",
+                        "description": "Timeline id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieved Events Summary Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventsSummary"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Timeline Id",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Timeline Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
         "/v2/specs": {
             "get": {
                 "tags": ["specs"],
@@ -1355,6 +1414,73 @@
                     },
                     "timeline_id": {
                         "$ref": "#/components/schemas/TimelineId"
+                    }
+                }
+            },
+            "EventSummary": {
+                "type": "object",
+                "required": ["attributes", "n_instances"],
+                "properties": {
+                    "attributes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "n_instances": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0
+                    },
+                    "name": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
+            "EventsError": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "required": ["InvalidTimelineId"],
+                        "properties": {
+                            "InvalidTimelineId": {
+                                "type": "string",
+                                "description": "Invalid Uuid"
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": ["TimelineNotFound"],
+                        "properties": {
+                            "TimelineNotFound": {
+                                "$ref": "#/components/schemas/TimelineId"
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": ["Internal"],
+                        "properties": {
+                            "Internal": {
+                                "type": "string",
+                                "description": "Internal Server Error"
+                            }
+                        }
+                    }
+                ],
+                "description": "Events operation errors"
+            },
+            "EventsSummary": {
+                "type": "object",
+                "required": ["events"],
+                "properties": {
+                    "events": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EventSummary"
+                        }
                     }
                 }
             },
