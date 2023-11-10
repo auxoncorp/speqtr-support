@@ -6,6 +6,7 @@ import * as child_process from "child_process";
 import * as api from "./modalityApi";
 import * as cliConfig from "./cliConfig";
 import * as config from "./config";
+import * as specCoverage from "./specCoverage";
 import * as transitionGraph from "./transitionGraph";
 import { ModalityLogCommandArgs } from "./modalityLog";
 
@@ -44,6 +45,9 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
             vscode.commands.registerCommand("auxon.segments.setAllActive", () => this.setAllActiveCommand()),
             vscode.commands.registerCommand("auxon.segments.setWholeWorkspaceActive", () =>
                 this.setWholeWorkspaceActiveCommand()
+            ),
+            vscode.commands.registerCommand("auxon.segments.specCoverage", (itemData) =>
+                this.showSpecCoverageForSegment(itemData)
             ),
             vscode.commands.registerCommand("auxon.segments.transitionGraph", (itemData) =>
                 this.transitionGraph(itemData)
@@ -156,6 +160,10 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     async setWholeWorkspaceActiveCommand() {
         await execFile(config.toolPath("modality"), ["segment", "use", "--whole-workspace"]);
         this.refresh();
+    }
+
+    async showSpecCoverageForSegment(item: SegmentTreeItemData) {
+        specCoverage.showSpecCoverage({ segmentId: item.segment.id }, this.apiClient);
     }
 
     transitionGraph(item: SegmentTreeItemData) {
