@@ -118,7 +118,7 @@
         "event_at_probe": {
             "patterns": [
                 {
-                    "match": "\\b([\\w\\?\\*]+)\\@([\\w\\?\\*]+)",
+                    "match": "\\b([\\w\\?\\*]+)\\@([\\w\\?\\*.]+)",
                     "name": "entity.name.event_at_probe.speqtr",
                     "captures": {
                         "1": { "name": "entity.name.type.class.speqtr" },
