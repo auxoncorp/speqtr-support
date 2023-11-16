@@ -183,14 +183,19 @@
                     "group": "navigation@1"
                 },
                 {
-                    "command": "auxon.timelines.groupTimelinesByNameComponents",
+                    "command": "auxon.timelines.disableTimelineGrouping",
                     "when": "view == auxon.timelines",
                     "group": "7_modification@1"
                 },
                 {
                     "command": "auxon.timelines.setGroupingAttrs",
                     "when": "view == auxon.timelines",
-                    "group": "7_modification@1"
+                    "group": "7_modification@2"
+                },
+                {
+                    "command": "auxon.timelines.groupTimelinesByNameComponents",
+                    "when": "view == auxon.timelines",
+                    "group": "7_modification@3"
                 },
                 {
                     "command": "auxon.events.refresh",
@@ -250,13 +255,18 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "auxon.timelines.groupTimelinesByNameComponents",
-                "title": "Group timelines by name components",
+                "command": "auxon.timelines.disableTimelineGrouping",
+                "title": "Show timelines in flat list",
                 "icon": "$(refresh)"
             },
             {
                 "command": "auxon.timelines.setGroupingAttrs",
                 "title": "Group timelines by attribute",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.timelines.groupTimelinesByNameComponents",
+                "title": "Group timelines by name components",
                 "icon": "$(refresh)"
             },
             {
