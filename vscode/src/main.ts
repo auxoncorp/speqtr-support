@@ -14,6 +14,7 @@ import * as terminalLinkProvider from "./terminalLinkProvider";
 import * as specFileCommands from "./specFileCommands";
 import * as transitionGraph from "./transitionGraph";
 import * as config from "./config";
+import * as speqtrLinkProvider from "./speqtrLinkProvider";
 
 export let log: vscode.OutputChannel;
 let lspClient: LanguageClient;
@@ -31,6 +32,7 @@ export async function activate(context: vscode.ExtensionContext) {
     modalityLog.register(context);
     transitionGraph.register(context, apiClient);
     specFileCommands.register(context);
+    speqtrLinkProvider.register(context);
 
     const specCoverageProvider = new specCoverage.SpecCoverageProvider(apiClient);
     await specCoverageProvider.initialize(context);

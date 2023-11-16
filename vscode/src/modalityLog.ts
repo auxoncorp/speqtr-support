@@ -8,9 +8,16 @@ import { log } from "./main";
 
 export function register(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(MODALITY_LOG_COMMAND, runModalityLogCommand));
+    context.subscriptions.push(
+        vscode.commands.registerCommand(MODALITY_LOG_TIMELINE_COMMAND, runModalityLogTimelineCommand)
+    );
 }
 
 export const MODALITY_LOG_COMMAND = "auxon.modality.log";
+
+// This is a single timeline shortcut because round tripping ModalityLogCommandArgs
+// through a URI appears to break things
+export const MODALITY_LOG_TIMELINE_COMMAND = "auxon.modality.log_timeline";
 
 interface ToLogCommandArgs {
     getModalityLogCommandArgs(): ModalityLogCommandArgs;
@@ -32,6 +39,14 @@ export class ModalityLogCommandArgs {
     getModalityLogCommandArgs(): ModalityLogCommandArgs {
         return this;
     }
+}
+
+function runModalityLogTimelineCommand(timeline: string) {
+    runModalityLogCommand(
+        new ModalityLogCommandArgs({
+            thingToLog: timeline,
+        })
+    );
 }
 
 function runModalityLogCommand(args: ToLogCommandArgs) {
