@@ -9,7 +9,7 @@ import * as modalityLog from "./modalityLog";
 import * as transitionGraph from "./transitionGraph";
 
 class TimelinesTreeMemento {
-    constructor(private readonly memento: vscode.Memento) {}
+    constructor(private readonly memento: vscode.Memento) { }
 
     getGroupByTimelineNameComponents(): boolean {
         return this.memento.get("timelinesTree_groupByTimelineNameComponents", false);
@@ -40,7 +40,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     readonly onDidChangeTreeData: vscode.Event<TimelineTreeItemData | TimelineTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
 
-    constructor(private readonly apiClient: api.Client) {}
+    constructor(private readonly apiClient: api.Client) { }
 
     register(context: vscode.ExtensionContext) {
         this.workspaceState = new TimelinesTreeMemento(context.workspaceState);
@@ -145,7 +145,15 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
                     }
                     break;
             }
-            timelines.sort((a, b) => a.name.localeCompare(b.name));
+            timelines.sort((a, b) => {
+                if (a === null || a.name === null) {
+                    return 1;
+                }
+                if (b === null || b.name === null) {
+                    return -1;
+                }
+                return a.name.localeCompare(b.name);
+            });
 
             if (groupByTimelineNameComponents) {
                 const root = new TimelineGroupByNameTreeItemData("", []);

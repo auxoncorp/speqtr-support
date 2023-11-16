@@ -15,6 +15,12 @@ export type AttrVal = gen.components["schemas"]["AttrVal"];
 export type GroupedGraph = gen.components["schemas"]["GroupedGraph"];
 export type GroupedGraphEdge = gen.components["schemas"]["GroupedGraphEdge"];
 export type GroupedGraphNode = gen.components["schemas"]["GroupedGraphNode"];
+export type SegmentCoverage = gen.components["schemas"]["SegmentCoverage"];
+export type SpecCoverage = gen.components["schemas"]["SpecCoverage"];
+export type BehaviorCoverage = gen.components["schemas"]["BehaviorCoverage"];
+export type CaseCoverage = gen.components["schemas"]["CaseCoverage"];
+export type TestyCounts = gen.components["schemas"]["TestyCounts"];
+export type CoverageAggregates = gen.components["schemas"]["CoverageAggregates"];
 export type LogicalTime = gen.components["schemas"]["LogicalTime"];
 export type Nanoseconds = gen.components["schemas"]["Nanoseconds"];
 export type SegmentationRuleName = gen.components["schemas"]["SegmentationRuleName"];
@@ -105,7 +111,7 @@ export class Client {
 }
 
 export class WorkspacesClient {
-    constructor(private readonly client: InternalClient) {}
+    constructor(private readonly client: InternalClient) { }
 
     async list(): Promise<Workspace[]> {
         const res = await this.client.get("/v2/workspaces", {});
@@ -114,7 +120,7 @@ export class WorkspacesClient {
 }
 
 export class WorkspaceClient {
-    constructor(private readonly client: InternalClient, private readonly workspaceVersionId: WorkspaceVersionId) {}
+    constructor(private readonly client: InternalClient, private readonly workspaceVersionId: WorkspaceVersionId) { }
 
     async segments(): Promise<WorkspaceSegmentMetadata[]> {
         const res = await this.client.get("/v2/workspaces/{workspace_version_id}/segments", {
@@ -160,7 +166,7 @@ export class WorkspaceClient {
 }
 
 export class SegmentClient {
-    constructor(private readonly client: InternalClient, private readonly segmentId: WorkspaceSegmentId) {}
+    constructor(private readonly client: InternalClient, private readonly segmentId: WorkspaceSegmentId) { }
 
     async timelines(): Promise<TimelineOverview[]> {
         const res = await this.client.get(
@@ -219,10 +225,36 @@ export class SegmentClient {
 
         return unwrapData(res);
     }
+    async specCoverage(spec_filter?: string, case_filter?: string): Promise<SegmentCoverage> {
+        const q = [];
+        if (typeof spec_filter !== 'undefined') {
+            q.push(["spec_filter", spec_filter]);
+        }
+        if (typeof case_filter !== 'undefined') {
+            q.push(["case_filter", case_filter]);
+        }
+        const res = await this.client.get(
+            "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_coverage",
+            {
+                params: {
+                    path: this.segmentId,
+                    // The spec_filter and case_filter query arguments could be supplied here.
+                    // @ts-ignore
+                    // The library's stated type for 'query' is inaccurate.
+                    // The actual type is "Something you can pass to the UrlSearchParams constructor".
+                    // Here, we use the 'array of tuples' form to get the query parameters
+                    // to appear.
+                    query: q,
+                },
+            }
+        );
+
+        return unwrapData(res);
+    }
 }
 
 export class TimelinesClient {
-    constructor(private readonly client: InternalClient) {}
+    constructor(private readonly client: InternalClient) { }
 
     async groupedGraph(timeline_id: string[], groupBy: string[]): Promise<GroupedGraph> {
         const timelineIdQuery = timeline_id.map((tid) => ["timeline_id", tid]);
@@ -243,7 +275,7 @@ export class TimelinesClient {
 }
 
 export class TimelineClient {
-    constructor(private readonly client: InternalClient, private readonly timelineId: TimelineId) {}
+    constructor(private readonly client: InternalClient, private readonly timelineId: TimelineId) { }
 
     async get(): Promise<Timeline> {
         const res = await this.client.get("/v2/timelines/{timeline_id}", {
@@ -254,7 +286,7 @@ export class TimelineClient {
 }
 
 export class EventsClient {
-    constructor(private readonly client: InternalClient) {}
+    constructor(private readonly client: InternalClient) { }
 
     async eventsSummaryForTimeline(timelineId: string): Promise<EventsSummary> {
         const res = await this.client.get("/v2/events/{timeline_id}/summary", {
@@ -265,7 +297,7 @@ export class EventsClient {
 }
 
 export class SpecsClient {
-    constructor(private readonly client: InternalClient) {}
+    constructor(private readonly client: InternalClient) { }
 
     async list(): Promise<SpecVersionMetadata[]> {
         const res = await this.client.get("/v2/specs", {});
@@ -274,7 +306,7 @@ export class SpecsClient {
 }
 
 export class SpecClient {
-    constructor(private readonly client: InternalClient, private readonly specName: string) {}
+    constructor(private readonly client: InternalClient, private readonly specName: string) { }
 
     version(specVersion: SpecVersionId): SpecVersionClient {
         return new SpecVersionClient(this.client, this.specName, specVersion);
@@ -300,7 +332,7 @@ export class SpecVersionClient {
         private readonly client: InternalClient,
         private readonly specName: string,
         private readonly specVersion: string
-    ) {}
+    ) { }
 
     async get(): Promise<SpecContent> {
         const res = await this.client.get("/v2/specs/{spec_name}/versions/{spec_version}", {

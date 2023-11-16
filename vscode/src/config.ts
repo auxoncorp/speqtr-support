@@ -7,6 +7,7 @@ import * as cliConfig from "./cliConfig";
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
+import * as os from "os";
 
 /**
  * The auth token that should be used to access the modality API, both directly
@@ -145,7 +146,10 @@ export function toolPath(tool_name: string): string {
         toolPath = firstExistingPath(
             customPath,
             path.join("/usr/local/bin/", tool_name),
-            path.join("/usr/bin/", tool_name)
+            path.join("/usr/bin/", tool_name),
+            // TODO - DEBUG - DELETE - once more general
+            path.join("/home/zack/.cargo/bin/", tool_name),
+            //path.join(os.homedir(), "/.cargo/bin/", tool_name)
         );
     }
 
