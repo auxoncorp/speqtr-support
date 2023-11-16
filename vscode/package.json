@@ -404,6 +404,7 @@
         "codegen": "openapi-typescript src/modality-api.json --output generated/"
     },
     "extensionDependencies": [
+        "ms-toolsai.jupyter",
         "tintinweb.graphviz-interactive-preview"
     ],
     "dependencies": {
