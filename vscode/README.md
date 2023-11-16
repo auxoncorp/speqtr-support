@@ -20,8 +20,16 @@ This extension contributes the following settings:
 -   `auxon.allowInsecureHttps`: Ignore certificate validation for https connections. If not given, defaults to the setting configured in the Modality CLI, or else to false.
 -   `auxon.extraEnv`: Extra environment variables that will be passed tool executables, including the SpeQTr LSP server.
 
+## Dependencies
+
+-   Modality CLI: See the [Modality Client documentation](https://docs.auxon.io/modality/installation/client.html)
+-   Python: The Jupter notebooks require Python 3, jupyter, pandas, and plotly packages to be installed
+-   Extensions: The extension will automatically install the `tintinweb.graphviz-interactive-preview`
+    and `ms-toolsai.jupyter` extensions by default when installed from the marketplace
+
 ## Development
 
+-   Install the `tintinweb.graphviz-interactive-preview` and `ms-toolsai.jupyter` extensions if they're not already installed: `ext install tintinweb.graphviz-interactive-preview ms-toolsai.jupyter`
 -   Start the background build process: `npm run watch`
 -   Regenerate the api stubs: `npm run codegen`
 -   Do typechecking: `npm lint`
