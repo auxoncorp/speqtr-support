@@ -17,19 +17,44 @@ export function register(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand("auxon.specFile.eval.dryRun", specFileEvalDryRun),
         vscode.commands.registerCommand("auxon.specFile.create", createSpec),
         vscode.commands.registerCommand("auxon.conform.eval", runConformEvalCommand),
+        vscode.workspace.onDidChangeWorkspaceFolders(workspaceFoldersChanged),
+        vscode.workspace.onDidCreateFiles(filesCreated),
+        vscode.workspace.onDidDeleteFiles(filesDeleted)
     );
 
     // walk the workspace to identify directories that have speqtr files in them
-    // TODO how do you update this list, when someone adds a new file? Is there a 'workspace changed' hook or s.t.?
-    // TODO how can we get this to run without first clicking on a spec file?
-    // TODO should this walk up the tree? What does that mean?
-    vscode.workspace.findFiles("**/*.speqtr").then((specFiles) => {
-        const specDirs = specFiles.map((f) => path.parse(f.fsPath).dir);
-        const uniqueSpecDirs = [...new Set(specDirs)];
-        const uniqueSpecDirUris = uniqueSpecDirs.map(pathToFileURL);
-        vscode.commands.executeCommand("setContext", "auxon.specFolders", uniqueSpecDirUris);
-    });
+    vscode.workspace.findFiles("**/*.speqtr").then(updateSpecFoldersContext);
 }
+
+function workspaceFoldersChanged(e: vscode.WorkspaceFoldersChangeEvent) {
+    for (const dir of e.added) {
+        vscode.workspace.findFiles(`${dir.uri.fsPath}/*.speqtr`).then(updateSpecFoldersContext)
+    }
+}
+
+function filesCreated(e: vscode.FileCreateEvent) {
+    updateSpecFoldersContext(e.files)
+}
+
+function filesDeleted(e: vscode.FileDeleteEvent) {
+    const dirs = e.files.map((f) => path.parse(f.fsPath).dir);
+    const uniqueDirs = [...new Set(dirs)];
+    for (const dir of uniqueDirs) {
+        vscode.workspace.findFiles(`${dir}/*.speqtr`).then((files) => {
+            if (files.length == 0) {
+                vscode.commands.executeCommand("setContext", "auxon.specFolders", []);
+            }
+        })
+    }
+}
+
+function updateSpecFoldersContext(specFiles: readonly vscode.Uri[]) {
+    const specDirs = specFiles.map((f) => path.parse(f.fsPath).dir);
+    const uniqueSpecDirs = [...new Set(specDirs)];
+    const uniqueSpecDirUris = uniqueSpecDirs.map(pathToFileURL);
+    vscode.commands.executeCommand("setContext", "auxon.specFolders", uniqueSpecDirUris);
+}
+
 
 async function specDirEval(dir: vscode.Uri) {
     const specPrefix = await promptForSpecName("Eval specs in dir: what name prefix should be used when storing specs on the server?", dir, true);
@@ -154,8 +179,3 @@ export function runConformEvalCommand(args: SpecEvalCommandArgs) : Thenable<vsco
 
     return vscode.tasks.executeTask(task);
 }
-
-
-// export function runConformEvalCommandMulti(argss: SpecEvalCommandArgs[]) : Thenable<vscode.TaskExecution> {
-//     // TODO
-// }
