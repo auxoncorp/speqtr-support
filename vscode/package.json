@@ -308,18 +308,23 @@
                     "group": "navigation@1"
                 },
                 {
-                    "command": "auxon.timelines.disableTimelineGrouping",
-                    "when": "view == auxon.timelines",
-                    "group": "7_modification@1"
+                    "command": "auxon.timelines.setGroupingAttrs",
+                    "when": "view == auxon.timelines && auxon.timelinesGroupingMode != 'BY_ATTRIBUTES'",
+                    "group": "7_modification@2"
                 },
                 {
-                    "command": "auxon.timelines.setGroupingAttrs",
-                    "when": "view == auxon.timelines",
+                    "command": "auxon.timelines.clearGroupingAttrs",
+                    "when": "view == auxon.timelines && auxon.timelinesGroupingMode == 'BY_ATTRIBUTES'",
                     "group": "7_modification@2"
                 },
                 {
                     "command": "auxon.timelines.groupTimelinesByNameComponents",
-                    "when": "view == auxon.timelines",
+                    "when": "view == auxon.timelines && auxon.timelinesGroupingMode != 'BY_NAME_COMPONENTS'",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.timelines.clearGroupTimelinesByNameComponents",
+                    "when": "view == auxon.timelines && auxon.timelinesGroupingMode == 'BY_NAME_COMPONENTS'",
                     "group": "7_modification@3"
                 },
                 {
@@ -404,19 +409,20 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "auxon.timelines.disableTimelineGrouping",
-                "title": "Show Timelines in Flat List",
-                "icon": "$(refresh)"
+                "command": "auxon.timelines.setGroupingAttrs",
+                "title": "Group timelines by attribute"
             },
             {
-                "command": "auxon.timelines.setGroupingAttrs",
-                "title": "Group Timelines by Attribute",
-                "icon": "$(refresh)"
+                "command": "auxon.timelines.clearGroupingAttrs",
+                "title": "✓ Group timelines by attribute"
             },
             {
                 "command": "auxon.timelines.groupTimelinesByNameComponents",
-                "title": "Group Timelines by Name Components",
-                "icon": "$(refresh)"
+                "title": "Group timelines by name components"
+            },
+            {
+                "command": "auxon.timelines.clearGroupTimelinesByNameComponents",
+                "title": "✓ Group timelines by name components"
             },
             {
                 "command": "auxon.timelines.inspect",

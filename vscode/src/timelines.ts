@@ -28,6 +28,12 @@ class TimelinesTreeMemento {
     }
 }
 
+enum TimelinesGroupingMode {
+    FlatList = "FLAT_LIST",
+    ByAttributes = "BY_ATTRIBUTES",
+    ByNameComponents = "BY_NAME_COMPONENTS",
+}
+
 export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<TimelineTreeItemData> {
     activeWorkspaceVersionId: string;
     usedSegmentConfig: cliConfig.ContextSegment;
@@ -62,17 +68,23 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             vscode.commands.registerCommand("auxon.timelines.transitionGraphForSelection", () =>
                 this.transitionGraphForSelection()
             ),
-            vscode.commands.registerCommand("auxon.timelines.disableTimelineGrouping", () =>
-                this.disableTimelineGrouping()
-            ),
-            vscode.commands.registerCommand("auxon.timelines.setGroupingAttrs", () => this.setGroupingAttrs()),
-            vscode.commands.registerCommand("auxon.timelines.groupTimelinesByNameComponents", () =>
-                this.groupTimelinesByNameComponents()
-            )
+            vscode.commands.registerCommand("auxon.timelines.setGroupingAttrs", () => {
+                this.setGroupingAttrs();
+            }),
+            vscode.commands.registerCommand("auxon.timelines.clearGroupingAttrs", () => {
+                this.disableTimelineGrouping();
+            }),
+            vscode.commands.registerCommand("auxon.timelines.groupTimelinesByNameComponents", () => {
+                this.groupTimelinesByNameComponents();
+            }),
+            vscode.commands.registerCommand("auxon.timelines.clearGroupTimelinesByNameComponents", () => {
+                this.disableTimelineGrouping();
+            })
         );
     }
 
     refresh(): void {
+        this.updateGroupingMenuContext();
         this._onDidChangeTreeData.fire(undefined);
     }
 
@@ -217,6 +229,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     async setGroupingAttrs() {
+        this.workspaceState.setGroupByTimelineNameComponents(false);
         const tlAttrs = await this.getAvailableTimelineAttrKeys();
         const groupingAttrKeys = this.workspaceState.getGroupingAttrKeys();
         const pickItems: vscode.QuickPickItem[] = tlAttrs.map((tlAttr) => {
@@ -226,7 +239,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         });
 
         const pickedItems = await vscode.window.showQuickPick(pickItems, { canPickMany: true });
-        if(pickedItems) {
+        if (pickedItems) {
             // User actually selected some attributes to use
             this.workspaceState.setGroupingAttrKeys(pickedItems.map((pi) => pi.label).sort());
             this.refresh();
@@ -263,6 +276,18 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
                     return [...keys];
                 }
         }
+    }
+
+    // We use this to manage the context menu sort option checkboxes.
+    // It's not elegant, but it's all we can do for now
+    updateGroupingMenuContext() {
+        let groupingMode = TimelinesGroupingMode.FlatList;
+        if (this.workspaceState.getGroupByTimelineNameComponents()) {
+            groupingMode = TimelinesGroupingMode.ByNameComponents;
+        } else if (this.workspaceState.getGroupingAttrKeys().length > 0) {
+            groupingMode = TimelinesGroupingMode.ByAttributes;
+        }
+        vscode.commands.executeCommand("setContext", "auxon.timelinesGroupingMode", groupingMode);
     }
 }
 
