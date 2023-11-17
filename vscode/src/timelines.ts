@@ -226,8 +226,11 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         });
 
         const pickedItems = await vscode.window.showQuickPick(pickItems, { canPickMany: true });
-        this.workspaceState.setGroupingAttrKeys(pickedItems.map((pi) => pi.label).sort());
-        this.refresh();
+        if(pickedItems) {
+            // User actually selected some attributes to use
+            this.workspaceState.setGroupingAttrKeys(pickedItems.map((pi) => pi.label).sort());
+            this.refresh();
+        }
     }
 
     groupTimelinesByNameComponents() {
