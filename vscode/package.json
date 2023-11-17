@@ -87,6 +87,33 @@
             ]
         },
         "menus": {
+            "explorer/context": [
+                {
+                    "command": "auxon.specDir.eval.dryRun",
+                    "when": "resource in auxon.specFolders",
+                    "group": "1_auxon@1"
+                },
+                {
+                    "command": "auxon.specDir.eval",
+                    "when": "resource in auxon.specFolders",
+                    "group": "1_auxon@2"
+                },
+                {
+                    "command": "auxon.specFile.eval.dryRun",
+                    "when": "resourceLangId == speqtr",
+                    "group": "1_auxon@1"
+                },
+                {
+                    "command": "auxon.specFile.eval",
+                    "when": "resourceLangId == speqtr",
+                    "group": "1_auxon@2"
+                },
+                {
+                    "command": "auxon.specFile.create",
+                    "when": "resourceLangId == speqtr",
+                    "group": "1_auxon@3"
+                }
+            ],
             "view/item/context": [
                 {
                     "command": "auxon.workspaces.setActive",
@@ -139,20 +166,59 @@
                     "when": "view == auxon.events && viewItem == eventAttribute"
                 },
                 {
-                    "command": "auxon.specs.eval",
-                    "when": "view == auxon.specs && viewItem == spec"
+                    "command": "auxon.specs.showLatest",
+                    "when": "view == auxon.specs && viewItem == spec",
+                    "group": "1_context@1"
                 },
                 {
-                    "command": "auxon.specs.eval.dryRun",
-                    "when": "view == auxon.specs && viewItem == spec"
+                    "command": "auxon.specs.evalLatest",
+                    "when": "view == auxon.specs && viewItem == spec",
+                    "group": "1_context@2"
+                },
+                {
+                    "command": "auxon.specs.evalLatest.dryRun",
+                    "when": "view == auxon.specs && viewItem == spec",
+                    "group": "1_context@3"
+                },
+                {
+                    "command": "auxon.specs.rename",
+                    "when": "view == auxon.specs && viewItem == spec",
+                    "group": "2_context@1"
+                },
+                {
+                    "command": "auxon.specs.delete",
+                    "when": "view == auxon.specs && viewItem == spec",
+                    "group": "2_context@2"
+                },
+                {
+                    "command": "auxon.specs.showVersion",
+                    "when": "view == auxon.specs && viewItem == specVersion",
+                    "group": "1_context@1"
                 },
                 {
                     "command": "auxon.specs.evalVersion",
-                    "when": "view == auxon.specs && viewItem == specVersion"
+                    "when": "view == auxon.specs && viewItem == specVersion",
+                    "group": "1_context@2"
                 },
                 {
                     "command": "auxon.specs.evalVersion.dryRun",
-                    "when": "view == auxon.specs && viewItem == specVersion"
+                    "when": "view == auxon.specs && viewItem == specVersion",
+                    "group": "1_context@3"
+                },
+                {
+                    "command": "auxon.specs.deleteVersion",
+                    "when": "view == auxon.specs && viewItem == specVersion",
+                    "group": "2_context@1"
+                },
+                {
+                    "command": "auxon.specs.showResult",
+                    "when": "view == auxon.specs && viewItem == specResult",
+                    "group": "1_context@1"
+                },
+                {
+                    "command": "auxon.specs.deleteResult",
+                    "when": "view == auxon.specs && viewItem == specResult",
+                    "group": "2_context@2"
                 }
             ],
             "view/title": [
@@ -316,20 +382,68 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "auxon.specs.eval",
-                "title": "Evaluate spec at latest version"
+                "command": "auxon.specs.showLatest",
+                "title": "Show spec at latest version"
             },
             {
-                "command": "auxon.specs.eval.dryRun",
-                "title": "Evaluate spec at latest version (dry run)"
+                "command": "auxon.specs.evalLatest",
+                "title": "Check spec at latest version (save results)"
+            },
+            {
+                "command": "auxon.specs.evalLatest.dryRun",
+                "title": "Check spec at latest version (dry run)"
+            },
+            {
+                "command": "auxon.specs.rename",
+                "title": "Rename spec..."
+            },
+            {
+                "command": "auxon.specs.delete",
+                "title": "Delete spec..."
             },
             {
                 "command": "auxon.specs.evalVersion",
-                "title": "Evaluate spec at this verison"
+                "title": "Check spec at this verison (save results)"
             },
             {
                 "command": "auxon.specs.evalVersion.dryRun",
-                "title": "Evaluate spec at this version (dry run)"
+                "title": "Check spec at this version (dry run)"
+            },
+            {
+                "command": "auxon.specs.showVersion",
+                "title": "Show spec at this verison"
+            },
+            {
+                "command": "auxon.specs.deleteVersion",
+                "title": "Delete this version of the spec..."
+            },
+            {
+                "command": "auxon.specs.showResult",
+                "title": "Show spec result"
+            },
+            {
+                "command": "auxon.specs.deleteResult",
+                "title": "Delete spec result..."
+            },
+            {
+                "command": "auxon.specDir.eval.dryRun",
+                "title": "Check all specs in folder (dry run)"
+            },
+            {
+                "command": "auxon.specDir.eval",
+                "title": "Check all specs in folder (save results)..."
+            },
+            {
+                "command": "auxon.specFile.eval.dryRun",
+                "title": "Check spec file (dry run)"
+            },
+            {
+                "command": "auxon.specFile.eval",
+                "title": "Check spec file (save results)..."
+            },
+            {
+                "command": "auxon.specFile.create",
+                "title": "Upload spec file..."
             },
             {
                 "command": "auxon.modality.log",
@@ -394,10 +508,6 @@
             }
         }
     },
-    "activationEvents": [
-        "onLanguage:speqtr",
-        "onView:auxon.workspaces"
-    ],
     "main": "out/main.js",
     "scripts": {
         "vscode:prepublish": "npm run build-base -- --minify",

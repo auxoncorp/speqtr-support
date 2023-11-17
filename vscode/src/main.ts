@@ -11,6 +11,7 @@ import * as lsp from "./lsp";
 import * as modalityLog from "./modalityLog";
 import * as terminalLinkProvider from "./terminalLinkProvider";
 import * as specCoverage from "./specCoverage";
+import * as specFileCommands from "./specFileCommands";
 import * as transitionGraph from "./transitionGraph";
 import * as config from "./config";
 
@@ -29,6 +30,7 @@ export async function activate(context: vscode.ExtensionContext) {
     terminalLinkProvider.register(context);
     modalityLog.register(context);
     transitionGraph.register(context, apiClient);
+    specFileCommands.register(context);
 
     const workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClient);
     const segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient);

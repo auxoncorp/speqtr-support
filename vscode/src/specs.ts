@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as api from "./modalityApi";
+import * as specFileCommands from "./specFileCommands";
 
 export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecTreeItemData> {
     private _onDidChangeTreeData: vscode.EventEmitter<SpecTreeItemData | SpecTreeItemData[] | undefined> =
@@ -14,8 +15,19 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecTreeIt
             vscode.window.createTreeView("auxon.specs", {
                 treeDataProvider: this,
             }),
-            vscode.commands.registerCommand("auxon.specs.refresh", () => this.refresh())
+            vscode.commands.registerCommand("auxon.specs.refresh", () => this.refresh()),
+            vscode.commands.registerCommand("auxon.specs.evalLatest", (item: NamedSpecTreeItemData) => this.evalLatest(item)),
+            vscode.commands.registerCommand("auxon.specs.evalLatest.dryRun", (item: NamedSpecTreeItemData) => this.evalLatestDryRun(item)),
+            vscode.commands.registerCommand("auxon.specs.evalVersion", (item: SpecResultTreeItemData) => this.evalVersion(item)),
+            vscode.commands.registerCommand("auxon.specs.evalVersion.dryRun", (item: SpecResultTreeItemData) => this.evalVersionDryRun(item)),
         );
+
+        // Refresh this list any time a spec is evaluated, since it may have saved some results
+        vscode.tasks.onDidEndTask(e => {
+            if (e.execution.task.definition.type == "auxon.conform.eval") {
+                this.refresh();
+            }
+        });
     }
 
     refresh(): void {
@@ -60,6 +72,26 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecTreeIt
                 return [];
             }
         }
+    }
+
+    evalLatest(spec: NamedSpecTreeItemData) {
+        this.conformEval({spec_name: spec.specName, dry_run: false}, true);
+    }
+
+    evalLatestDryRun(spec: NamedSpecTreeItemData) {
+        this.conformEval({spec_name: spec.specName, dry_run: true}, false);
+    }
+
+    evalVersion(spec: SpecVersionTreeItemData) {
+        this.conformEval({spec_version: spec.specVersion, dry_run: false}, true)
+    }
+
+    evalVersionDryRun(spec: SpecVersionTreeItemData) {
+        this.conformEval({spec_version: spec.specVersion, dry_run: true}, false)
+    }
+
+    conformEval(args: specFileCommands.SpecEvalCommandArgs, refresh: boolean) {
+        specFileCommands.runConformEvalCommand(args);
     }
 }
 
