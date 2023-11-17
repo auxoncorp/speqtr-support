@@ -276,6 +276,26 @@
                     "command": "auxon.specs.refresh",
                     "when": "view == auxon.specs",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.specs.showVersions",
+                    "when": "view == auxon.specs && auxon.specs.versions == 'HIDE'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.specs.hideVersions",
+                    "when": "view == auxon.specs && auxon.specs.versions == 'SHOW'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.specs.showResults",
+                    "when": "view == auxon.specs && auxon.specs.results == 'HIDE'",
+                    "group": "7_modification@2"
+                },
+                {
+                    "command": "auxon.specs.hideResults",
+                    "when": "view == auxon.specs && auxon.specs.results == 'SHOW'",
+                    "group": "7_modification@2"
                 }
             ]
         },
@@ -380,6 +400,22 @@
                 "command": "auxon.specs.refresh",
                 "title": "Refresh Spec List",
                 "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.specs.showVersions",
+                "title": "Show Versions"
+            },
+            {
+                "command": "auxon.specs.hideVersions",
+                "title": "✓ Show Versions"
+            },
+            {
+                "command": "auxon.specs.showResults",
+                "title": "Show Results"
+            },
+            {
+                "command": "auxon.specs.hideResults",
+                "title": "✓ Show Results"
             },
             {
                 "command": "auxon.specs.showLatest",
