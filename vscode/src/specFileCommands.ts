@@ -71,12 +71,12 @@ async function specDirEval(dir: vscode.Uri) {
         specNames.push(specName);
     }
 
-    // TODO eval specs in batch, with --name
+    await runConformEvalCommand({spec_names: specNames, dry_run: false});
 }
 
 async function specDirEvalDryRun(dir: vscode.Uri) {
     const specFiles = await vscode.workspace.findFiles("**/*.speqtr");
-    // TODO eval specs in batch, with --file
+    await runConformEvalCommand({document_uris: specFiles.map((uri) => uri.toString()), dry_run: false});
 }
 
 async function specFileEval(file: vscode.Uri) {
@@ -136,8 +136,10 @@ async function upsertSpec(name: string, file: vscode.Uri): Promise<void> {
 // This has to match the json returned by the lsp server for the 'auxon.conform.eval' action
 export type SpecEvalCommandArgs = {
     document_uri?: string;
+    document_uris?: string[];
     spec_name?: string;
-    spec_version?: string;
+    spec_names?: string[];
+    spec_version?: string,
     behavior?: string;
     dry_run: boolean;
 };
@@ -145,25 +147,39 @@ export type SpecEvalCommandArgs = {
 export function runConformEvalCommand(args: SpecEvalCommandArgs): Thenable<vscode.TaskExecution> {
     const conformPath = config.toolPath("conform");
 
-    const commandArgs = ["spec", "eval"];
-    if (args.document_uri) {
-        commandArgs.push("--file", vscode.Uri.parse(args.document_uri).fsPath);
-    }
+    var commandArgs = ["spec"];
+    if (args.document_uris || args.spec_names) {
+        commandArgs.push("batch-eval");
 
-    if (args.spec_name) {
-        commandArgs.push("--name", args.spec_name);
-    }
+        // We lean on the CLI for error semantics around mutual exclusiveness of args
+        if (args.document_uris) {
+            for (const specFile of args.document_uris) {
+                commandArgs.push("--file", vscode.Uri.parse(specFile).fsPath);
+            }
+        }
+        if (args.spec_names) {
+            for (const specName of args.spec_names) {
+                commandArgs.push("--name", specName);
+            }
+        }
+    } else {
+        commandArgs.push("eval");
 
-    if (args.spec_version) {
-        commandArgs.push("--version", args.spec_version);
-    }
+        if (args.document_uri) {
+            commandArgs.push("--file", vscode.Uri.parse(args.document_uri).fsPath);
+        }
 
-    if (args.behavior) {
-        commandArgs.push("--behavior", args.behavior);
-    }
+        if (args.spec_name) {
+            commandArgs.push("--name", args.spec_name);
+        }
 
-    if (args.dry_run) {
-        commandArgs.push("--dry-run");
+        if (args.spec_version) {
+            commandArgs.push("--version", args.spec_version);
+        }
+
+        if (args.behavior) {
+            commandArgs.push("--behavior", args.behavior);
+        }
     }
 
     const taskDef: vscode.TaskDefinition = {
