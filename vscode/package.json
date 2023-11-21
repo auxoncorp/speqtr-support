@@ -182,7 +182,7 @@
                 },
                 {
                     "command": "auxon.specs.rename",
-                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection && false",
                     "group": "2_context@1"
                 },
                 {
@@ -197,7 +197,7 @@
                 },
                 {
                     "command": "auxon.specs.showVersion",
-                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection",
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection && false",
                     "group": "1_context@1"
                 },
                 {
@@ -207,7 +207,7 @@
                 },
                 {
                     "command": "auxon.specs.evalManyVersions",
-                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection",
+                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection && false",
                     "group": "1_context@2"
                 },
                 {
@@ -217,7 +217,7 @@
                 },
                 {
                     "command": "auxon.specs.evalManyVersions.dryRun",
-                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection",
+                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection && false",
                     "group": "1_context@3"
                 },
                 {
@@ -227,22 +227,22 @@
                 },
                 {
                     "command": "auxon.specs.deleteManyVersions",
-                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection",
+                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection && false",
                     "group": "2_context@1"
                 },
                 {
                     "command": "auxon.specs.showResult",
-                    "when": "view == auxon.specs && viewItem == specResult && !listMultiSelection",
+                    "when": "view == auxon.specs && viewItem == specResult && !listMultiSelection && false",
                     "group": "1_context@1"
                 },
                 {
                     "command": "auxon.specs.deleteResult",
-                    "when": "view == auxon.specs && viewItem == specResult && !listMultiSelection",
+                    "when": "view == auxon.specs && viewItem == specResult && !listMultiSelection && false",
                     "group": "2_context@2"
                 },
                 {
                     "command": "auxon.specs.deleteManyResults",
-                    "when": "view == auxon.specs && viewItem == specResult && listMultiSelection",
+                    "when": "view == auxon.specs && viewItem == specResult && listMultiSelection && false",
                     "group": "2_context@2"
                 }
             ],
