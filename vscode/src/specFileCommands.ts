@@ -34,11 +34,16 @@ function filesCreated(e: vscode.FileCreateEvent) {
     updateSpecFoldersContext(e.files);
 }
 
+async function recursivelyFindSpeqtrFilesBeneath(dir: vscode.Uri): Promise<vscode.Uri[]> {
+    const pat = new vscode.RelativePattern(dir, "**/*.speqtr");
+    return await vscode.workspace.findFiles(pat);
+}
+
 function filesDeleted(e: vscode.FileDeleteEvent) {
-    const dirs = e.files.map((f) => path.parse(f.fsPath).dir);
+    const dirs = e.files.map((f) => vscode.Uri.file(path.parse(f.fsPath).dir));
     const uniqueDirs = [...new Set(dirs)];
     for (const dir of uniqueDirs) {
-        vscode.workspace.findFiles(`${dir}/*.speqtr`).then((files) => {
+        recursivelyFindSpeqtrFilesBeneath(dir).then((files) => {
             if (files.length == 0) {
                 vscode.commands.executeCommand("setContext", "auxon.specFolders", []);
             }
@@ -63,7 +68,7 @@ async function specDirEval(dir: vscode.Uri) {
         return;
     }
 
-    const specFiles = await vscode.workspace.findFiles("**/*.speqtr");
+    const specFiles = await recursivelyFindSpeqtrFilesBeneath(dir);
     const specNames = [];
     for (const specFile of specFiles) {
         const specName = specPrefix + path.parse(specFile.fsPath).base;
@@ -71,12 +76,12 @@ async function specDirEval(dir: vscode.Uri) {
         specNames.push(specName);
     }
 
-    await runConformEvalCommand({spec_names: specNames, dry_run: false});
+    await runConformEvalCommand({ spec_names: specNames, dry_run: false });
 }
 
 async function specDirEvalDryRun(dir: vscode.Uri) {
-    const specFiles = await vscode.workspace.findFiles("**/*.speqtr");
-    await runConformEvalCommand({document_uris: specFiles.map((uri) => uri.toString()), dry_run: false});
+    const specFiles = await recursivelyFindSpeqtrFilesBeneath(dir);
+    await runConformEvalCommand({ document_uris: specFiles.map((uri) => uri.toString()), dry_run: false });
 }
 
 async function specFileEval(file: vscode.Uri) {
@@ -139,7 +144,7 @@ export type SpecEvalCommandArgs = {
     document_uris?: string[];
     spec_name?: string;
     spec_names?: string[];
-    spec_version?: string,
+    spec_version?: string;
     behavior?: string;
     dry_run: boolean;
 };
@@ -147,7 +152,7 @@ export type SpecEvalCommandArgs = {
 export function runConformEvalCommand(args: SpecEvalCommandArgs): Thenable<vscode.TaskExecution> {
     const conformPath = config.toolPath("conform");
 
-    var commandArgs = ["spec"];
+    const commandArgs = ["spec"];
     if (args.document_uris || args.spec_names) {
         commandArgs.push("batch-eval");
 
