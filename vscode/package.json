@@ -167,57 +167,82 @@
                 },
                 {
                     "command": "auxon.specs.showLatest",
-                    "when": "view == auxon.specs && viewItem == spec",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
                     "group": "1_context@1"
                 },
                 {
                     "command": "auxon.specs.evalLatest",
-                    "when": "view == auxon.specs && viewItem == spec",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
                     "group": "1_context@2"
                 },
                 {
                     "command": "auxon.specs.evalLatest.dryRun",
-                    "when": "view == auxon.specs && viewItem == spec",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
                     "group": "1_context@3"
                 },
                 {
                     "command": "auxon.specs.rename",
-                    "when": "view == auxon.specs && viewItem == spec",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
                     "group": "2_context@1"
                 },
                 {
                     "command": "auxon.specs.delete",
-                    "when": "view == auxon.specs && viewItem == spec",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
+                    "group": "2_context@2"
+                },
+                {
+                    "command": "auxon.specs.deleteMany",
+                    "when": "view == auxon.specs && viewItem == spec && listMultiSelection",
                     "group": "2_context@2"
                 },
                 {
                     "command": "auxon.specs.showVersion",
-                    "when": "view == auxon.specs && viewItem == specVersion",
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection",
                     "group": "1_context@1"
                 },
                 {
                     "command": "auxon.specs.evalVersion",
-                    "when": "view == auxon.specs && viewItem == specVersion",
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection",
+                    "group": "1_context@2"
+                },
+                {
+                    "command": "auxon.specs.evalManyVersions",
+                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection",
                     "group": "1_context@2"
                 },
                 {
                     "command": "auxon.specs.evalVersion.dryRun",
-                    "when": "view == auxon.specs && viewItem == specVersion",
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection",
+                    "group": "1_context@3"
+                },
+                {
+                    "command": "auxon.specs.evalManyVersions.dryRun",
+                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection",
                     "group": "1_context@3"
                 },
                 {
                     "command": "auxon.specs.deleteVersion",
-                    "when": "view == auxon.specs && viewItem == specVersion",
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection",
+                    "group": "2_context@1"
+                },
+                {
+                    "command": "auxon.specs.deleteManyVersions",
+                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection",
                     "group": "2_context@1"
                 },
                 {
                     "command": "auxon.specs.showResult",
-                    "when": "view == auxon.specs && viewItem == specResult",
+                    "when": "view == auxon.specs && viewItem == specResult && !listMultiSelection",
                     "group": "1_context@1"
                 },
                 {
                     "command": "auxon.specs.deleteResult",
-                    "when": "view == auxon.specs && viewItem == specResult",
+                    "when": "view == auxon.specs && viewItem == specResult && !listMultiSelection",
+                    "group": "2_context@2"
+                },
+                {
+                    "command": "auxon.specs.deleteManyResults",
+                    "when": "view == auxon.specs && viewItem == specResult && listMultiSelection",
                     "group": "2_context@2"
                 }
             ],
@@ -438,12 +463,24 @@
                 "title": "Delete spec..."
             },
             {
+                "command": "auxon.specs.deleteMany",
+                "title": "Delete selected specs..."
+            },
+            {
                 "command": "auxon.specs.evalVersion",
                 "title": "Check spec at this verison (save results)"
             },
             {
+                "command": "auxon.specs.evalManyVersions",
+                "title": "Check selected spec verisons (save results)"
+            },
+            {
                 "command": "auxon.specs.evalVersion.dryRun",
                 "title": "Check spec at this version (dry run)"
+            },
+            {
+                "command": "auxon.specs.evalManyVersions.dryRun",
+                "title": "Check selected spec versions (dry run)"
             },
             {
                 "command": "auxon.specs.showVersion",
@@ -454,12 +491,20 @@
                 "title": "Delete this version of the spec..."
             },
             {
+                "command": "auxon.specs.deleteManyVersions",
+                "title": "Delete selected spec versions..."
+            },
+            {
                 "command": "auxon.specs.showResult",
                 "title": "Show spec result"
             },
             {
                 "command": "auxon.specs.deleteResult",
                 "title": "Delete spec result..."
+            },
+            {
+                "command": "auxon.specs.deleteManyResults",
+                "title": "Delete selected spec results..."
             },
             {
                 "command": "auxon.specDir.eval.dryRun",

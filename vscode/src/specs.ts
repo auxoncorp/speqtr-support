@@ -33,16 +33,19 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
     readonly onDidChangeTreeData: vscode.Event<SpecsTreeItemData | SpecsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
     workspaceState?: SpecsTreeMemento;
+    view: vscode.TreeView<SpecsTreeItemData>;
 
     constructor(private readonly apiClient: api.Client) {}
 
     register(context: vscode.ExtensionContext) {
         this.workspaceState = new SpecsTreeMemento(context.workspaceState);
+        this.view = vscode.window.createTreeView("auxon.specs", {
+            treeDataProvider: this,
+            canSelectMany: true,
+        });
 
         context.subscriptions.push(
-            vscode.window.createTreeView("auxon.specs", {
-                treeDataProvider: this,
-            }),
+            this.view,
             vscode.commands.registerCommand("auxon.specs.refresh", () => this.refresh()),
             vscode.commands.registerCommand("auxon.specs.showVersions", () => this.showVersions(true)),
             vscode.commands.registerCommand("auxon.specs.hideVersions", () => this.showVersions(false)),
@@ -63,6 +66,12 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
             vscode.commands.registerCommand("auxon.specs.delete", (item: NamedSpecTreeItemData) =>
                 this.deleteSpec(item)
             ),
+            vscode.commands.registerCommand("auxon.specs.deleteMany", () => {
+                const specs = this.view.selection.filter(
+                    (i) => i instanceof NamedSpecTreeItemData
+                ) as NamedSpecTreeItemData[];
+                this.deleteSpecs(specs);
+            }),
 
             // Refresh this list any time a spec eval is completed, since it may have saved some results
             vscode.tasks.onDidEndTask((e) => {
@@ -140,6 +149,21 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         if (answer == "Delete") {
             const conform = config.toolPath("conform");
             await execFile(conform, ["spec", "delete", spec.specMetadata.name, "--force"], { encoding: "utf8" });
+            this.refresh();
+        }
+    }
+
+    async deleteSpecs(specs: NamedSpecTreeItemData[]) {
+        const answer = await vscode.window.showInformationMessage(
+            `Really delete ${specs.length} specs? This will delete all spec versions and stored results.`,
+            "Delete",
+            "Cancel"
+        );
+        if (answer == "Delete") {
+            const conform = config.toolPath("conform");
+            for (const spec of specs) {
+                await execFile(conform, ["spec", "delete", spec.specMetadata.name, "--force"], { encoding: "utf8" });
+            }
             this.refresh();
         }
     }
