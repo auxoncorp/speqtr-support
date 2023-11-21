@@ -1,6 +1,4 @@
-
 import * as vscode from "vscode";
-import * as api from "./modalityApi";
 import * as config from "./config";
 import * as util from "util";
 import * as child_process from "child_process";
@@ -28,12 +26,12 @@ export function register(context: vscode.ExtensionContext) {
 
 function workspaceFoldersChanged(e: vscode.WorkspaceFoldersChangeEvent) {
     for (const dir of e.added) {
-        vscode.workspace.findFiles(`${dir.uri.fsPath}/*.speqtr`).then(updateSpecFoldersContext)
+        vscode.workspace.findFiles(`${dir.uri.fsPath}/*.speqtr`).then(updateSpecFoldersContext);
     }
 }
 
 function filesCreated(e: vscode.FileCreateEvent) {
-    updateSpecFoldersContext(e.files)
+    updateSpecFoldersContext(e.files);
 }
 
 function filesDeleted(e: vscode.FileDeleteEvent) {
@@ -44,7 +42,7 @@ function filesDeleted(e: vscode.FileDeleteEvent) {
             if (files.length == 0) {
                 vscode.commands.executeCommand("setContext", "auxon.specFolders", []);
             }
-        })
+        });
     }
 }
 
@@ -55,10 +53,15 @@ function updateSpecFoldersContext(specFiles: readonly vscode.Uri[]) {
     vscode.commands.executeCommand("setContext", "auxon.specFolders", uniqueSpecDirUris);
 }
 
-
 async function specDirEval(dir: vscode.Uri) {
-    const specPrefix = await promptForSpecName("Eval specs in dir: what name prefix should be used when storing specs on the server?", dir, true);
-    if (!specPrefix) { return; }
+    const specPrefix = await promptForSpecName(
+        "Eval specs in dir: what name prefix should be used when storing specs on the server?",
+        dir,
+        true
+    );
+    if (!specPrefix) {
+        return;
+    }
 
     const specFiles = await vscode.workspace.findFiles("**/*.speqtr");
     const specNames = [];
@@ -67,7 +70,7 @@ async function specDirEval(dir: vscode.Uri) {
         await upsertSpec(specName, specFile);
         specNames.push(specName);
     }
-    
+
     // TODO eval specs in batch, with --name
 }
 
@@ -78,69 +81,81 @@ async function specDirEvalDryRun(dir: vscode.Uri) {
 
 async function specFileEval(file: vscode.Uri) {
     const specName = await promptForSpecName("Check spec file: what should this spec be named on the server?", file);
-    if (!specName) { return; }
+    if (!specName) {
+        return;
+    }
 
     await upsertSpec(specName, file);
-    await runConformEvalCommand({spec_name: specName, dry_run: false});
+    await runConformEvalCommand({ spec_name: specName, dry_run: false });
 }
 
 async function specFileEvalDryRun(file: vscode.Uri) {
-    await runConformEvalCommand({document_uri: file.toString(),  dry_run: true});
+    await runConformEvalCommand({ document_uri: file.toString(), dry_run: true });
 }
 
 async function createSpec(file: vscode.Uri) {
     const specName = await promptForSpecName("Upload spec file: what should this spec be named on the server?", file);
-    if (!specName) { return; }
+    if (!specName) {
+        return;
+    }
 
     await upsertSpec(specName, file);
 }
 
-// TODO save the chosen spec name in the workspace, if different from the default
-async function promptForSpecName(prompt: string, file: vscode.Uri, isDir?: boolean) : Promise<string | undefined> {
-    var defaultSpecName = vscode.workspace.name + "/" + vscode.workspace.asRelativePath(file).toString();
+// TODO save the chosen spec name in the workspace
+async function promptForSpecName(prompt: string, file: vscode.Uri, isDir?: boolean): Promise<string | undefined> {
+    const nameParts = [vscode.workspace.name];
+    // TODO if the spec has a 'spec.name' attr, prefer that. Maybe skip prompting, in that case?
+
+    const p = path.parse(vscode.workspace.asRelativePath(file));
+    nameParts.push(...p.dir.split(path.sep));
+    nameParts.push(p.name);
+
+    let defaultSpecName = nameParts.join(".");
     if (isDir) {
-        defaultSpecName += "/";
+        defaultSpecName += ".";
     }
-    return await vscode.window.showInputBox({title: prompt, value: defaultSpecName});
+    return await vscode.window.showInputBox({ title: prompt, value: defaultSpecName });
 }
 
-async function upsertSpec(name: string, file: vscode.Uri) : Promise<void> {
+async function upsertSpec(name: string, file: vscode.Uri): Promise<void> {
     const conform = config.toolPath("conform");
-    var spec_exists = false;
-    try { 
+    let spec_exists: boolean;
+    try {
         await execFile(conform, ["spec", "inspect", name], { encoding: "utf8" });
         // if it didn't error (that is, if it had a zero return code), the spec exists
         spec_exists = true;
-    } catch { }
+    } catch {
+        spec_exists = false;
+    }
 
-    const verb = spec_exists ? "update" : "create"; 
+    const verb = spec_exists ? "update" : "create";
     await execFile(conform, ["spec", verb, name, "--file", file.fsPath], { encoding: "utf8" });
 }
-
 
 // This has to match the json returned by the lsp server for the 'auxon.conform.eval' action
 export type SpecEvalCommandArgs = {
     document_uri?: string;
     spec_name?: string;
-    spec_version?: string,
+    spec_version?: string;
     behavior?: string;
     dry_run: boolean;
 };
 
-export function runConformEvalCommand(args: SpecEvalCommandArgs) : Thenable<vscode.TaskExecution> {
+export function runConformEvalCommand(args: SpecEvalCommandArgs): Thenable<vscode.TaskExecution> {
     const conformPath = config.toolPath("conform");
 
-    var commandArgs = ["spec", "eval"];
+    const commandArgs = ["spec", "eval"];
     if (args.document_uri) {
-       commandArgs.push("--file", vscode.Uri.parse(args.document_uri).fsPath) ;
+        commandArgs.push("--file", vscode.Uri.parse(args.document_uri).fsPath);
     }
 
     if (args.spec_name) {
-       commandArgs.push("--name", args.spec_name) ;
+        commandArgs.push("--name", args.spec_name);
     }
 
     if (args.spec_version) {
-       commandArgs.push("--version", args.spec_version) ;
+        commandArgs.push("--version", args.spec_version);
     }
 
     if (args.behavior) {

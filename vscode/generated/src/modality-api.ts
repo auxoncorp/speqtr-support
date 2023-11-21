@@ -10,6 +10,13 @@ type XOR<T, U> = (T | U) extends object ? (Without<T, U> & U) | (Without<U, T> &
 type OneOf<T extends any[]> = T extends [infer Only] ? Only : T extends [infer A, infer B, ...infer Rest] ? OneOf<[XOR<A, B>, ...Rest]> : never;
 
 export interface paths {
+  "/v2/events/{timeline_id}/summary": {
+    /**
+     * Get an event summary for a single timeline 
+     * @description Get an event summary for a single timeline
+     */
+    get: operations["get_events_summary_for_timeline"];
+  };
   "/v2/specs": {
     /**
      * List all specs 
@@ -23,6 +30,13 @@ export interface paths {
      * @description Get the current version of the named spec
      */
     get: operations["get_spec"];
+  };
+  "/v2/specs/{spec_name}/structure": {
+    /**
+     * Get the structure of behaviors and cases for the stored spec 
+     * @description Get the structure of behaviors and cases for the stored spec
+     */
+    get: operations["get_spec_structure"];
   };
   "/v2/specs/{spec_name}/versions": {
     /**
@@ -44,6 +58,13 @@ export interface paths {
      * @description List stored evaluation results for the given spec version
      */
     get: operations["list_spec_version_results"];
+  };
+  "/v2/specs/{spec_name}/versions/{spec_version}/structure": {
+    /**
+     * List stored evaluation results for the given spec version 
+     * @description List stored evaluation results for the given spec version
+     */
+    get: operations["get_spec_version_structure"];
   };
   "/v2/timelines/grouped_graph": {
     /**
@@ -168,20 +189,33 @@ export interface components {
       /** @enum {string} */
       NonFiniteFloat?: "NaN" | "-NaN" | "Infinity" | "-Infinity";
     }]>;
+    AttributeMap: {
+      [key: string]: components["schemas"]["AttrVal"] | undefined;
+    };
+    /** @enum {string} */
+    BehaviorCaseType: "Nominal" | "Recovery" | "Prohibited";
     BehaviorCoverage: {
       case_coverage: {
         [key: string]: components["schemas"]["CaseCoverage"] | undefined;
       };
       ever_vacuous: boolean;
       name: string;
-      testy_counts: components["schemas"]["TestyCounts"];
+      test_counts: components["schemas"]["TestCounts"];
       vacuous_n_times: number;
+    };
+    BehaviorName: string;
+    BehaviorStructure: {
+      attributes?: components["schemas"]["AttributeMap"];
+      cases?: ((components["schemas"]["CaseName"] & components["schemas"]["BehaviorCaseType"] & components["schemas"]["AttributeMap"])[])[];
+      until?: ((components["schemas"]["CaseName"] & components["schemas"]["AttributeMap"])[]) | null;
+      when?: ((components["schemas"]["CaseName"] & components["schemas"]["AttributeMap"])[]) | null;
     };
     CaseCoverage: {
       ever_matched: boolean;
       matched_n_times: number;
       name: string;
     };
+    CaseName: string;
     CoverageAggregates: {
       n_behaviors: number;
       n_behaviors_executed: number;
@@ -214,6 +248,25 @@ export interface components {
     EventCoordinate: {
       opaque_event_id?: (number)[];
       timeline_id?: components["schemas"]["TimelineId"];
+    };
+    EventSummary: {
+      attributes: (string)[];
+      /** Format: int32 */
+      n_instances: number;
+      name?: string | null;
+    };
+    /** @description Events operation errors */
+    EventsError: OneOf<[{
+      /** @description Invalid Uuid */
+      InvalidTimelineId: string;
+    }, {
+      TimelineNotFound: components["schemas"]["TimelineId"];
+    }, {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
+    EventsSummary: {
+      events: (components["schemas"]["EventSummary"])[];
     };
     /** @description A graph created by grouping together events by their attribute values. */
     GroupedGraph: {
@@ -272,7 +325,7 @@ export interface components {
         [key: string]: components["schemas"]["BehaviorCoverage"] | undefined;
       };
       spec_at_version_meta: components["schemas"]["SpecVersionMetadata"];
-      testy_counts: components["schemas"]["TestyCounts"];
+      test_counts: components["schemas"]["TestCounts"];
     };
     SpecEvalOutcomeHighlights: {
       behaviors: (string)[];
@@ -289,6 +342,10 @@ export interface components {
     /** Format: uuid */
     SpecEvalResultsId: string;
     SpecName: string;
+    SpecStructure: {
+      attributes?: components["schemas"]["AttributeMap"];
+      behaviors?: ((components["schemas"]["BehaviorName"] & components["schemas"]["BehaviorStructure"])[])[];
+    };
     /** Format: uuid */
     SpecVersionId: string;
     SpecVersionMetadata: {
@@ -306,7 +363,7 @@ export interface components {
       /** @description Internal Server Error */
       Internal: string;
     }]>;
-    TestyCounts: {
+    TestCounts: {
       ever_executed: boolean;
       ever_failed: boolean;
       ever_passed: boolean;
@@ -381,6 +438,40 @@ export type external = Record<string, never>;
 export interface operations {
 
   /**
+   * Get an event summary for a single timeline 
+   * @description Get an event summary for a single timeline
+   */
+  get_events_summary_for_timeline: {
+    parameters: {
+      path: {
+        /** @description Timeline id */
+        timeline_id: string;
+      };
+    };
+    responses: {
+      /** @description Retrieved Events Summary Successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["EventsSummary"];
+        };
+      };
+      /** @description Invalid Timeline Id */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Timeline Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["EventsError"];
+        };
+      };
+    };
+  };
+  /**
    * List all specs 
    * @description List all specs
    */
@@ -412,6 +503,34 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["SpecContent"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Spec not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get the structure of behaviors and cases for the stored spec 
+   * @description Get the structure of behaviors and cases for the stored spec
+   */
+  get_spec_structure: {
+    responses: {
+      /** @description Get spec structure successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SpecStructure"];
         };
       };
       /** @description Operation not authorized */
@@ -514,6 +633,46 @@ export interface operations {
       200: {
         content: {
           "application/json": (components["schemas"]["SpecEvalOutcomeHighlights"])[];
+        };
+      };
+      /** @description Invalid spec version */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Spec or spec version not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List stored evaluation results for the given spec version 
+   * @description List stored evaluation results for the given spec version
+   */
+  get_spec_version_structure: {
+    parameters: {
+      path: {
+        spec_name: components["schemas"]["SpecName"];
+        spec_version: components["schemas"]["SpecVersionId"];
+      };
+    };
+    responses: {
+      /** @description Get spec version structure */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SpecStructure"];
         };
       };
       /** @description Invalid spec version */

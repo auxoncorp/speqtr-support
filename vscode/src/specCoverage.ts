@@ -2,31 +2,31 @@ import * as api from "./modalityApi";
 import * as vscode from "vscode";
 
 interface SpecCoverageParams {
-    segmentId: api.WorkspaceSegmentId
+    segmentId: api.WorkspaceSegmentId;
 }
 
 export async function showSpecCoverage(params: SpecCoverageParams, apiClient: api.Client) {
-    const coverage = await apiClient.segment(params.segmentId).specCoverage()
+    const coverage = await apiClient.segment(params.segmentId).specCoverage();
     let html = "<html>";
     html += `<h1>Coverage report for segment ${params.segmentId.segment_name}</h1>`;
 
     // TODO - headline values from segment_spec_coverage.coverage_aggregates
     // % behaviors non-vacuous (called "covered" here)
-    let percentage_behaviors_covered = 0.0
+    let percentage_behaviors_covered = 0.0;
     if (coverage.coverage_aggregates.n_behaviors > 0 && coverage.coverage_aggregates.n_behaviors_executed > 0) {
         percentage_behaviors_covered = 100.0 - coverage.coverage_aggregates.percentage_behaviors_vacuous;
     }
-    coverage.coverage_aggregates.percentage_specs_executed
+    coverage.coverage_aggregates.percentage_specs_executed;
     html += "<table>";
-    html += "<tr>"
+    html += "<tr>";
     html += "<th>Specs Executed</th><th>Specs Passing</th><th>% Behaviors Covered</th><th>% Cases Covered</th>";
-    html += "</tr>"
-    html += "<tr>"
+    html += "</tr>";
+    html += "<tr>";
     html += `<td>${coverage.coverage_aggregates.percentage_specs_executed}%</td>`;
     html += `<td>${coverage.coverage_aggregates.percentage_specs_passing}%</td>`;
     html += `<td>${percentage_behaviors_covered}%</td>`;
     html += `<td>${coverage.coverage_aggregates.percentage_cases_ever_matched}%</td>`;
-    html += "</tr>"
+    html += "</tr>";
     html += "</table>";
 
     let optional_s = "";
@@ -36,11 +36,11 @@ export async function showSpecCoverage(params: SpecCoverageParams, apiClient: ap
     html += `<h2>Per-Spec Breakdown (${coverage.coverage_aggregates.n_specs} spec${optional_s}) </h2>`;
 
     html += "<table>";
-    html += "<tr>"
+    html += "<tr>";
     html += "<th>Name</th><th>Executed</th><th>Passing</th><th>Behaviors Covered</th><th>% Cases Covered</th>";
-    html += "</tr>"
+    html += "</tr>";
     for (const spec_coverage of coverage.spec_coverages) {
-        html += "<tr>"
+        html += "<tr>";
         html += `<td>${spec_coverage.spec_at_version_meta.name}</td>`;
         html += `<td>${spec_coverage.testy_counts.ever_executed}</td>`;
         html += `<td>${spec_coverage.testy_counts.ever_passed}</td>`;
@@ -70,7 +70,7 @@ export async function showSpecCoverage(params: SpecCoverageParams, apiClient: ap
         }
         html += `<td>${spec_behaviors_covered_percentage}%   (${n_spec_behaviors_covered}/${n_spec_behaviors})</td>`;
         html += `<td>${spec_cases_covered_percentage}%   (${n_spec_cases_covered}/${n_spec_cases})</td>`;
-        html += "</tr>"
+        html += "</tr>";
     }
     html += "</table>";
 

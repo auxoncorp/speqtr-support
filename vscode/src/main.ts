@@ -10,7 +10,6 @@ import * as events from "./events";
 import * as lsp from "./lsp";
 import * as modalityLog from "./modalityLog";
 import * as terminalLinkProvider from "./terminalLinkProvider";
-import * as specCoverage from "./specCoverage";
 import * as specFileCommands from "./specFileCommands";
 import * as transitionGraph from "./transitionGraph";
 import * as config from "./config";

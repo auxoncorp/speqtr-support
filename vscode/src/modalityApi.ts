@@ -11,7 +11,10 @@ if (!globalThis.fetch) {
     globalThis.Response = Response;
 }
 
+export type AttrKey = gen.components["schemas"]["AttrKey"];
 export type AttrVal = gen.components["schemas"]["AttrVal"];
+export type AttributeMap = gen.components["schemas"]["AttributeMap"];
+export type BehaviorCaseType = gen.components["schemas"]["BehaviorCaseType"];
 export type GroupedGraph = gen.components["schemas"]["GroupedGraph"];
 export type GroupedGraphEdge = gen.components["schemas"]["GroupedGraphEdge"];
 export type GroupedGraphNode = gen.components["schemas"]["GroupedGraphNode"];
@@ -25,6 +28,8 @@ export type LogicalTime = gen.components["schemas"]["LogicalTime"];
 export type Nanoseconds = gen.components["schemas"]["Nanoseconds"];
 export type SegmentationRuleName = gen.components["schemas"]["SegmentationRuleName"];
 export type SpecContent = gen.components["schemas"]["SpecContent"];
+export type SpecStructure = gen.components["schemas"]["SpecStructure"];
+export type BehaviorStructure = gen.components["schemas"]["BehaviorStructure"];
 export type SpecEvalResultId = gen.components["schemas"]["SpecEvalResultsId"];
 export type SpecEvalOutcomeHighlights = gen.components["schemas"]["SpecEvalOutcomeHighlights"];
 export type SpecName = gen.components["schemas"]["SpecName"];
@@ -111,7 +116,7 @@ export class Client {
 }
 
 export class WorkspacesClient {
-    constructor(private readonly client: InternalClient) { }
+    constructor(private readonly client: InternalClient) {}
 
     async list(): Promise<Workspace[]> {
         const res = await this.client.get("/v2/workspaces", {});
@@ -120,7 +125,7 @@ export class WorkspacesClient {
 }
 
 export class WorkspaceClient {
-    constructor(private readonly client: InternalClient, private readonly workspaceVersionId: WorkspaceVersionId) { }
+    constructor(private readonly client: InternalClient, private readonly workspaceVersionId: WorkspaceVersionId) {}
 
     async segments(): Promise<WorkspaceSegmentMetadata[]> {
         const res = await this.client.get("/v2/workspaces/{workspace_version_id}/segments", {
@@ -166,7 +171,7 @@ export class WorkspaceClient {
 }
 
 export class SegmentClient {
-    constructor(private readonly client: InternalClient, private readonly segmentId: WorkspaceSegmentId) { }
+    constructor(private readonly client: InternalClient, private readonly segmentId: WorkspaceSegmentId) {}
 
     async timelines(): Promise<TimelineOverview[]> {
         const res = await this.client.get(
@@ -227,10 +232,10 @@ export class SegmentClient {
     }
     async specCoverage(spec_filter?: string, case_filter?: string): Promise<SegmentCoverage> {
         const q = [];
-        if (typeof spec_filter !== 'undefined') {
+        if (typeof spec_filter !== "undefined") {
             q.push(["spec_filter", spec_filter]);
         }
-        if (typeof case_filter !== 'undefined') {
+        if (typeof case_filter !== "undefined") {
             q.push(["case_filter", case_filter]);
         }
         const res = await this.client.get(
@@ -254,7 +259,7 @@ export class SegmentClient {
 }
 
 export class TimelinesClient {
-    constructor(private readonly client: InternalClient) { }
+    constructor(private readonly client: InternalClient) {}
 
     async groupedGraph(timeline_id: string[], groupBy: string[]): Promise<GroupedGraph> {
         const timelineIdQuery = timeline_id.map((tid) => ["timeline_id", tid]);
@@ -275,7 +280,7 @@ export class TimelinesClient {
 }
 
 export class TimelineClient {
-    constructor(private readonly client: InternalClient, private readonly timelineId: TimelineId) { }
+    constructor(private readonly client: InternalClient, private readonly timelineId: TimelineId) {}
 
     async get(): Promise<Timeline> {
         const res = await this.client.get("/v2/timelines/{timeline_id}", {
@@ -286,7 +291,7 @@ export class TimelineClient {
 }
 
 export class EventsClient {
-    constructor(private readonly client: InternalClient) { }
+    constructor(private readonly client: InternalClient) {}
 
     async eventsSummaryForTimeline(timelineId: string): Promise<EventsSummary> {
         const res = await this.client.get("/v2/events/{timeline_id}/summary", {
@@ -297,7 +302,7 @@ export class EventsClient {
 }
 
 export class SpecsClient {
-    constructor(private readonly client: InternalClient) { }
+    constructor(private readonly client: InternalClient) {}
 
     async list(): Promise<SpecVersionMetadata[]> {
         const res = await this.client.get("/v2/specs", {});
@@ -306,7 +311,7 @@ export class SpecsClient {
 }
 
 export class SpecClient {
-    constructor(private readonly client: InternalClient, private readonly specName: string) { }
+    constructor(private readonly client: InternalClient, private readonly specName: string) {}
 
     version(specVersion: SpecVersionId): SpecVersionClient {
         return new SpecVersionClient(this.client, this.specName, specVersion);
@@ -314,6 +319,13 @@ export class SpecClient {
 
     async get(): Promise<SpecContent> {
         const res = await this.client.get("/v2/specs/{spec_name}", {
+            params: { path: { spec_name: this.specName } },
+        });
+        return unwrapData(res);
+    }
+
+    async structure(): Promise<SpecStructure> {
+        const res = await this.client.get("/v2/specs/{spec_name}/structure", {
             params: { path: { spec_name: this.specName } },
         });
         return unwrapData(res);
@@ -332,10 +344,22 @@ export class SpecVersionClient {
         private readonly client: InternalClient,
         private readonly specName: string,
         private readonly specVersion: string
-    ) { }
+    ) {}
 
     async get(): Promise<SpecContent> {
         const res = await this.client.get("/v2/specs/{spec_name}/versions/{spec_version}", {
+            params: {
+                path: {
+                    spec_name: this.specName,
+                    spec_version: this.specVersion,
+                },
+            },
+        });
+        return unwrapData(res);
+    }
+
+    async structure(): Promise<SpecStructure> {
+        const res = await this.client.get("/v2/specs/{spec_name}/versions/{spec_version}/structure", {
             params: {
                 path: {
                     spec_name: this.specName,

@@ -9,7 +9,7 @@ import * as modalityLog from "./modalityLog";
 import * as transitionGraph from "./transitionGraph";
 
 class TimelinesTreeMemento {
-    constructor(private readonly memento: vscode.Memento) { }
+    constructor(private readonly memento: vscode.Memento) {}
 
     getGroupByTimelineNameComponents(): boolean {
         return this.memento.get("timelinesTree_groupByTimelineNameComponents", false);
@@ -40,7 +40,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     readonly onDidChangeTreeData: vscode.Event<TimelineTreeItemData | TimelineTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
 
-    constructor(private readonly apiClient: api.Client) { }
+    constructor(private readonly apiClient: api.Client) {}
 
     register(context: vscode.ExtensionContext) {
         this.workspaceState = new TimelinesTreeMemento(context.workspaceState);

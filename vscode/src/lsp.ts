@@ -4,7 +4,7 @@ import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } f
 import * as config from "./config";
 import { log } from "./main";
 
-export async function activateLspClient(context: vscode.ExtensionContext): Promise<LanguageClient> {
+export async function activateLspClient(_context: vscode.ExtensionContext): Promise<LanguageClient> {
     const serverPath = config.toolPath("speqtr_lsp");
     log.appendLine(`Using lsp executable at ${serverPath}`);
 
@@ -33,7 +33,6 @@ export async function activateLspClient(context: vscode.ExtensionContext): Promi
         serverOptions,
         clientOptions
     );
-
 
     // Start the client. This will also launch the server
     lspClient.start();

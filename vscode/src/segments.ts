@@ -26,7 +26,7 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     private _onDidChangeUsedSegments: vscode.EventEmitter<UsedSegmentsChangeEvent> = new vscode.EventEmitter();
     readonly onDidChangeUsedSegments: vscode.Event<UsedSegmentsChangeEvent> = this._onDidChangeUsedSegments.event;
 
-    constructor(private readonly apiClient: api.Client) { }
+    constructor(private readonly apiClient: api.Client) {}
 
     register(context: vscode.ExtensionContext) {
         this.view = vscode.window.createTreeView("auxon.segments", {
@@ -177,13 +177,13 @@ export class UsedSegmentsChangeEvent {
     constructor(
         public usedSegmentConfig: cliConfig.ContextSegment,
         public activeSegmentIds: api.WorkspaceSegmentId[]
-    ) { }
+    ) {}
 }
 
 const ACTIVE_ITEM_MARKER = "✦";
 
 export class SegmentTreeItemData {
-    constructor(public segment: api.WorkspaceSegmentMetadata, public isActive: boolean) { }
+    constructor(public segment: api.WorkspaceSegmentMetadata, public isActive: boolean) {}
 
     getModalityLogCommandArgs(): ModalityLogCommandArgs {
         return new ModalityLogCommandArgs({
