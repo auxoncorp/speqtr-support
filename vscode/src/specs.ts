@@ -33,6 +33,7 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
     readonly onDidChangeTreeData: vscode.Event<SpecsTreeItemData | SpecsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
     workspaceState?: SpecsTreeMemento;
+    activeSegmentId?: api.WorkspaceSegmentId = undefined;
     view: vscode.TreeView<SpecsTreeItemData>;
 
     constructor(private readonly apiClient: api.Client) {}
@@ -101,6 +102,15 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         this._onDidChangeTreeData.fire(undefined);
     }
 
+    setActiveSegmentIds(segmentIds?: api.WorkspaceSegmentId[]) {
+        if (segmentIds && segmentIds.length == 1) {
+            this.activeSegmentId = segmentIds[0];
+        } else {
+            this.activeSegmentId = undefined;
+        }
+        this.refresh();
+    }
+
     showVersions(show: boolean) {
         this.workspaceState.setShowVersions(show);
         this.refresh();
@@ -118,15 +128,15 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
     async getChildren(element?: SpecsTreeItemData): Promise<SpecsTreeItemData[]> {
         if (!element) {
             const specs = await this.apiClient.specs().list();
+            var evalSummaries: api.SpecSegmentEvalOutcomeSummary[] = [];
+            const showResultsOrVersions = this.workspaceState.getShowResults() || this.workspaceState.getShowVersions();
+            if(!showResultsOrVersions && this.activeSegmentId) {
+                evalSummaries = await this.apiClient.segment(this.activeSegmentId).specSummary();
+            }
             return await Promise.all(specs.map(async (spec) => {
-                var config = {
-                    showResultsOrVersions: this.workspaceState.getShowResults() || this.workspaceState.getShowVersions(),
-                    topLevelStatus: undefined,
-                };
-                if (!config.showResultsOrVersions) {
-                    config.topLevelStatus = await getSpecTopLevelStatus(this.apiClient, spec);
-                }
-                return new NamedSpecTreeItemData(spec, config);
+                const summary = evalSummaries.find((s) => s.spec_name == spec.name);
+                const icon = getNamedSpecIcon(summary);
+                return new NamedSpecTreeItemData(spec, icon);
             }));
         } else {
             return await element.children(this.apiClient, this.workspaceState);
@@ -216,20 +226,11 @@ abstract class SpecsTreeItemData {
     }
 }
 
-interface NamedSpecTreeItemDataConfig {
-    showResultsOrVersions: boolean,
-    topLevelStatus?: TopLevelStatus,
-}
-
 export class NamedSpecTreeItemData extends SpecsTreeItemData {
     contextValue = "spec";
-    constructor(public specMetadata: api.SpecVersionMetadata, config: NamedSpecTreeItemDataConfig) {
+    constructor(public specMetadata: api.SpecVersionMetadata, icon: vscode.ThemeIcon) {
         super(specMetadata.name);
-        if (config.showResultsOrVersions) {
-            super.iconPath = new vscode.ThemeIcon("file", new vscode.ThemeColor("symbolIcon.fileForeground"));
-        } else {
-            super.iconPath = config.topLevelStatus.icon;
-        }
+        super.iconPath = icon;
     }
 
     override canHaveChildren(_workspaceData: SpecsTreeMemento): boolean {
@@ -307,21 +308,17 @@ export class SpecVersionsTreeItemData extends SpecsTreeItemData {
     override async children(apiClient: api.Client, workspaceState: SpecsTreeMemento): Promise<SpecsTreeItemData[]> {
         const versions = await apiClient.spec(this.specName).versions();
         return await Promise.all(versions.map(async (versionMd) => {
-            var config = {
-                showResults: workspaceState.getShowResults(),
-                topLevelStatus: undefined,
-            };
-            if (!config.showResults) {
-                config.topLevelStatus = await getSpecVersionTopLevelStatus(apiClient, versionMd.name, versionMd.version);
+            const showResults = workspaceState.getShowResults();
+            var icon = undefined;
+            if (!showResults) {
+                const stats = await getSpecVersionTopLevelStats(apiClient, versionMd.name, versionMd.version);
+                icon = getTopLevelStatsIcon(stats);
+            } else {
+                icon = new vscode.ThemeIcon("file", new vscode.ThemeColor("symbolIcon.fileForeground"));
             }
-            return new SpecVersionTreeItemData(versionMd.name, versionMd.version, config);
+            return new SpecVersionTreeItemData(versionMd.name, versionMd.version, icon);
         }));
     }
-}
-
-interface SpecVersionTreeItemDataConfig {
-    showResults: boolean,
-    topLevelStatus?: TopLevelStatus,
 }
 
 export class SpecVersionTreeItemData extends SpecsTreeItemData {
@@ -329,14 +326,10 @@ export class SpecVersionTreeItemData extends SpecsTreeItemData {
     constructor(
         public specName: api.SpecName,
         public specVersion: api.SpecVersionId,
-        config: SpecVersionTreeItemDataConfig
+        icon: vscode.ThemeIcon
     ) {
         super("Spec Version: " + specVersion);
-        if (config.showResults) {
-            super.iconPath = new vscode.ThemeIcon("file", new vscode.ThemeColor("symbolIcon.constructorForeground"));
-        } else {
-            super.iconPath = config.topLevelStatus.icon;
-        }
+        super.iconPath = icon;
     }
 
     override canHaveChildren(workspaceData: SpecsTreeMemento): boolean {
@@ -505,48 +498,18 @@ class CaseTreeItemData extends BehaviorItemTreeItemData {
     }
 }
 
-interface TopLevelStatus {
-    stats: TopLevelStats,
-    icon: vscode.ThemeIcon,
-}
-
-// TODO color this based on if it has been executed, and if it was successful or not
-// Icons: Verified or verified-filled (It passed) / Unverified (I haven't run it) / hacked up version of verified-filled for unsuccessful
-async function getSpecTopLevelStatus(apiClient: api.Client, specMetadata: api.SpecVersionMetadata): Promise<TopLevelStatus> {
-    const versions = await apiClient.spec(specMetadata.name).versions();
-
-    const statsForVersions = await Promise.all(versions.map(async (versionMetadata) =>
-        await getSpecVersionTopLevelStats(apiClient, specMetadata.name, versionMetadata.version)));
-
-    const stats: TopLevelStats = statsForVersions.reduce((runningStats, s) => addTopLevelStats(runningStats, s),
-    {
-        total_failing: 0,
-        total_passing: 0,
-        total_unknown: 0,
-        total_vacuous: 0,
-    });
-
-    return {
-        stats,
-        icon: getTopLevelStatsIcon(stats),
-    };
-}
-
-// TODO color this based on if it has been executed, and if it was successful or not
-// Icons: Verified or verified-filled (It passed) / Unverified (I haven't run it) / hacked up version of verified-filled for unsuccessful
-async function getSpecVersionTopLevelStatus(apiClient: api.Client, specName: api.SpecName, specVersion: api.SpecVersionId): Promise<TopLevelStatus> {
-    const stats = await getSpecVersionTopLevelStats(apiClient, specName, specVersion);
-    return {
-        stats,
-        icon: getTopLevelStatsIcon(stats),
-    };
-}
-
-interface TopLevelStats {
-    total_failing: number,
-    total_passing: number,
-    total_unknown: number,
-    total_vacuous: number,
+function getNamedSpecIcon(summary?: api.SpecSegmentEvalOutcomeSummary): vscode.ThemeIcon {
+    if (summary) {
+        return getTopLevelStatsIcon({
+            total_failing: summary.regions_failing,
+            total_passing: summary.regions_passing,
+            total_unknown: summary.regions_unknown,
+            total_vacuous: summary.regions_vacuous,
+        });
+    } else {
+        // Either we're showing results and/or versions, or no/multiple segments are selected
+        return new vscode.ThemeIcon("file", new vscode.ThemeColor("symbolIcon.fileForeground"));
+    }
 }
 
 async function getSpecVersionTopLevelStats(apiClient: api.Client, specName: string, specVersion: string): Promise<TopLevelStats> {
@@ -565,15 +528,15 @@ async function getSpecVersionTopLevelStats(apiClient: api.Client, specName: stri
     };
 }
 
-function addTopLevelStats(a: TopLevelStats, b: TopLevelStats): TopLevelStats {
-    return {
-        total_failing: a.total_failing + b.total_failing,
-        total_passing: a.total_passing + b.total_passing,
-        total_unknown: a.total_unknown + b.total_unknown,
-        total_vacuous: a.total_vacuous + b.total_vacuous,
-    };
+interface TopLevelStats {
+    total_failing: number,
+    total_passing: number,
+    total_unknown: number,
+    total_vacuous: number,
 }
 
+// TODO color based on if it has been executed, and if it was successful or not
+// Icons: Verified or verified-filled (It passed) / Unverified (I haven't run it) / hacked up version of verified-filled for unsuccessful
 function getTopLevelStatsIcon(stats: TopLevelStats): vscode.ThemeIcon {
     if (stats.total_failing > 0) {
         return new vscode.ThemeIcon("testing-failed-icon");
