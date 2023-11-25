@@ -33,6 +33,7 @@ export type BehaviorStructure = gen.components["schemas"]["BehaviorStructure"];
 export type SpecEvalResultId = gen.components["schemas"]["SpecEvalResultsId"];
 export type SpecEvalOutcomeHighlights = gen.components["schemas"]["SpecEvalOutcomeHighlights"];
 export type SpecName = gen.components["schemas"]["SpecName"];
+export type SpecSegmentEvalOutcomeSummary = gen.components["schemas"]["SpecSegmentEvalOutcomeSummary"];
 export type SpecVersionMetadata = gen.components["schemas"]["SpecVersionMetadata"];
 export type SpecVersionId = gen.components["schemas"]["SpecVersionId"];
 export type Timeline = gen.components["schemas"]["Timeline"];
@@ -265,6 +266,30 @@ export class SegmentClient {
                     // The actual type is "Something you can pass to the UrlSearchParams constructor".
                     // Here, we use the 'array of tuples' form to get the query parameters
                     // to appear multiple times.
+                    query: q,
+                },
+            }
+        );
+
+        return unwrapData(res);
+    }
+
+    async specSummary(spec_filter?: string): Promise<SpecSegmentEvalOutcomeSummary[]> {
+        const q = [];
+        if (typeof spec_filter !== "undefined") {
+            q.push(["spec_filter", spec_filter]);
+        }
+        const res = await this.client.get(
+            "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_summary",
+            {
+                params: {
+                    path: this.segmentId,
+                    // The spec_filter and case_filter query arguments could be supplied here.
+                    // @ts-ignore
+                    // The library's stated type for 'query' is inaccurate.
+                    // The actual type is "Something you can pass to the UrlSearchParams constructor".
+                    // Here, we use the 'array of tuples' form to get the query parameters
+                    // to appear.
                     query: q,
                 },
             }

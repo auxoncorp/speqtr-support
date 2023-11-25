@@ -1348,6 +1348,133 @@
         ]
       }
     },
+    "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_summary": {
+      "get": {
+        "tags": [
+          "workspaces"
+        ],
+        "summary": "List the named spec evaluation summaries of the segment",
+        "description": "List the named spec evaluation summaries of the segment",
+        "operationId": "segment_spec_summary",
+        "parameters": [
+          {
+            "name": "workspace_version_id",
+            "in": "path",
+            "description": "Workspace Version Id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceVersionId"
+            }
+          },
+          {
+            "name": "rule_name",
+            "in": "path",
+            "description": "Segmentation Rule Name",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SegmentationRuleName"
+            }
+          },
+          {
+            "name": "segment_name",
+            "in": "path",
+            "description": "Segment Name",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceSegmentName"
+            }
+          },
+          {
+            "name": "spec_filter",
+            "in": "query",
+            "description": "Expression for filtering specs from the perspective of spec attributes.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "explode": true
+          },
+          {
+            "name": "behavior_filter",
+            "in": "query",
+            "description": "Expression for filtering specs and their behaviors from the perspective of behavior attributes.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "explode": true
+          },
+          {
+            "name": "case_filter",
+            "in": "query",
+            "description": "Expression for filtering specs and their behaviors from the perspective of case attributes.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieve the segment spec summary successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpecSegmentEvalOutcomeSummary"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid workspace_version_id",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operation not authorized"
+          },
+          "404": {
+            "description": "Workspace or segment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacesError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [
+              "access"
+            ]
+          }
+        ]
+      }
+    },
     "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timeline_attr_keys": {
       "get": {
         "tags": [
@@ -2327,6 +2454,41 @@
       },
       "SpecName": {
         "type": "string"
+      },
+      "SpecSegmentEvalOutcomeSummary": {
+        "type": "object",
+        "required": [
+          "spec_name",
+          "regions_passing",
+          "regions_failing",
+          "regions_unknown",
+          "regions_vacuous"
+        ],
+        "properties": {
+          "regions_failing": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "regions_passing": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "regions_unknown": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "regions_vacuous": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "spec_name": {
+            "type": "string"
+          }
+        }
       },
       "SpecStructure": {
         "type": "object",

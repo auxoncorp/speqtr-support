@@ -141,6 +141,13 @@ export interface paths {
      */
     get: operations["segment_spec_coverage"];
   };
+  "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_summary": {
+    /**
+     * List the named spec evaluation summaries of the segment 
+     * @description List the named spec evaluation summaries of the segment
+     */
+    get: operations["segment_spec_summary"];
+  };
   "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timeline_attr_keys": {
     /**
      * List all timeline attr keys in a specific segment 
@@ -342,6 +349,17 @@ export interface components {
     /** Format: uuid */
     SpecEvalResultsId: string;
     SpecName: string;
+    SpecSegmentEvalOutcomeSummary: {
+      /** Format: int32 */
+      regions_failing: number;
+      /** Format: int32 */
+      regions_passing: number;
+      /** Format: int32 */
+      regions_unknown: number;
+      /** Format: int32 */
+      regions_vacuous: number;
+      spec_name: string;
+    };
     SpecStructure: {
       attributes?: components["schemas"]["AttributeMap"];
       behaviors?: ((components["schemas"]["BehaviorName"] & components["schemas"]["BehaviorStructure"])[])[];
@@ -1059,6 +1077,58 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["SegmentCoverage"];
+        };
+      };
+      /** @description Invalid workspace_version_id */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Workspace or segment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+    };
+  };
+  /**
+   * List the named spec evaluation summaries of the segment 
+   * @description List the named spec evaluation summaries of the segment
+   */
+  segment_spec_summary: {
+    parameters: {
+      query: {
+        /** @description Expression for filtering specs from the perspective of spec attributes. */
+        spec_filter?: string | null;
+        /** @description Expression for filtering specs and their behaviors from the perspective of behavior attributes. */
+        behavior_filter?: string | null;
+        /** @description Expression for filtering specs and their behaviors from the perspective of case attributes. */
+        case_filter?: string | null;
+      };
+      path: {
+        /** @description Workspace Version Id */
+        workspace_version_id: components["schemas"]["WorkspaceVersionId"];
+        /** @description Segmentation Rule Name */
+        rule_name: components["schemas"]["SegmentationRuleName"];
+        /** @description Segment Name */
+        segment_name: components["schemas"]["WorkspaceSegmentName"];
+      };
+    };
+    responses: {
+      /** @description Retrieve the segment spec summary successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["SpecSegmentEvalOutcomeSummary"])[];
         };
       };
       /** @description Invalid workspace_version_id */

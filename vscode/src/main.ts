@@ -54,6 +54,8 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     segmentsTreeDataProvider.onDidChangeUsedSegments((ev) => {
+        specsTreeDataProvider.setActiveSegmentIds(ev.activeSegmentIds);
+
         timelinesTreeDataProvider.usedSegmentConfig = ev.usedSegmentConfig;
         timelinesTreeDataProvider.activeSegments = ev.activeSegmentIds;
         timelinesTreeDataProvider.refresh();
