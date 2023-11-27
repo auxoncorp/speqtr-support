@@ -4,6 +4,8 @@ import * as specFileCommands from "./specFileCommands";
 import * as util from "util";
 import * as child_process from "child_process";
 import * as config from "./config";
+import * as specCoverage from "./specCoverage";
+import * as cliConfig from "./cliConfig";
 
 const execFile = util.promisify(child_process.execFile);
 
@@ -35,7 +37,7 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
     workspaceState?: SpecsTreeMemento;
     view: vscode.TreeView<SpecsTreeItemData>;
 
-    constructor(private readonly apiClient: api.Client) {}
+    constructor(private readonly apiClient: api.Client, private readonly cov: specCoverage.SpecCoverageProvider) {}
 
     register(context: vscode.ExtensionContext) {
         this.workspaceState = new SpecsTreeMemento(context.workspaceState);
@@ -43,6 +45,8 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
             treeDataProvider: this,
             canSelectMany: true,
         });
+
+        const coverage = this.coverage.bind(this);
 
         context.subscriptions.push(
             this.view,
@@ -72,6 +76,13 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
                 ) as NamedSpecTreeItemData[];
                 this.deleteSpecs(specs);
             }),
+            vscode.commands.registerCommand("auxon.specs.coverage", coverage),
+            vscode.commands.registerCommand("auxon.specs.coverage.spec", coverage),
+            vscode.commands.registerCommand("auxon.specs.coverage.manySpecs", coverage),
+            vscode.commands.registerCommand("auxon.specs.coverage.version", coverage),
+            vscode.commands.registerCommand("auxon.specs.coverage.manyVersions", coverage),
+            vscode.commands.registerCommand("auxon.specs.coverage.result", coverage),
+            vscode.commands.registerCommand("auxon.specs.coverage.manyResults", coverage),
 
             // Refresh this list any time a spec eval is completed, since it may have saved some results
             vscode.tasks.onDidEndTask((e) => {
@@ -118,7 +129,10 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
     async getChildren(element?: SpecsTreeItemData): Promise<SpecsTreeItemData[]> {
         if (!element) {
             const specs = await this.apiClient.specs().list();
-            return specs.map((spec) => new NamedSpecTreeItemData(spec, this.workspaceState));
+            const { compare } = Intl.Collator("en-US");
+            return specs
+                .sort((a, b) => compare(a.name > b.name))
+                .map((spec) => new NamedSpecTreeItemData(spec, this.workspaceState));
         } else {
             return await element.children(this.apiClient, this.workspaceState);
         }
@@ -166,6 +180,67 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
             }
             this.refresh();
         }
+    }
+
+    async coverage(item: SpecsTreeItemData) {
+        const activeSegments = await cliConfig.activeSegments();
+        if (activeSegments.length > 1) {
+            throw new Error("Can't currently show coverage for multiple segments at once");
+        } else if (activeSegments.length == 0) {
+            throw new Error("No segments are active");
+        }
+
+        const params: specCoverage.SpecCoverageParams = {
+            segmentId: activeSegments[0].id,
+        };
+
+        // consider the clicked item to be part of the selection for
+        // the purposes of choosing coverage inputs
+        const selection = [...this.view.selection];
+        if (!selection.find((i) => i == item)) {
+            selection.push(item);
+        }
+
+        if (item instanceof NamedSpecTreeItemData) {
+            params.specNames = selection.flatMap((item) => {
+                if (item instanceof NamedSpecTreeItemData) {
+                    return [item.specMetadata.name];
+                } else {
+                    return [];
+                }
+            });
+        } else if (item instanceof SpecVersionTreeItemData) {
+            params.specVersions = selection.flatMap((item) => {
+                if (item instanceof SpecVersionTreeItemData) {
+                    return [item.specVersion];
+                } else {
+                    return [];
+                }
+            });
+        } else if (item instanceof SpecResultTreeItemData || item instanceof SpecResultsTreeItemData) {
+            params.specResultIds = [];
+            for (item of selection) {
+                if (item instanceof SpecResultTreeItemData) {
+                    params.specResultIds.push(item.evalOutcome.spec_eval_results_id);
+                } else if (item instanceof SpecResultsTreeItemData) {
+                    const children = await item.children(this.apiClient, this.workspaceState);
+                    for (const child of children) {
+                        const childResult = child as SpecResultTreeItemData;
+                        params.specResultIds.push(childResult.evalOutcome.spec_eval_results_id);
+                    }
+                }
+            }
+        }
+
+        const reqOk =
+            (params.specNames && params.specNames.length > 0) ||
+            (params.specVersions && params.specVersions.length > 0) ||
+            (params.specResultIds && params.specResultIds.length > 0);
+        if (!reqOk) {
+            throw new Error("Internal error: composed empty coverage request");
+        }
+
+        await this.cov.showSpecCoverage(params);
     }
 
     conformEval(args: specFileCommands.SpecEvalCommandArgs) {

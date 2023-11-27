@@ -5,6 +5,7 @@ import * as api from "./modalityApi";
 import * as workspaces from "./workspaces";
 import * as segments from "./segments";
 import * as specs from "./specs";
+import * as specCoverage from "./specCoverage";
 import * as timelines from "./timelines";
 import * as events from "./events";
 import * as lsp from "./lsp";
@@ -31,11 +32,14 @@ export async function activate(context: vscode.ExtensionContext) {
     transitionGraph.register(context, apiClient);
     specFileCommands.register(context);
 
+    const specCoverageProvider = new specCoverage.SpecCoverageProvider(apiClient);
+    await specCoverageProvider.initialize(context);
+
     const workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClient);
-    const segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient);
+    const segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient, specCoverageProvider);
     const timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClient);
     const eventsTreeDataProvider = new events.EventsTreeDataProvider(apiClient);
-    const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient);
+    const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);

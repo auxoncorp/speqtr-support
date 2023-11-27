@@ -136,7 +136,7 @@ export interface paths {
      * Get the spec-coverage of the segment. 
      * @description Get the spec-coverage of the segment.
      * 
-     * If no filters are  'group_by' query parameter,
+     * If no filters are 'group_by' query parameter,
      * the graph is grouped by (timeline.name, event.name).
      */
     get: operations["segment_spec_coverage"];
@@ -421,7 +421,7 @@ export interface components {
     WorkspacesError: OneOf<[{
       /** @description Workspace not found */
       WorkspaceNotFound: string;
-    }, "SegmentNotFound", "NoGroupsSpecified", {
+    }, "SegmentNotFound", "NoGroupsSpecified", "InvalidSpecVersionId", "InvalidSpecResultId", {
       /** @description Internal Server Error */
       Internal: string;
     }]>;
@@ -1026,12 +1026,18 @@ export interface operations {
    * Get the spec-coverage of the segment. 
    * @description Get the spec-coverage of the segment.
    * 
-   * If no filters are  'group_by' query parameter,
+   * If no filters are 'group_by' query parameter,
    * the graph is grouped by (timeline.name, event.name).
    */
   segment_spec_coverage: {
     parameters: {
       query: {
+        /** @description Include the latest results of the latest version of this spec in the analysis */
+        spec_name?: (string)[] | null;
+        /** @description Include the latest results of this spec version in the analysis */
+        spec_version?: (string)[] | null;
+        /** @description Include this spec result in the analysis */
+        spec_result?: (string)[] | null;
         /** @description Expression for filtering specs from the perspective of spec attributes. */
         spec_filter?: string | null;
         /** @description Expression for filtering specs and their behaviors from the perspective of behavior attributes. */

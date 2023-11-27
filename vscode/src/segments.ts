@@ -26,7 +26,7 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     private _onDidChangeUsedSegments: vscode.EventEmitter<UsedSegmentsChangeEvent> = new vscode.EventEmitter();
     readonly onDidChangeUsedSegments: vscode.Event<UsedSegmentsChangeEvent> = this._onDidChangeUsedSegments.event;
 
-    constructor(private readonly apiClient: api.Client) {}
+    constructor(private readonly apiClient: api.Client, private readonly cov: specCoverage.SpecCoverageProvider) {}
 
     register(context: vscode.ExtensionContext) {
         this.view = vscode.window.createTreeView("auxon.segments", {
@@ -163,7 +163,7 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     }
 
     async showSpecCoverageForSegment(item: SegmentTreeItemData) {
-        await specCoverage.showSpecCoverage({ segmentId: item.segment.id }, this.apiClient);
+        await this.cov.showSpecCoverage({ segmentId: item.segment.id });
     }
 
     transitionGraph(item: SegmentTreeItemData) {

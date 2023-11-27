@@ -230,12 +230,28 @@ export class SegmentClient {
 
         return unwrapData(res);
     }
-    async specCoverage(spec_filter?: string, case_filter?: string): Promise<SegmentCoverage> {
+
+    async specCoverage(
+        specNames?: string[],
+        specVersions?: string[],
+        specResultIds?: string[],
+        spec_filter?: string,
+        case_filter?: string
+    ): Promise<SegmentCoverage> {
         const q = [];
-        if (typeof spec_filter !== "undefined") {
+        if (specNames) {
+            q.push(...specNames.map((n) => ["spec_name", n]));
+        }
+        if (specVersions) {
+            q.push(...specVersions.map((n) => ["spec_version", n]));
+        }
+        if (specResultIds) {
+            q.push(...specResultIds.map((n) => ["spec_result", n]));
+        }
+        if (spec_filter) {
             q.push(["spec_filter", spec_filter]);
         }
-        if (typeof case_filter !== "undefined") {
+        if (case_filter) {
             q.push(["case_filter", case_filter]);
         }
         const res = await this.client.get(
@@ -248,7 +264,7 @@ export class SegmentClient {
                     // The library's stated type for 'query' is inaccurate.
                     // The actual type is "Something you can pass to the UrlSearchParams constructor".
                     // Here, we use the 'array of tuples' form to get the query parameters
-                    // to appear.
+                    // to appear multiple times.
                     query: q,
                 },
             }
