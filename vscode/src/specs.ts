@@ -618,15 +618,14 @@ interface TopLevelStats {
 // Icons: Verified or verified-filled (It passed) / Unverified (I haven't run it) / hacked up version of verified-filled for unsuccessful
 function getTopLevelStatsIcon(stats: TopLevelStats): vscode.ThemeIcon {
     if (stats.total_failing > 0) {
-        return new vscode.ThemeIcon("testing-failed-icon");
+        return new vscode.ThemeIcon("testing-failed-icon", new vscode.ThemeColor("testing.iconFailed"));
     } else if (stats.total_unknown > 0) {
-        return new vscode.ThemeIcon("unverified", new vscode.ThemeColor("symbolIcon.fieldForeground"));
+        return new vscode.ThemeIcon("unverified", new vscode.ThemeColor("testing.iconQueued"));
     } else if (stats.total_vacuous > 0) {
-        // TODO - pick an icon for vacuous
-        return new vscode.ThemeIcon("trash", new vscode.ThemeColor("symbolIcon.fieldForeground"));
+        return new vscode.ThemeIcon("question", new vscode.ThemeColor("testing.iconQueued"));
     } else if (stats.total_passing > 0) {
-        return new vscode.ThemeIcon("verified-filled", new vscode.ThemeColor("symbolIcon.fieldForeground"));
+        return new vscode.ThemeIcon("verified-filled", new vscode.ThemeColor("testing.iconPassed"));
     } else {
-        return new vscode.ThemeIcon("unverified", new vscode.ThemeColor("symbolIcon.fieldForeground"));
+        return new vscode.ThemeIcon("unverified", new vscode.ThemeColor("testing.iconQueued"));
     }
 }
