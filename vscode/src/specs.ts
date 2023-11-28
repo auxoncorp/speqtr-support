@@ -141,14 +141,16 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
             const specs = await this.apiClient.specs().list();
             let evalSummaries: api.SpecSegmentEvalOutcomeSummary[] = [];
             const showResultsOrVersions = this.workspaceState.getShowResults() || this.workspaceState.getShowVersions();
-            if(!showResultsOrVersions && this.activeSegmentId) {
+            if (!showResultsOrVersions && this.activeSegmentId) {
                 evalSummaries = await this.apiClient.segment(this.activeSegmentId).specSummary();
             }
-            const items = await Promise.all(specs.map(async (spec) => {
-                const summary = evalSummaries.find((s) => s.spec_name == spec.name);
-                const icon = getNamedSpecIcon(summary);
-                return new NamedSpecTreeItemData(spec, icon);
-            }));
+            const items = await Promise.all(
+                specs.map(async (spec) => {
+                    const summary = evalSummaries.find((s) => s.spec_name == spec.name);
+                    const icon = getNamedSpecIcon(summary);
+                    return new NamedSpecTreeItemData(spec, icon);
+                })
+            );
 
             const { compare } = Intl.Collator("en-US");
             return items.sort((a, b) => compare(a.name, b.name));
@@ -359,7 +361,7 @@ export class MetadataTreeItemData extends SpecsTreeItemData {
 
 export class AttrKVTreeItemData extends SpecsTreeItemData {
     contextValue = "specMetadata";
-    constructor(public key: api.AttrKey, public val: api.AttrVal) {
+    constructor(public key: string, public val: api.AttrVal) {
         super(`${key}: ${val}`);
         if (key == "spec.author") {
             super.iconPath = new vscode.ThemeIcon("person");
@@ -382,27 +384,25 @@ export class SpecVersionsTreeItemData extends SpecsTreeItemData {
 
     override async children(apiClient: api.Client, workspaceState: SpecsTreeMemento): Promise<SpecsTreeItemData[]> {
         const versions = await apiClient.spec(this.specName).versions();
-        return await Promise.all(versions.map(async (versionMd) => {
-            const showResults = workspaceState.getShowResults();
-            var icon = undefined;
-            if (!showResults) {
-                const stats = await getSpecVersionTopLevelStats(apiClient, versionMd.name, versionMd.version);
-                icon = getTopLevelStatsIcon(stats);
-            } else {
-                icon = new vscode.ThemeIcon("file", new vscode.ThemeColor("symbolIcon.fileForeground"));
-            }
-            return new SpecVersionTreeItemData(versionMd.name, versionMd.version, icon);
-        }));
+        return await Promise.all(
+            versions.map(async (versionMd) => {
+                const showResults = workspaceState.getShowResults();
+                let icon = undefined;
+                if (!showResults) {
+                    const stats = await getSpecVersionTopLevelStats(apiClient, versionMd.name, versionMd.version);
+                    icon = getTopLevelStatsIcon(stats);
+                } else {
+                    icon = new vscode.ThemeIcon("file", new vscode.ThemeColor("symbolIcon.fileForeground"));
+                }
+                return new SpecVersionTreeItemData(versionMd.name, versionMd.version, icon);
+            })
+        );
     }
 }
 
 export class SpecVersionTreeItemData extends SpecsTreeItemData {
     contextValue = "specVersion";
-    constructor(
-        public specName: api.SpecName,
-        public specVersion: api.SpecVersionId,
-        icon: vscode.ThemeIcon
-    ) {
+    constructor(public specName: api.SpecName, public specVersion: api.SpecVersionId, icon: vscode.ThemeIcon) {
         super("Spec Version: " + specVersion);
         super.iconPath = icon;
     }
@@ -587,7 +587,11 @@ function getNamedSpecIcon(summary?: api.SpecSegmentEvalOutcomeSummary): vscode.T
     }
 }
 
-async function getSpecVersionTopLevelStats(apiClient: api.Client, specName: string, specVersion: string): Promise<TopLevelStats> {
+async function getSpecVersionTopLevelStats(
+    apiClient: api.Client,
+    specName: string,
+    specVersion: string
+): Promise<TopLevelStats> {
     const results = await apiClient.spec(specName).version(specVersion).results();
     const total_failing = results.reduce((sum, result) => sum + result.regions_failing, 0);
     const total_passing = results.reduce((sum, result) => sum + result.regions_passing, 0);
@@ -604,10 +608,10 @@ async function getSpecVersionTopLevelStats(apiClient: api.Client, specName: stri
 }
 
 interface TopLevelStats {
-    total_failing: number,
-    total_passing: number,
-    total_unknown: number,
-    total_vacuous: number,
+    total_failing: number;
+    total_passing: number;
+    total_unknown: number;
+    total_vacuous: number;
 }
 
 // TODO color based on if it has been executed, and if it was successful or not

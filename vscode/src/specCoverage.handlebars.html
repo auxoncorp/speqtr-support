@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Coverage Report</title>
     <style>
         table {
@@ -30,7 +29,7 @@
             text-indent: -1em;
         }
 
-        li:before{
+        li:before {
             display: inline-block;
         }
 
@@ -41,13 +40,13 @@
             color: green;
         }
 
-        li.failed:before{
+        li.failed:before {
             content: "✘";
             color: var(--vscode-testing-iconFailed);
             color: red;
         }
 
-        li.not-executed:before{
+        li.not-executed:before {
             content: "?";
             font-weight: bold;
             color: var(--vscode-testing-iconQueued);
@@ -91,7 +90,6 @@
             text-align: right;
         }
 
-
         th {
             padding: calc(({{designUnit}} / 4) * 1px) 0;
             box-sizing: border-box;
@@ -134,62 +132,77 @@
         td:active ::slotted(*) {
             color: var(--vscode-list-activeSelectionForeground) !important;
         }
-  </style>
+    </style>
 
-  <h1>Coverage Report for Segment '{{params.segmentId.segment_name}}'</h1>
+    <h1>Coverage Report for Segment '{{params.segmentId.segment_name}}'</h1>
 
-  <table>
-    <tr>
-      <th>Specs<br>Evaluated</th>
-      <th>Specs<br>Passing</th>
-      <th>Behaviors<br>Covered</th>
-      <th>Cases<br>Covered</th>
-    </tr>
-    {{#with header}}
-    <tr>
-      <td>{{shortPercent percentageSpecsExecuted}}</td>
-      <td>{{shortPercent percentageSpecsPassing}}</td>
-      <td>{{shortPercent percentageBehaviorsCovered}}</td>
-      <td>{{shortPercent percentageCasesEverMatched}}</td>
-    </tr>
-    {{/with}}
-  </table>
+    <table>
+        <tr>
+            <th>Specs<br />Evaluated</th>
+            <th>Specs<br />Passing</th>
+            <th>Behaviors<br />Covered</th>
+            <th>Cases<br />Covered</th>
+        </tr>
+        {{#with header}}
+        <tr>
+            <td>{{shortPercent percentageSpecsExecuted}}</td>
+            <td>{{shortPercent percentageSpecsPassing}}</td>
+            <td>{{shortPercent percentageBehaviorsCovered}}</td>
+            <td>{{shortPercent percentageCasesEverMatched}}</td>
+        </tr>
+        {{/with}}
+    </table>
 
-  <h2>Per-Spec Breakdown ({{specs.length}} {{pluralize specs.length 'spec' 'specs'}})</h2>
+    <h2>Per-Spec Breakdown ({{specs.length}} {{pluralize specs.length 'spec' 'specs'}})</h2>
 
-  <table>
-    <!-- <tr> -->
-    <!--   <th class="name">Name</th> -->
-    <!--   <th>Executed</th> -->
-    <!--   <th>Passing</th> -->
-    <!--   <th>Behaviors<br>Covered</th> -->
-    <!--   <th>Cases<br>Covered</th> -->
-    <!-- </tr> -->
+    <table>
+        <!-- <tr> -->
+        <!--   <th class="name">Name</th> -->
+        <!--   <th>Executed</th> -->
+        <!--   <th>Passing</th> -->
+        <!--   <th>Behaviors<br>Covered</th> -->
+        <!--   <th>Cases<br>Covered</th> -->
+        <!-- </tr> -->
 
-    {{#each specs}}
+        {{#each specs}}
         <tr class="spec">
-            <td><ul><li class="{{this.status}}">Spec: {{this.name}}</li></ul></td>
-            <td>{{this.numSpecBehaviorsCovered}}/{{this.numSpecBehaviors}} {{pluralize this.numSpecBehaviors 'behavior' 'behaviors'}} covered</td>
-            <td>{{this.numSpecCasesCovered}}/{{this.numSpecCases}}  {{pluralize this.numSpecCases 'case' 'cases'}} covered</td>
+            <td>
+                <ul>
+                    <li class="{{this.status}}">Spec: {{this.name}}</li>
+                </ul>
+            </td>
+            <td>
+                {{this.numSpecBehaviorsCovered}}/{{this.numSpecBehaviors}} {{pluralize this.numSpecBehaviors 'behavior'
+                'behaviors'}} covered
+            </td>
+            <td>
+                {{this.numSpecCasesCovered}}/{{this.numSpecCases}} {{pluralize this.numSpecCases 'case' 'cases'}}
+                covered
+            </td>
         </tr>
 
         {{#each this.behaviors}}
-            <tr class="behavior">
-                <td><ul><li class="{{this.status}}">Behavior: {{this.name}}</li></ul></td>
-                <td>{{this.triggerCount}} {{pluralize this.triggerCount 'match' 'matches'}}</td>
-                <td></td>
-            </tr>
+        <tr class="behavior">
+            <td>
+                <ul>
+                    <li class="{{this.status}}">Behavior: {{this.name}}</li>
+                </ul>
+            </td>
+            <td>{{this.triggerCount}} {{pluralize this.triggerCount 'match' 'matches'}}</td>
+            <td></td>
+        </tr>
 
-
-            {{#each this.cases}}
-                <tr class="case">
-                    <!-- <td><span class="test-symbol {{this.status}}">{{this.passfailSymbol}}</span>Behavior: {{this.name}}</td> -->
-                    <td><ul><li class="{{this.status}}">Case: {{this.name}}</li></ul></td>
-                    <td>{{this.matchCount}} {{pluralize this.matchCount 'match' 'matches'}}</td>
-                    <td></td>
-                </tr>
-            {{/each}}
-        {{/each}}
-    {{/each}}
-  </table>
-</html>
+        {{#each this.cases}}
+        <tr class="case">
+            <!-- <td><span class="test-symbol {{this.status}}">{{this.passfailSymbol}}</span>Behavior: {{this.name}}</td> -->
+            <td>
+                <ul>
+                    <li class="{{this.status}}">Case: {{this.name}}</li>
+                </ul>
+            </td>
+            <td>{{this.matchCount}} {{pluralize this.matchCount 'match' 'matches'}}</td>
+            <td></td>
+        </tr>
+        {{/each}} {{/each}} {{/each}}
+    </table>
+</head>

@@ -11,7 +11,6 @@ if (!globalThis.fetch) {
     globalThis.Response = Response;
 }
 
-export type AttrKey = gen.components["schemas"]["AttrKey"];
 export type AttrVal = gen.components["schemas"]["AttrVal"];
 export type AttributeMap = gen.components["schemas"]["AttributeMap"];
 export type BehaviorCaseType = gen.components["schemas"]["BehaviorCaseType"];
@@ -22,7 +21,6 @@ export type SegmentCoverage = gen.components["schemas"]["SegmentCoverage"];
 export type SpecCoverage = gen.components["schemas"]["SpecCoverage"];
 export type BehaviorCoverage = gen.components["schemas"]["BehaviorCoverage"];
 export type CaseCoverage = gen.components["schemas"]["CaseCoverage"];
-export type TestyCounts = gen.components["schemas"]["TestyCounts"];
 export type CoverageAggregates = gen.components["schemas"]["CoverageAggregates"];
 export type LogicalTime = gen.components["schemas"]["LogicalTime"];
 export type Nanoseconds = gen.components["schemas"]["Nanoseconds"];

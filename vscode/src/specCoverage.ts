@@ -76,9 +76,9 @@ export class SpecCoverageProvider {
 }
 
 interface TemplateContext {
-    designUnit: number,
-    borderWidth: number,
-    cornerRadius: number,
+    designUnit: number;
+    borderWidth: number;
+    cornerRadius: number;
     header: HeaderViewModel;
     specs: SpecViewModel[];
     params: SpecCoverageParams;
@@ -102,10 +102,10 @@ interface SpecViewModel {
 
     percentageBehaviorsCovered: number;
     percentageCasesCovered: number;
-    numSpecBehaviors: number,
-    numSpecBehaviorsCovered: number,
-    numSpecCases: number,
-    numSpecCasesCovered: number,
+    numSpecBehaviors: number;
+    numSpecBehaviorsCovered: number;
+    numSpecCases: number;
+    numSpecCasesCovered: number;
 
     behaviors: BehaviorViewModel[];
 }
@@ -127,7 +127,6 @@ interface CaseViewModel {
 }
 
 function specViewModel(sc: api.SpecCoverage): SpecViewModel {
-
     let numSpecBehaviors = 0;
     let numSpecBehaviorsCovered = 0;
     let numSpecCases = 0;
@@ -187,7 +186,9 @@ function specViewModel(sc: api.SpecCoverage): SpecViewModel {
 }
 
 function behaviorViewModel(bhCov: api.BehaviorCoverage): BehaviorViewModel {
-    const triggerCount = Object.values(bhCov.case_coverage).map((cc) => cc.matched_n_times).reduce((a, b) => a + b);
+    const triggerCount = Object.values(bhCov.case_coverage)
+        .map((cc) => cc.matched_n_times)
+        .reduce((a, b) => a + b);
 
     let status: Status = "not-executed";
     // TODO use api value once it exists
@@ -214,6 +215,6 @@ function caseViewModel(cCov: api.CaseCoverage): CaseViewModel {
         name: cCov.name,
         status: cCov.ever_matched ? "passed" : "not-executed",
         everMatched: cCov.ever_matched,
-        matchCount: cCov.matched_n_times
+        matchCount: cCov.matched_n_times,
     };
 }
