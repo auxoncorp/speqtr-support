@@ -614,8 +614,6 @@ interface TopLevelStats {
     total_vacuous: number;
 }
 
-// TODO color based on if it has been executed, and if it was successful or not
-// Icons: Verified or verified-filled (It passed) / Unverified (I haven't run it) / hacked up version of verified-filled for unsuccessful
 function getTopLevelStatsIcon(stats: TopLevelStats): vscode.ThemeIcon {
     if (stats.total_failing > 0) {
         return new vscode.ThemeIcon("testing-failed-icon", new vscode.ThemeColor("testing.iconFailed"));
