@@ -60,7 +60,7 @@ export class SpecCoverageProvider {
                 percentageBehaviorsCovered,
                 percentageCasesEverMatched: coverage.coverage_aggregates.percentage_cases_ever_matched,
             },
-            specs: coverage.spec_coverages.map(specViewModel),
+            specs: coverage.spec_coverages.map(specViewModel).sort((a, b) => a.name.localeCompare(b.name)),
             params,
             percentageBehaviorsCovered,
         });
