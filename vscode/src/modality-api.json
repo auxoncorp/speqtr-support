@@ -162,6 +162,54 @@
                 ]
             }
         },
+        "/v2/specs/{spec_name}/structure": {
+            "get": {
+                "tags": ["specs"],
+                "summary": "Get the structure of behaviors and cases for the stored spec",
+                "description": "Get the structure of behaviors and cases for the stored spec",
+                "operationId": "get_spec_structure",
+                "responses": {
+                    "200": {
+                        "description": "Get spec structure successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpecStructure"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Spec not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpecsError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpecsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
         "/v2/specs/{spec_name}/versions": {
             "get": {
                 "tags": ["specs"],
@@ -323,6 +371,82 @@
                                     "items": {
                                         "$ref": "#/components/schemas/SpecEvalOutcomeHighlights"
                                     }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid spec version",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Spec or spec version not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpecsError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpecsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
+        "/v2/specs/{spec_name}/versions/{spec_version}/structure": {
+            "get": {
+                "tags": ["specs"],
+                "summary": "List stored evaluation results for the given spec version",
+                "description": "List stored evaluation results for the given spec version",
+                "operationId": "get_spec_version_structure",
+                "parameters": [
+                    {
+                        "name": "spec_name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/SpecName"
+                        }
+                    },
+                    {
+                        "name": "spec_version",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/SpecVersionId"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Get spec version structure",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpecStructure"
                                 }
                             }
                         }
@@ -994,6 +1118,291 @@
                 ]
             }
         },
+        "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_coverage": {
+            "get": {
+                "tags": ["workspaces"],
+                "summary": "Get the spec-coverage of the segment.",
+                "description": "Get the spec-coverage of the segment.\n\nIf no filters are 'group_by' query parameter,\nthe graph is grouped by (timeline.name, event.name).",
+                "operationId": "segment_spec_coverage",
+                "parameters": [
+                    {
+                        "name": "workspace_version_id",
+                        "in": "path",
+                        "description": "Workspace Version Id",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceVersionId"
+                        }
+                    },
+                    {
+                        "name": "rule_name",
+                        "in": "path",
+                        "description": "Segmentation Rule Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/SegmentationRuleName"
+                        }
+                    },
+                    {
+                        "name": "segment_name",
+                        "in": "path",
+                        "description": "Segment Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceSegmentName"
+                        }
+                    },
+                    {
+                        "name": "spec_name",
+                        "in": "query",
+                        "description": "Include the latest results of the latest version of this spec in the analysis",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "spec_version",
+                        "in": "query",
+                        "description": "Include the latest results of this spec version in the analysis",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "spec_result",
+                        "in": "query",
+                        "description": "Include this spec result in the analysis",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "spec_filter",
+                        "in": "query",
+                        "description": "Expression for filtering specs from the perspective of spec attributes.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "behavior_filter",
+                        "in": "query",
+                        "description": "Expression for filtering specs and their behaviors from the perspective of behavior attributes.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "case_filter",
+                        "in": "query",
+                        "description": "Expression for filtering specs and their behaviors from the perspective of case attributes.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieve the segment spec coverage successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SegmentCoverage"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid workspace_version_id",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Workspace or segment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspacesError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspacesError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
+        "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_summary": {
+            "get": {
+                "tags": ["workspaces"],
+                "summary": "List the named spec evaluation summaries of the segment",
+                "description": "List the named spec evaluation summaries of the segment",
+                "operationId": "segment_spec_summary",
+                "parameters": [
+                    {
+                        "name": "workspace_version_id",
+                        "in": "path",
+                        "description": "Workspace Version Id",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceVersionId"
+                        }
+                    },
+                    {
+                        "name": "rule_name",
+                        "in": "path",
+                        "description": "Segmentation Rule Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/SegmentationRuleName"
+                        }
+                    },
+                    {
+                        "name": "segment_name",
+                        "in": "path",
+                        "description": "Segment Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceSegmentName"
+                        }
+                    },
+                    {
+                        "name": "spec_filter",
+                        "in": "query",
+                        "description": "Expression for filtering specs from the perspective of spec attributes.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "behavior_filter",
+                        "in": "query",
+                        "description": "Expression for filtering specs and their behaviors from the perspective of behavior attributes.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "case_filter",
+                        "in": "query",
+                        "description": "Expression for filtering specs and their behaviors from the perspective of case attributes.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieve the segment spec summary successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/SpecSegmentEvalOutcomeSummary"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid workspace_version_id",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Workspace or segment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspacesError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspacesError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
         "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timeline_attr_keys": {
             "get": {
                 "tags": ["workspaces"],
@@ -1398,6 +1807,220 @@
                     }
                 ]
             },
+            "AttributeMap": {
+                "type": "object",
+                "additionalProperties": {
+                    "$ref": "#/components/schemas/AttrVal"
+                }
+            },
+            "BehaviorCaseType": {
+                "type": "string",
+                "enum": ["Nominal", "Recovery", "Prohibited"]
+            },
+            "BehaviorCoverage": {
+                "type": "object",
+                "required": ["name", "case_coverage", "test_counts", "vacuous_n_times", "ever_vacuous"],
+                "properties": {
+                    "case_coverage": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/CaseCoverage"
+                        }
+                    },
+                    "ever_vacuous": {
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "test_counts": {
+                        "$ref": "#/components/schemas/TestCounts"
+                    },
+                    "vacuous_n_times": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                }
+            },
+            "BehaviorName": {
+                "type": "string"
+            },
+            "BehaviorStructure": {
+                "type": "object",
+                "properties": {
+                    "attributes": {
+                        "$ref": "#/components/schemas/AttributeMap"
+                    },
+                    "cases": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/CaseName"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/BehaviorCaseType"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AttributeMap"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "until": {
+                        "type": "array",
+                        "items": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/CaseName"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/AttributeMap"
+                                }
+                            ]
+                        },
+                        "nullable": true
+                    },
+                    "when": {
+                        "type": "array",
+                        "items": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/CaseName"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/AttributeMap"
+                                }
+                            ]
+                        },
+                        "nullable": true
+                    }
+                }
+            },
+            "CaseCoverage": {
+                "type": "object",
+                "required": ["name", "matched_n_times", "ever_matched"],
+                "properties": {
+                    "ever_matched": {
+                        "type": "boolean"
+                    },
+                    "matched_n_times": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "CaseName": {
+                "type": "string"
+            },
+            "CoverageAggregates": {
+                "type": "object",
+                "required": [
+                    "n_specs",
+                    "n_specs_executed",
+                    "n_specs_passing",
+                    "n_specs_failing",
+                    "percentage_specs_executed",
+                    "percentage_specs_passing",
+                    "percentage_specs_failing",
+                    "n_behaviors",
+                    "n_behaviors_executed",
+                    "n_behaviors_passing",
+                    "n_behaviors_failing",
+                    "n_behaviors_vacuous",
+                    "percentage_behaviors_executed",
+                    "percentage_behaviors_passing",
+                    "percentage_behaviors_failing",
+                    "percentage_behaviors_vacuous",
+                    "n_cases",
+                    "n_cases_ever_matched",
+                    "percentage_cases_ever_matched"
+                ],
+                "properties": {
+                    "n_behaviors": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "n_behaviors_executed": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "n_behaviors_failing": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "n_behaviors_passing": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "n_behaviors_vacuous": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "n_cases": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "n_cases_ever_matched": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "n_specs": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "n_specs_executed": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "n_specs_failing": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "n_specs_passing": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "percentage_behaviors_executed": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "percentage_behaviors_failing": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "percentage_behaviors_passing": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "percentage_behaviors_vacuous": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "percentage_cases_ever_matched": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "percentage_specs_executed": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "percentage_specs_failing": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "percentage_specs_passing": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                }
+            },
             "EventCoordinate": {
                 "type": "object",
                 "properties": {
@@ -1591,6 +2214,21 @@
             "Nanoseconds": {
                 "type": "integer"
             },
+            "SegmentCoverage": {
+                "type": "object",
+                "required": ["spec_coverages", "coverage_aggregates"],
+                "properties": {
+                    "coverage_aggregates": {
+                        "$ref": "#/components/schemas/CoverageAggregates"
+                    },
+                    "spec_coverages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SpecCoverage"
+                        }
+                    }
+                }
+            },
             "SegmentationRuleName": {
                 "type": "string"
             },
@@ -1603,6 +2241,24 @@
                     },
                     "speqtr": {
                         "type": "string"
+                    }
+                }
+            },
+            "SpecCoverage": {
+                "type": "object",
+                "required": ["spec_at_version_meta", "behavior_to_coverage", "test_counts"],
+                "properties": {
+                    "behavior_to_coverage": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/BehaviorCoverage"
+                        }
+                    },
+                    "spec_at_version_meta": {
+                        "$ref": "#/components/schemas/SpecVersionMetadata"
+                    },
+                    "test_counts": {
+                        "$ref": "#/components/schemas/TestCounts"
                     }
                 }
             },
@@ -1656,6 +2312,59 @@
             },
             "SpecName": {
                 "type": "string"
+            },
+            "SpecSegmentEvalOutcomeSummary": {
+                "type": "object",
+                "required": ["spec_name", "regions_passing", "regions_failing", "regions_unknown", "regions_vacuous"],
+                "properties": {
+                    "regions_failing": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0
+                    },
+                    "regions_passing": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0
+                    },
+                    "regions_unknown": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0
+                    },
+                    "regions_vacuous": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0
+                    },
+                    "spec_name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "SpecStructure": {
+                "type": "object",
+                "properties": {
+                    "attributes": {
+                        "$ref": "#/components/schemas/AttributeMap"
+                    },
+                    "behaviors": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/BehaviorName"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/BehaviorStructure"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
             },
             "SpecVersionId": {
                 "type": "string",
@@ -1711,6 +2420,40 @@
                     }
                 ],
                 "description": "Spec operation errors"
+            },
+            "TestCounts": {
+                "type": "object",
+                "required": [
+                    "executed_n_times",
+                    "ever_executed",
+                    "failed_n_times",
+                    "ever_failed",
+                    "passed_n_times",
+                    "ever_passed"
+                ],
+                "properties": {
+                    "ever_executed": {
+                        "type": "boolean"
+                    },
+                    "ever_failed": {
+                        "type": "boolean"
+                    },
+                    "ever_passed": {
+                        "type": "boolean"
+                    },
+                    "executed_n_times": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "failed_n_times": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "passed_n_times": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                }
             },
             "Timeline": {
                 "type": "object",
@@ -1868,6 +2611,14 @@
                     {
                         "type": "string",
                         "enum": ["NoGroupsSpecified"]
+                    },
+                    {
+                        "type": "string",
+                        "enum": ["InvalidSpecVersionId"]
+                    },
+                    {
+                        "type": "string",
+                        "enum": ["InvalidSpecResultId"]
                     },
                     {
                         "type": "object",

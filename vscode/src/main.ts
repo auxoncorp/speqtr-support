@@ -5,11 +5,13 @@ import * as api from "./modalityApi";
 import * as workspaces from "./workspaces";
 import * as segments from "./segments";
 import * as specs from "./specs";
+import * as specCoverage from "./specCoverage";
 import * as timelines from "./timelines";
 import * as events from "./events";
 import * as lsp from "./lsp";
 import * as modalityLog from "./modalityLog";
 import * as terminalLinkProvider from "./terminalLinkProvider";
+import * as specFileCommands from "./specFileCommands";
 import * as transitionGraph from "./transitionGraph";
 import * as config from "./config";
 
@@ -28,12 +30,16 @@ export async function activate(context: vscode.ExtensionContext) {
     terminalLinkProvider.register(context);
     modalityLog.register(context);
     transitionGraph.register(context, apiClient);
+    specFileCommands.register(context);
+
+    const specCoverageProvider = new specCoverage.SpecCoverageProvider(apiClient);
+    await specCoverageProvider.initialize(context);
 
     const workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClient);
-    const segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient);
+    const segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient, specCoverageProvider);
     const timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClient);
     const eventsTreeDataProvider = new events.EventsTreeDataProvider(apiClient);
-    const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient);
+    const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);
@@ -48,6 +54,8 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     segmentsTreeDataProvider.onDidChangeUsedSegments((ev) => {
+        specsTreeDataProvider.setActiveSegmentIds(ev.activeSegmentIds);
+
         timelinesTreeDataProvider.usedSegmentConfig = ev.usedSegmentConfig;
         timelinesTreeDataProvider.activeSegments = ev.activeSegmentIds;
         timelinesTreeDataProvider.refresh();

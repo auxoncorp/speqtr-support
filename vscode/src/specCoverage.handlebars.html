@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coverage Report</title>
+    <style>
+        table {
+            flex-direction: column;
+        }
+
+        tr {
+            padding: calc(({{designUnit}} / 4) * 1px) 0;
+            box-sizing: border-box;
+            background: transparent;
+        }
+
+        td.column-header {
+            font-weight: 600;
+        }
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        li {
+            padding-left: 1em;
+            text-indent: -1em;
+        }
+
+        li:before {
+            display: inline-block;
+        }
+
+        li.passed:before {
+            content: "✓";
+            font-weight: bolder;
+            color: var(--vscode-testing-iconPassed);
+            color: green;
+        }
+
+        li.failed:before {
+            content: "✘";
+            color: var(--vscode-testing-iconFailed);
+            color: red;
+        }
+
+        li.not-executed:before {
+            content: "?";
+            font-weight: bold;
+            color: var(--vscode-testing-iconQueued);
+        }
+
+        tr.spec td {
+            padding-bottom: 0;
+        }
+
+        tr.spec td:nth-child(2) {
+            text-align: right;
+        }
+
+        tr.spec td:nth-child(3) {
+            text-align: right;
+        }
+
+        tr.behavior td {
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        tr.behavior td:nth-child(1) {
+            padding-left: 48px;
+        }
+
+        tr.behavior td:nth-child(2) {
+            text-align: right;
+        }
+
+        tr.case td {
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        tr.case td:nth-child(1) {
+            padding-left: 96px;
+        }
+
+        tr.case td:nth-child(2) {
+            text-align: right;
+        }
+
+        th {
+            padding: calc(({{designUnit}} / 4) * 1px) 0;
+            box-sizing: border-box;
+            background: transparent;
+            line-height: normal;
+        }
+
+        tr:hover {
+            background: var(--vscode-list-hoverBackground);
+            outline: 1px dotted var(--vscode-contrastActiveBorder);
+            outline-offset: -1px;
+        }
+
+        td {
+            padding: calc({{designUnit}} * 1px) calc({{designUnit}} * 3px);
+            color: var(--vscode-foreground);
+            opacity: 1;
+            box-sizing: border-box;
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+            line-height: normal;
+            font-weight: 400;
+            border: solid calc({{borderWidth}} * 1px) transparent;
+            border-radius: calc({{cornerRadius}} * 1px);
+            white-space: wrap;
+            overflow-wrap: anywhere;
+        }
+
+        td:focus-visible,
+        td:focus,
+        td:active {
+            background: var(--vscode-list-activeSelectionBackground);
+            border: solid calc({{borderWidth}} * 1px) var(--vccode-focusborder);
+            color: var(--vscode-list-activeSelectionForeground);
+            outline: none;
+        }
+
+        td:focus-visible ::slotted(*),
+        td:focus ::slotted(*),
+        td:active ::slotted(*) {
+            color: var(--vscode-list-activeSelectionForeground) !important;
+        }
+    </style>
+
+    <h1>Coverage Report for Segment '{{params.segmentId.segment_name}}'</h1>
+
+    <table>
+        <tr>
+            <th>Specs<br />Evaluated</th>
+            <th>Specs<br />Passing</th>
+            <th>Behaviors<br />Covered</th>
+            <th>Cases<br />Covered</th>
+        </tr>
+        {{#with header}}
+        <tr>
+            <td>{{shortPercent percentageSpecsExecuted}}</td>
+            <td>{{shortPercent percentageSpecsPassing}}</td>
+            <td>{{shortPercent percentageBehaviorsCovered}}</td>
+            <td>{{shortPercent percentageCasesEverMatched}}</td>
+        </tr>
+        {{/with}}
+    </table>
+
+    <h2>Per-Spec Breakdown ({{specs.length}} {{pluralize specs.length 'spec' 'specs'}})</h2>
+
+    <table>
+        <!-- <tr> -->
+        <!--   <th class="name">Name</th> -->
+        <!--   <th>Executed</th> -->
+        <!--   <th>Passing</th> -->
+        <!--   <th>Behaviors<br>Covered</th> -->
+        <!--   <th>Cases<br>Covered</th> -->
+        <!-- </tr> -->
+
+        {{#each specs}}
+        <tr class="spec">
+            <td>
+                <ul>
+                    <li class="{{this.status}}">Spec: {{this.name}}</li>
+                </ul>
+            </td>
+            <td>
+                {{this.numSpecBehaviorsCovered}}/{{this.numSpecBehaviors}} {{pluralize this.numSpecBehaviors 'behavior'
+                'behaviors'}} covered
+            </td>
+            <td>
+                {{this.numSpecCasesCovered}}/{{this.numSpecCases}} {{pluralize this.numSpecCases 'case' 'cases'}}
+                covered
+            </td>
+        </tr>
+
+        {{#each this.behaviors}}
+        <tr class="behavior">
+            <td>
+                <ul>
+                    <li class="{{this.status}}">Behavior: {{this.name}}</li>
+                </ul>
+            </td>
+            <td>{{this.triggerCount}} {{pluralize this.triggerCount 'match' 'matches'}}</td>
+            <td></td>
+        </tr>
+
+        {{#each this.cases}}
+        <tr class="case">
+            <!-- <td><span class="test-symbol {{this.status}}">{{this.passfailSymbol}}</span>Behavior: {{this.name}}</td> -->
+            <td>
+                <ul>
+                    <li class="{{this.status}}">Case: {{this.name}}</li>
+                </ul>
+            </td>
+            <td>{{this.matchCount}} {{pluralize this.matchCount 'match' 'matches'}}</td>
+            <td></td>
+        </tr>
+        {{/each}} {{/each}} {{/each}}
+    </table>
+</head>

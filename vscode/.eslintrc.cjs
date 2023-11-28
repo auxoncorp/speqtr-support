@@ -6,5 +6,14 @@ module.exports = {
     root: true,
     rules: {
         "@typescript-eslint/ban-ts-comment": "off",
+        "no-unused-vars": "off",
+        "@typescript-eslint/no-unused-vars": [
+            "error",
+            {
+                argsIgnorePattern: "^_",
+                varsIgnorePattern: "^_",
+                caughtErrorsIgnorePattern: "^_",
+            },
+        ],
     },
 };

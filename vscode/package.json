@@ -87,6 +87,33 @@
             ]
         },
         "menus": {
+            "explorer/context": [
+                {
+                    "command": "auxon.specDir.eval.dryRun",
+                    "when": "resource in auxon.specFolders",
+                    "group": "1_auxon@1"
+                },
+                {
+                    "command": "auxon.specDir.eval",
+                    "when": "resource in auxon.specFolders",
+                    "group": "1_auxon@2"
+                },
+                {
+                    "command": "auxon.specFile.eval.dryRun",
+                    "when": "resourceLangId == speqtr",
+                    "group": "1_auxon@1"
+                },
+                {
+                    "command": "auxon.specFile.eval",
+                    "when": "resourceLangId == speqtr",
+                    "group": "1_auxon@2"
+                },
+                {
+                    "command": "auxon.specFile.create",
+                    "when": "resourceLangId == speqtr",
+                    "group": "1_auxon@3"
+                }
+            ],
             "view/item/context": [
                 {
                     "command": "auxon.workspaces.setActive",
@@ -108,6 +135,10 @@
                 },
                 {
                     "command": "auxon.segments.transitionGraph",
+                    "when": "view == auxon.segments"
+                },
+                {
+                    "command": "auxon.segments.specCoverage",
                     "when": "view == auxon.segments"
                 },
                 {
@@ -135,20 +166,114 @@
                     "when": "view == auxon.events && viewItem == eventAttribute"
                 },
                 {
-                    "command": "auxon.specs.eval",
-                    "when": "view == auxon.specs && viewItem == spec"
+                    "command": "auxon.specs.showLatest",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
+                    "group": "1_context@1"
                 },
                 {
-                    "command": "auxon.specs.eval.dryRun",
-                    "when": "view == auxon.specs && viewItem == spec"
+                    "command": "auxon.specs.evalLatest",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
+                    "group": "1_context@2"
+                },
+                {
+                    "command": "auxon.specs.evalLatest.dryRun",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
+                    "group": "1_context@3"
+                },
+                {
+                    "command": "auxon.specs.rename",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection && false",
+                    "group": "2_context@1"
+                },
+                {
+                    "command": "auxon.specs.coverage.spec",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
+                    "group": "1_context@1"
+                },
+                {
+                    "command": "auxon.specs.coverage.manySpecs",
+                    "when": "view == auxon.specs && viewItem == spec && listMultiSelection",
+                    "group": "1_context@1"
+                },
+                {
+                    "command": "auxon.specs.delete",
+                    "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
+                    "group": "2_context@2"
+                },
+                {
+                    "command": "auxon.specs.deleteMany",
+                    "when": "view == auxon.specs && viewItem == spec && listMultiSelection",
+                    "group": "2_context@2"
+                },
+                {
+                    "command": "auxon.specs.showVersion",
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection && false",
+                    "group": "1_context@1"
+                },
+                {
+                    "command": "auxon.specs.coverage.version",
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection",
+                    "group": "1_context@1"
+                },
+                {
+                    "command": "auxon.specs.coverage.manyVersions",
+                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection",
+                    "group": "1_context@1"
                 },
                 {
                     "command": "auxon.specs.evalVersion",
-                    "when": "view == auxon.specs && viewItem == specVersion"
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection",
+                    "group": "1_context@2"
+                },
+                {
+                    "command": "auxon.specs.evalManyVersions",
+                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection && false",
+                    "group": "1_context@2"
                 },
                 {
                     "command": "auxon.specs.evalVersion.dryRun",
-                    "when": "view == auxon.specs && viewItem == specVersion"
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection",
+                    "group": "1_context@3"
+                },
+                {
+                    "command": "auxon.specs.evalManyVersions.dryRun",
+                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection && false",
+                    "group": "1_context@3"
+                },
+                {
+                    "command": "auxon.specs.deleteVersion",
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection",
+                    "group": "2_context@1"
+                },
+                {
+                    "command": "auxon.specs.deleteManyVersions",
+                    "when": "view == auxon.specs && viewItem == specVersion && listMultiSelection && false",
+                    "group": "2_context@1"
+                },
+                {
+                    "command": "auxon.specs.coverage.result",
+                    "when": "view == auxon.specs && viewItem == specResult && !listMultiSelection",
+                    "group": "1_context@1"
+                },
+                {
+                    "command": "auxon.specs.coverage.manyResults",
+                    "when": "view == auxon.specs && ((viewItem == specResult && listMultiSelection) || (viewItem == specResults))",
+                    "group": "1_context@1"
+                },
+                {
+                    "command": "auxon.specs.showResult",
+                    "when": "view == auxon.specs && viewItem == specResult && !listMultiSelection && false",
+                    "group": "1_context@1"
+                },
+                {
+                    "command": "auxon.specs.deleteResult",
+                    "when": "view == auxon.specs && viewItem == specResult && !listMultiSelection && false",
+                    "group": "2_context@2"
+                },
+                {
+                    "command": "auxon.specs.deleteManyResults",
+                    "when": "view == auxon.specs && viewItem == specResult && listMultiSelection && false",
+                    "group": "2_context@2"
                 }
             ],
             "view/title": [
@@ -206,6 +331,26 @@
                     "command": "auxon.specs.refresh",
                     "when": "view == auxon.specs",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.specs.showVersions",
+                    "when": "view == auxon.specs && auxon.specs.versions == 'HIDE'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.specs.hideVersions",
+                    "when": "view == auxon.specs && auxon.specs.versions == 'SHOW'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.specs.showResults",
+                    "when": "view == auxon.specs && auxon.specs.results == 'HIDE'",
+                    "group": "7_modification@2"
+                },
+                {
+                    "command": "auxon.specs.hideResults",
+                    "when": "view == auxon.specs && auxon.specs.results == 'SHOW'",
+                    "group": "7_modification@2"
                 }
             ]
         },
@@ -217,7 +362,7 @@
             },
             {
                 "command": "auxon.workspaces.setActive",
-                "title": "Set this workspace as active",
+                "title": "Set this Workspace as Active",
                 "icon": "$(refresh)"
             },
             {
@@ -227,27 +372,31 @@
             },
             {
                 "command": "auxon.segments.setActive",
-                "title": "Set this segment as active"
+                "title": "Set this Segment as Active"
             },
             {
                 "command": "auxon.segments.setActiveFromSelection",
-                "title": "Set selected segments as active"
+                "title": "Set Selected Segments as Active"
             },
             {
                 "command": "auxon.segments.setLatestActive",
-                "title": "Set latest segment as active data"
+                "title": "Set Latest Segment as Active Data"
             },
             {
                 "command": "auxon.segments.setAllActive",
-                "title": "Set all contained segments as active data, individually"
+                "title": "Set All Contained Segments as Active Data, Individually"
             },
             {
                 "command": "auxon.segments.setWholeWorkspaceActive",
-                "title": "Set all workspace content as active data, as a single universe"
+                "title": "Set All Workspace Content as Active Data, as a Single Universe"
             },
             {
                 "command": "auxon.segments.transitionGraph",
                 "title": "View Transition Graph"
+            },
+            {
+                "command": "auxon.segments.specCoverage",
+                "title": "Show Coverage of All Specs for Segment"
             },
             {
                 "command": "auxon.timelines.refresh",
@@ -256,17 +405,17 @@
             },
             {
                 "command": "auxon.timelines.disableTimelineGrouping",
-                "title": "Show timelines in flat list",
+                "title": "Show Timelines in Flat List",
                 "icon": "$(refresh)"
             },
             {
                 "command": "auxon.timelines.setGroupingAttrs",
-                "title": "Group timelines by attribute",
+                "title": "Group Timelines by Attribute",
                 "icon": "$(refresh)"
             },
             {
                 "command": "auxon.timelines.groupTimelinesByNameComponents",
-                "title": "Group timelines by name components",
+                "title": "Group Timelines by Name Components",
                 "icon": "$(refresh)"
             },
             {
@@ -308,20 +457,128 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "auxon.specs.eval",
-                "title": "Evaluate spec at latest version"
+                "command": "auxon.specs.coverage.spec",
+                "title": "Coverage Report for this Spec (latest version)"
             },
             {
-                "command": "auxon.specs.eval.dryRun",
-                "title": "Evaluate spec at latest version (dry run)"
+                "command": "auxon.specs.coverage.manySpecs",
+                "title": "Coverage Report for Selected Specs (latest version)"
+            },
+            {
+                "command": "auxon.specs.coverage.version",
+                "title": "Coverage Report for this Spec Version"
+            },
+            {
+                "command": "auxon.specs.coverage.manyVersions",
+                "title": "Coverage Report for Selected Versions"
+            },
+            {
+                "command": "auxon.specs.coverage.result",
+                "title": "Coverage Report for this Result"
+            },
+            {
+                "command": "auxon.specs.coverage.manyResults",
+                "title": "Coverage Report for Selected Results"
+            },
+            {
+                "command": "auxon.specs.showVersions",
+                "title": "Show Versions"
+            },
+            {
+                "command": "auxon.specs.hideVersions",
+                "title": "✓ Show Versions"
+            },
+            {
+                "command": "auxon.specs.showResults",
+                "title": "Show Results"
+            },
+            {
+                "command": "auxon.specs.hideResults",
+                "title": "✓ Show Results"
+            },
+            {
+                "command": "auxon.specs.showLatest",
+                "title": "Show Spec at Latest Version"
+            },
+            {
+                "command": "auxon.specs.evalLatest",
+                "title": "Check Spec at Latest Version (save results)"
+            },
+            {
+                "command": "auxon.specs.evalLatest.dryRun",
+                "title": "Check Spec at Latest Version (dry run)"
+            },
+            {
+                "command": "auxon.specs.rename",
+                "title": "Rename Spec..."
+            },
+            {
+                "command": "auxon.specs.delete",
+                "title": "Delete Spec..."
+            },
+            {
+                "command": "auxon.specs.deleteMany",
+                "title": "Delete Selected Specs..."
             },
             {
                 "command": "auxon.specs.evalVersion",
-                "title": "Evaluate spec at this verison"
+                "title": "Check Spec at This Verison (save results)"
+            },
+            {
+                "command": "auxon.specs.evalManyVersions",
+                "title": "Check Selected Spec Verisons (save results)"
             },
             {
                 "command": "auxon.specs.evalVersion.dryRun",
-                "title": "Evaluate spec at this version (dry run)"
+                "title": "Check Spec at This Version (dry run)"
+            },
+            {
+                "command": "auxon.specs.evalManyVersions.dryRun",
+                "title": "Check Selected Spec Versions (dry run)"
+            },
+            {
+                "command": "auxon.specs.showVersion",
+                "title": "Show Spec at This Verison"
+            },
+            {
+                "command": "auxon.specs.deleteVersion",
+                "title": "Delete This Version of the Spec..."
+            },
+            {
+                "command": "auxon.specs.deleteManyVersions",
+                "title": "Delete Selected Spec Versions..."
+            },
+            {
+                "command": "auxon.specs.showResult",
+                "title": "Show Spec Result"
+            },
+            {
+                "command": "auxon.specs.deleteResult",
+                "title": "Delete Spec Result..."
+            },
+            {
+                "command": "auxon.specs.deleteManyResults",
+                "title": "Delete Selected Spec Results..."
+            },
+            {
+                "command": "auxon.specDir.eval.dryRun",
+                "title": "Check All Specs in Folder (dry run)"
+            },
+            {
+                "command": "auxon.specDir.eval",
+                "title": "Check All Specs in Folder (save results)..."
+            },
+            {
+                "command": "auxon.specFile.eval.dryRun",
+                "title": "Check Spec File (dry run)"
+            },
+            {
+                "command": "auxon.specFile.eval",
+                "title": "Check Spec File (save results)..."
+            },
+            {
+                "command": "auxon.specFile.create",
+                "title": "Upload Spec File..."
             },
             {
                 "command": "auxon.modality.log",
@@ -386,10 +643,6 @@
             }
         }
     },
-    "activationEvents": [
-        "onLanguage:speqtr",
-        "onView:auxon.workspaces"
-    ],
     "main": "out/main.js",
     "scripts": {
         "vscode:prepublish": "npm run build-base -- --minify",
@@ -410,6 +663,7 @@
     "dependencies": {
         "@types/lodash": "^4.14.200",
         "@viz-js/viz": "^3.0.1",
+        "handlebars": "^4.7.8",
         "lodash": "^4.17.21",
         "node-fetch": "https://github.com/mullr/node-fetch",
         "openapi-fetch": "^0.0.8",

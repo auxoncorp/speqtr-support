@@ -31,6 +31,13 @@ export interface paths {
      */
     get: operations["get_spec"];
   };
+  "/v2/specs/{spec_name}/structure": {
+    /**
+     * Get the structure of behaviors and cases for the stored spec 
+     * @description Get the structure of behaviors and cases for the stored spec
+     */
+    get: operations["get_spec_structure"];
+  };
   "/v2/specs/{spec_name}/versions": {
     /**
      * List all the versions of the named spec 
@@ -51,6 +58,13 @@ export interface paths {
      * @description List stored evaluation results for the given spec version
      */
     get: operations["list_spec_version_results"];
+  };
+  "/v2/specs/{spec_name}/versions/{spec_version}/structure": {
+    /**
+     * List stored evaluation results for the given spec version 
+     * @description List stored evaluation results for the given spec version
+     */
+    get: operations["get_spec_version_structure"];
   };
   "/v2/timelines/grouped_graph": {
     /**
@@ -117,6 +131,23 @@ export interface paths {
      */
     get: operations["list_grouped_segment_timelines"];
   };
+  "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_coverage": {
+    /**
+     * Get the spec-coverage of the segment. 
+     * @description Get the spec-coverage of the segment.
+     * 
+     * If no filters are 'group_by' query parameter,
+     * the graph is grouped by (timeline.name, event.name).
+     */
+    get: operations["segment_spec_coverage"];
+  };
+  "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_summary": {
+    /**
+     * List the named spec evaluation summaries of the segment 
+     * @description List the named spec evaluation summaries of the segment
+     */
+    get: operations["segment_spec_summary"];
+  };
   "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timeline_attr_keys": {
     /**
      * List all timeline attr keys in a specific segment 
@@ -165,6 +196,62 @@ export interface components {
       /** @enum {string} */
       NonFiniteFloat?: "NaN" | "-NaN" | "Infinity" | "-Infinity";
     }]>;
+    AttributeMap: {
+      [key: string]: components["schemas"]["AttrVal"] | undefined;
+    };
+    /** @enum {string} */
+    BehaviorCaseType: "Nominal" | "Recovery" | "Prohibited";
+    BehaviorCoverage: {
+      case_coverage: {
+        [key: string]: components["schemas"]["CaseCoverage"] | undefined;
+      };
+      ever_vacuous: boolean;
+      name: string;
+      test_counts: components["schemas"]["TestCounts"];
+      vacuous_n_times: number;
+    };
+    BehaviorName: string;
+    BehaviorStructure: {
+      attributes?: components["schemas"]["AttributeMap"];
+      cases?: ((components["schemas"]["CaseName"] & components["schemas"]["BehaviorCaseType"] & components["schemas"]["AttributeMap"])[])[];
+      until?: ((components["schemas"]["CaseName"] & components["schemas"]["AttributeMap"])[]) | null;
+      when?: ((components["schemas"]["CaseName"] & components["schemas"]["AttributeMap"])[]) | null;
+    };
+    CaseCoverage: {
+      ever_matched: boolean;
+      matched_n_times: number;
+      name: string;
+    };
+    CaseName: string;
+    CoverageAggregates: {
+      n_behaviors: number;
+      n_behaviors_executed: number;
+      n_behaviors_failing: number;
+      n_behaviors_passing: number;
+      n_behaviors_vacuous: number;
+      n_cases: number;
+      n_cases_ever_matched: number;
+      n_specs: number;
+      n_specs_executed: number;
+      n_specs_failing: number;
+      n_specs_passing: number;
+      /** Format: double */
+      percentage_behaviors_executed: number;
+      /** Format: double */
+      percentage_behaviors_failing: number;
+      /** Format: double */
+      percentage_behaviors_passing: number;
+      /** Format: double */
+      percentage_behaviors_vacuous: number;
+      /** Format: double */
+      percentage_cases_ever_matched: number;
+      /** Format: double */
+      percentage_specs_executed: number;
+      /** Format: double */
+      percentage_specs_failing: number;
+      /** Format: double */
+      percentage_specs_passing: number;
+    };
     EventCoordinate: {
       opaque_event_id?: (number)[];
       timeline_id?: components["schemas"]["TimelineId"];
@@ -231,10 +318,21 @@ export interface components {
       Some: components["schemas"]["AttrVal"];
     }]>;
     Nanoseconds: number;
+    SegmentCoverage: {
+      coverage_aggregates: components["schemas"]["CoverageAggregates"];
+      spec_coverages: (components["schemas"]["SpecCoverage"])[];
+    };
     SegmentationRuleName: string;
     SpecContent: {
       metadata: components["schemas"]["SpecVersionMetadata"];
       speqtr: string;
+    };
+    SpecCoverage: {
+      behavior_to_coverage: {
+        [key: string]: components["schemas"]["BehaviorCoverage"] | undefined;
+      };
+      spec_at_version_meta: components["schemas"]["SpecVersionMetadata"];
+      test_counts: components["schemas"]["TestCounts"];
     };
     SpecEvalOutcomeHighlights: {
       behaviors: (string)[];
@@ -251,6 +349,21 @@ export interface components {
     /** Format: uuid */
     SpecEvalResultsId: string;
     SpecName: string;
+    SpecSegmentEvalOutcomeSummary: {
+      /** Format: int32 */
+      regions_failing: number;
+      /** Format: int32 */
+      regions_passing: number;
+      /** Format: int32 */
+      regions_unknown: number;
+      /** Format: int32 */
+      regions_vacuous: number;
+      spec_name: string;
+    };
+    SpecStructure: {
+      attributes?: components["schemas"]["AttributeMap"];
+      behaviors?: ((components["schemas"]["BehaviorName"] & components["schemas"]["BehaviorStructure"])[])[];
+    };
     /** Format: uuid */
     SpecVersionId: string;
     SpecVersionMetadata: {
@@ -268,6 +381,14 @@ export interface components {
       /** @description Internal Server Error */
       Internal: string;
     }]>;
+    TestCounts: {
+      ever_executed: boolean;
+      ever_failed: boolean;
+      ever_passed: boolean;
+      executed_n_times: number;
+      failed_n_times: number;
+      passed_n_times: number;
+    };
     Timeline: {
       attributes: {
         [key: string]: components["schemas"]["AttrVal"] | undefined;
@@ -318,7 +439,7 @@ export interface components {
     WorkspacesError: OneOf<[{
       /** @description Workspace not found */
       WorkspaceNotFound: string;
-    }, "SegmentNotFound", "NoGroupsSpecified", {
+    }, "SegmentNotFound", "NoGroupsSpecified", "InvalidSpecVersionId", "InvalidSpecResultId", {
       /** @description Internal Server Error */
       Internal: string;
     }]>;
@@ -400,6 +521,34 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["SpecContent"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Spec not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get the structure of behaviors and cases for the stored spec 
+   * @description Get the structure of behaviors and cases for the stored spec
+   */
+  get_spec_structure: {
+    responses: {
+      /** @description Get spec structure successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SpecStructure"];
         };
       };
       /** @description Operation not authorized */
@@ -502,6 +651,46 @@ export interface operations {
       200: {
         content: {
           "application/json": (components["schemas"]["SpecEvalOutcomeHighlights"])[];
+        };
+      };
+      /** @description Invalid spec version */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Spec or spec version not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["SpecsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List stored evaluation results for the given spec version 
+   * @description List stored evaluation results for the given spec version
+   */
+  get_spec_version_structure: {
+    parameters: {
+      path: {
+        spec_name: components["schemas"]["SpecName"];
+        spec_version: components["schemas"]["SpecVersionId"];
+      };
+    };
+    responses: {
+      /** @description Get spec version structure */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SpecStructure"];
         };
       };
       /** @description Invalid spec version */
@@ -830,6 +1019,119 @@ export interface operations {
         };
       };
       /** @description No grouping attrs specified */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Workspace or segment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get the spec-coverage of the segment. 
+   * @description Get the spec-coverage of the segment.
+   * 
+   * If no filters are 'group_by' query parameter,
+   * the graph is grouped by (timeline.name, event.name).
+   */
+  segment_spec_coverage: {
+    parameters: {
+      query: {
+        /** @description Include the latest results of the latest version of this spec in the analysis */
+        spec_name?: (string)[] | null;
+        /** @description Include the latest results of this spec version in the analysis */
+        spec_version?: (string)[] | null;
+        /** @description Include this spec result in the analysis */
+        spec_result?: (string)[] | null;
+        /** @description Expression for filtering specs from the perspective of spec attributes. */
+        spec_filter?: string | null;
+        /** @description Expression for filtering specs and their behaviors from the perspective of behavior attributes. */
+        behavior_filter?: string | null;
+        /** @description Expression for filtering specs and their behaviors from the perspective of case attributes. */
+        case_filter?: string | null;
+      };
+      path: {
+        /** @description Workspace Version Id */
+        workspace_version_id: components["schemas"]["WorkspaceVersionId"];
+        /** @description Segmentation Rule Name */
+        rule_name: components["schemas"]["SegmentationRuleName"];
+        /** @description Segment Name */
+        segment_name: components["schemas"]["WorkspaceSegmentName"];
+      };
+    };
+    responses: {
+      /** @description Retrieve the segment spec coverage successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SegmentCoverage"];
+        };
+      };
+      /** @description Invalid workspace_version_id */
+      400: {
+        content: {
+          "text/plain": string;
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Workspace or segment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+    };
+  };
+  /**
+   * List the named spec evaluation summaries of the segment 
+   * @description List the named spec evaluation summaries of the segment
+   */
+  segment_spec_summary: {
+    parameters: {
+      query: {
+        /** @description Expression for filtering specs from the perspective of spec attributes. */
+        spec_filter?: string | null;
+        /** @description Expression for filtering specs and their behaviors from the perspective of behavior attributes. */
+        behavior_filter?: string | null;
+        /** @description Expression for filtering specs and their behaviors from the perspective of case attributes. */
+        case_filter?: string | null;
+      };
+      path: {
+        /** @description Workspace Version Id */
+        workspace_version_id: components["schemas"]["WorkspaceVersionId"];
+        /** @description Segmentation Rule Name */
+        rule_name: components["schemas"]["SegmentationRuleName"];
+        /** @description Segment Name */
+        segment_name: components["schemas"]["WorkspaceSegmentName"];
+      };
+    };
+    responses: {
+      /** @description Retrieve the segment spec summary successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["SpecSegmentEvalOutcomeSummary"])[];
+        };
+      };
+      /** @description Invalid workspace_version_id */
       400: {
         content: {
           "text/plain": string;

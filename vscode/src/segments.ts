@@ -6,6 +6,7 @@ import * as child_process from "child_process";
 import * as api from "./modalityApi";
 import * as cliConfig from "./cliConfig";
 import * as config from "./config";
+import * as specCoverage from "./specCoverage";
 import * as transitionGraph from "./transitionGraph";
 import { ModalityLogCommandArgs } from "./modalityLog";
 
@@ -25,7 +26,7 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     private _onDidChangeUsedSegments: vscode.EventEmitter<UsedSegmentsChangeEvent> = new vscode.EventEmitter();
     readonly onDidChangeUsedSegments: vscode.Event<UsedSegmentsChangeEvent> = this._onDidChangeUsedSegments.event;
 
-    constructor(private readonly apiClient: api.Client) {}
+    constructor(private readonly apiClient: api.Client, private readonly cov: specCoverage.SpecCoverageProvider) {}
 
     register(context: vscode.ExtensionContext) {
         this.view = vscode.window.createTreeView("auxon.segments", {
@@ -44,6 +45,9 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
             vscode.commands.registerCommand("auxon.segments.setAllActive", () => this.setAllActiveCommand()),
             vscode.commands.registerCommand("auxon.segments.setWholeWorkspaceActive", () =>
                 this.setWholeWorkspaceActiveCommand()
+            ),
+            vscode.commands.registerCommand("auxon.segments.specCoverage", (itemData) =>
+                this.showSpecCoverageForSegment(itemData)
             ),
             vscode.commands.registerCommand("auxon.segments.transitionGraph", (itemData) =>
                 this.transitionGraph(itemData)
@@ -156,6 +160,10 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     async setWholeWorkspaceActiveCommand() {
         await execFile(config.toolPath("modality"), ["segment", "use", "--whole-workspace"]);
         this.refresh();
+    }
+
+    async showSpecCoverageForSegment(item: SegmentTreeItemData) {
+        await this.cov.showSpecCoverage({ segmentId: item.segment.id });
     }
 
     transitionGraph(item: SegmentTreeItemData) {

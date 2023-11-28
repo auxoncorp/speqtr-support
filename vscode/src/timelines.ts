@@ -145,7 +145,15 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
                     }
                     break;
             }
-            timelines.sort((a, b) => a.name.localeCompare(b.name));
+            timelines.sort((a, b) => {
+                if (a === null || a.name === null) {
+                    return 1;
+                }
+                if (b === null || b.name === null) {
+                    return -1;
+                }
+                return a.name.localeCompare(b.name);
+            });
 
             if (groupByTimelineNameComponents) {
                 const root = new TimelineGroupByNameTreeItemData("", []);

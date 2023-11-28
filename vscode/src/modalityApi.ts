@@ -12,16 +12,26 @@ if (!globalThis.fetch) {
 }
 
 export type AttrVal = gen.components["schemas"]["AttrVal"];
+export type AttributeMap = gen.components["schemas"]["AttributeMap"];
+export type BehaviorCaseType = gen.components["schemas"]["BehaviorCaseType"];
 export type GroupedGraph = gen.components["schemas"]["GroupedGraph"];
 export type GroupedGraphEdge = gen.components["schemas"]["GroupedGraphEdge"];
 export type GroupedGraphNode = gen.components["schemas"]["GroupedGraphNode"];
+export type SegmentCoverage = gen.components["schemas"]["SegmentCoverage"];
+export type SpecCoverage = gen.components["schemas"]["SpecCoverage"];
+export type BehaviorCoverage = gen.components["schemas"]["BehaviorCoverage"];
+export type CaseCoverage = gen.components["schemas"]["CaseCoverage"];
+export type CoverageAggregates = gen.components["schemas"]["CoverageAggregates"];
 export type LogicalTime = gen.components["schemas"]["LogicalTime"];
 export type Nanoseconds = gen.components["schemas"]["Nanoseconds"];
 export type SegmentationRuleName = gen.components["schemas"]["SegmentationRuleName"];
 export type SpecContent = gen.components["schemas"]["SpecContent"];
+export type SpecStructure = gen.components["schemas"]["SpecStructure"];
+export type BehaviorStructure = gen.components["schemas"]["BehaviorStructure"];
 export type SpecEvalResultId = gen.components["schemas"]["SpecEvalResultsId"];
 export type SpecEvalOutcomeHighlights = gen.components["schemas"]["SpecEvalOutcomeHighlights"];
 export type SpecName = gen.components["schemas"]["SpecName"];
+export type SpecSegmentEvalOutcomeSummary = gen.components["schemas"]["SpecSegmentEvalOutcomeSummary"];
 export type SpecVersionMetadata = gen.components["schemas"]["SpecVersionMetadata"];
 export type SpecVersionId = gen.components["schemas"]["SpecVersionId"];
 export type Timeline = gen.components["schemas"]["Timeline"];
@@ -219,6 +229,72 @@ export class SegmentClient {
 
         return unwrapData(res);
     }
+
+    async specCoverage(
+        specNames?: string[],
+        specVersions?: string[],
+        specResultIds?: string[],
+        spec_filter?: string,
+        case_filter?: string
+    ): Promise<SegmentCoverage> {
+        const q = [];
+        if (specNames) {
+            q.push(...specNames.map((n) => ["spec_name", n]));
+        }
+        if (specVersions) {
+            q.push(...specVersions.map((n) => ["spec_version", n]));
+        }
+        if (specResultIds) {
+            q.push(...specResultIds.map((n) => ["spec_result", n]));
+        }
+        if (spec_filter) {
+            q.push(["spec_filter", spec_filter]);
+        }
+        if (case_filter) {
+            q.push(["case_filter", case_filter]);
+        }
+        const res = await this.client.get(
+            "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_coverage",
+            {
+                params: {
+                    path: this.segmentId,
+                    // The spec_filter and case_filter query arguments could be supplied here.
+                    // @ts-ignore
+                    // The library's stated type for 'query' is inaccurate.
+                    // The actual type is "Something you can pass to the UrlSearchParams constructor".
+                    // Here, we use the 'array of tuples' form to get the query parameters
+                    // to appear multiple times.
+                    query: q,
+                },
+            }
+        );
+
+        return unwrapData(res);
+    }
+
+    async specSummary(spec_filter?: string): Promise<SpecSegmentEvalOutcomeSummary[]> {
+        const q = [];
+        if (typeof spec_filter !== "undefined") {
+            q.push(["spec_filter", spec_filter]);
+        }
+        const res = await this.client.get(
+            "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_summary",
+            {
+                params: {
+                    path: this.segmentId,
+                    // The spec_filter and case_filter query arguments could be supplied here.
+                    // @ts-ignore
+                    // The library's stated type for 'query' is inaccurate.
+                    // The actual type is "Something you can pass to the UrlSearchParams constructor".
+                    // Here, we use the 'array of tuples' form to get the query parameters
+                    // to appear.
+                    query: q,
+                },
+            }
+        );
+
+        return unwrapData(res);
+    }
 }
 
 export class TimelinesClient {
@@ -287,6 +363,13 @@ export class SpecClient {
         return unwrapData(res);
     }
 
+    async structure(): Promise<SpecStructure> {
+        const res = await this.client.get("/v2/specs/{spec_name}/structure", {
+            params: { path: { spec_name: this.specName } },
+        });
+        return unwrapData(res);
+    }
+
     async versions(): Promise<SpecVersionMetadata[]> {
         const res = await this.client.get("/v2/specs/{spec_name}/versions", {
             params: { path: { spec_name: this.specName } },
@@ -304,6 +387,18 @@ export class SpecVersionClient {
 
     async get(): Promise<SpecContent> {
         const res = await this.client.get("/v2/specs/{spec_name}/versions/{spec_version}", {
+            params: {
+                path: {
+                    spec_name: this.specName,
+                    spec_version: this.specVersion,
+                },
+            },
+        });
+        return unwrapData(res);
+    }
+
+    async structure(): Promise<SpecStructure> {
+        const res = await this.client.get("/v2/specs/{spec_name}/versions/{spec_version}/structure", {
             params: {
                 path: {
                     spec_name: this.specName,
