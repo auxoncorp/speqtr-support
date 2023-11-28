@@ -187,6 +187,10 @@ export function runConformEvalCommand(args: SpecEvalCommandArgs): Thenable<vscod
         }
     }
 
+    if (args.dry_run) {
+        commandArgs.push("--dry-run");
+    }
+
     const taskDef: vscode.TaskDefinition = {
         type: "auxon.conform.eval",
         command: conformPath,
