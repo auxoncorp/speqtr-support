@@ -394,7 +394,7 @@ export class SpecVersionsTreeItemData extends SpecsTreeItemData {
                 } else {
                     icon = new vscode.ThemeIcon("file", new vscode.ThemeColor("symbolIcon.fileForeground"));
                 }
-                return new SpecVersionTreeItemData(versionMd.name, versionMd.version, icon);
+                return new SpecVersionTreeItemData(versionMd.name, versionMd.version, versionMd.version_number, icon);
             })
         );
     }
@@ -402,8 +402,13 @@ export class SpecVersionsTreeItemData extends SpecsTreeItemData {
 
 export class SpecVersionTreeItemData extends SpecsTreeItemData {
     contextValue = "specVersion";
-    constructor(public specName: api.SpecName, public specVersion: api.SpecVersionId, icon: vscode.ThemeIcon) {
-        super("Spec Version: " + specVersion);
+    constructor(
+        public specName: api.SpecName,
+        public specVersion: api.SpecVersionId,
+        public specVersionNumber: number,
+        icon: vscode.ThemeIcon
+    ) {
+        super("Spec Version: " + specVersionNumber);
         super.iconPath = icon;
     }
 
