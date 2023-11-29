@@ -60,7 +60,7 @@ export class SpecCoverageProvider {
                 percentageBehaviorsCovered,
                 percentageCasesEverMatched: coverage.coverage_aggregates.percentage_cases_ever_matched,
             },
-            specs: coverage.spec_coverages.map(specViewModel),
+            specs: coverage.spec_coverages.map(specViewModel).sort((a, b) => a.name.localeCompare(b.name)),
             params,
             percentageBehaviorsCovered,
         });
@@ -191,13 +191,10 @@ function behaviorViewModel(bhCov: api.BehaviorCoverage): BehaviorViewModel {
         .reduce((a, b) => a + b);
 
     let status: Status = "not-executed";
-    // TODO use api value once it exists
-    if (bhCov.test_counts.ever_executed && triggerCount > 0) {
-        if (bhCov.test_counts.ever_failed) {
-            status = "failed";
-        } else {
-            status = "passed";
-        }
+    if (bhCov.test_counts.ever_failed) {
+        status = "failed";
+    } else if (bhCov.test_counts.ever_executed && triggerCount > 0) {
+        status = "passed";
     }
 
     return {

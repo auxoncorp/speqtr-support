@@ -394,7 +394,7 @@ export class SpecVersionsTreeItemData extends SpecsTreeItemData {
                 } else {
                     icon = new vscode.ThemeIcon("file", new vscode.ThemeColor("symbolIcon.fileForeground"));
                 }
-                return new SpecVersionTreeItemData(versionMd.name, versionMd.version, icon);
+                return new SpecVersionTreeItemData(versionMd.name, versionMd.version, versionMd.version_number, icon);
             })
         );
     }
@@ -402,8 +402,13 @@ export class SpecVersionsTreeItemData extends SpecsTreeItemData {
 
 export class SpecVersionTreeItemData extends SpecsTreeItemData {
     contextValue = "specVersion";
-    constructor(public specName: api.SpecName, public specVersion: api.SpecVersionId, icon: vscode.ThemeIcon) {
-        super("Spec Version: " + specVersion);
+    constructor(
+        public specName: api.SpecName,
+        public specVersion: api.SpecVersionId,
+        public specVersionNumber: number,
+        icon: vscode.ThemeIcon
+    ) {
+        super("Spec Version: " + specVersionNumber);
         super.iconPath = icon;
     }
 
@@ -447,7 +452,12 @@ export class SpecResultsTreeItemData extends SpecsTreeItemData {
 export class SpecResultTreeItemData extends SpecsTreeItemData {
     contextValue = "specResult";
     constructor(public evalOutcome: api.SpecEvalOutcomeHighlights) {
-        super("Spec Result: " + evalOutcome.spec_eval_results_id);
+        super("Spec Result");
+
+        const d = new Date(0);
+        d.setUTCSeconds(evalOutcome.spec_eval_at_utc_seconds);
+        super.description = d.toString();
+
         if (evalOutcome.regions_failing > 0) {
             super.iconPath = new vscode.ThemeIcon("testing-failed-icon");
         } else {

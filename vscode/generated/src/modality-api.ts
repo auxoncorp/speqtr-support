@@ -342,6 +342,8 @@ export interface components {
       regions_passing: number;
       /** Format: int32 */
       regions_unknown: number;
+      /** Format: int64 */
+      spec_eval_at_utc_seconds: number;
       spec_eval_results_id: components["schemas"]["SpecEvalResultsId"];
       spec_name: string;
       spec_version_id: components["schemas"]["SpecVersionId"];
@@ -371,6 +373,8 @@ export interface components {
       created_by: string;
       name: string;
       version: components["schemas"]["SpecVersionId"];
+      /** @description Not uniquely identifying, but helps give a sense of ordering */
+      version_number: number;
     };
     /** @description Spec operation errors */
     SpecsError: OneOf<[{

@@ -2267,6 +2267,7 @@
                 "required": [
                     "spec_eval_results_id",
                     "spec_version_id",
+                    "spec_eval_at_utc_seconds",
                     "spec_name",
                     "behaviors",
                     "regions_passing",
@@ -2294,6 +2295,10 @@
                         "type": "integer",
                         "format": "int32",
                         "minimum": 0
+                    },
+                    "spec_eval_at_utc_seconds": {
+                        "type": "integer",
+                        "format": "int64"
                     },
                     "spec_eval_results_id": {
                         "$ref": "#/components/schemas/SpecEvalResultsId"
@@ -2372,7 +2377,7 @@
             },
             "SpecVersionMetadata": {
                 "type": "object",
-                "required": ["name", "version", "created_at", "created_by"],
+                "required": ["name", "version", "version_number", "created_at", "created_by"],
                 "properties": {
                     "created_at": {
                         "type": "string"
@@ -2385,6 +2390,11 @@
                     },
                     "version": {
                         "$ref": "#/components/schemas/SpecVersionId"
+                    },
+                    "version_number": {
+                        "type": "integer",
+                        "description": "Not uniquely identifying, but helps give a sense of ordering",
+                        "minimum": 0
                     }
                 }
             },

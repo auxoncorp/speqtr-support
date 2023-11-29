@@ -75,6 +75,8 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
                 }
                 children.push(new EventNameTreeItemData(name, summary.n_instances, attrs));
             }
+
+            children.sort((a, b) => a.eventName.localeCompare(b.eventName));
             return children;
         } else {
             if (element instanceof EventNameTreeItemData) {

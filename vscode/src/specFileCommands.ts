@@ -71,7 +71,7 @@ async function specDirEval(dir: vscode.Uri) {
     const specFiles = await recursivelyFindSpeqtrFilesBeneath(dir);
     const specNames = [];
     for (const specFile of specFiles) {
-        const specName = specPrefix + path.parse(specFile.fsPath).base;
+        const specName = specPrefix + path.parse(specFile.fsPath).name;
         await upsertSpec(specName, specFile);
         specNames.push(specName);
     }
@@ -185,6 +185,10 @@ export function runConformEvalCommand(args: SpecEvalCommandArgs): Thenable<vscod
         if (args.behavior) {
             commandArgs.push("--behavior", args.behavior);
         }
+    }
+
+    if (args.dry_run) {
+        commandArgs.push("--dry-run");
     }
 
     const taskDef: vscode.TaskDefinition = {
