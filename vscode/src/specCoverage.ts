@@ -110,17 +110,23 @@ interface SpecViewModel {
     behaviors: BehaviorViewModel[];
 }
 
+type BehaviorStyle = "triggered" | "global";
+
 interface BehaviorViewModel {
     name: string;
     executed: boolean;
     passed: boolean;
-    triggerCount: number;
+    triggerCount?: number;
+    style: BehaviorStyle;
+    isTriggered: boolean;
+    isGlobal: boolean;
     status: Status;
     cases: CaseViewModel[];
 }
 
 interface CaseViewModel {
     name: string;
+    caseType: api.BehaviorCaseType;
     everMatched: boolean;
     matchCount: number;
     status: Status;
@@ -186,31 +192,50 @@ function specViewModel(sc: api.SpecCoverage): SpecViewModel {
 }
 
 function behaviorViewModel(bhCov: api.BehaviorCoverage): BehaviorViewModel {
-    const triggerCount = Object.values(bhCov.case_coverage)
-        .map((cc) => cc.matched_n_times)
-        .reduce((a, b) => a + b);
+    let style: BehaviorStyle = "triggered";
+    if (typeof bhCov.triggered_n_times == "undefined" || bhCov.triggered_n_times == null) {
+        style = "global";
+    }
 
     let status: Status = "not-executed";
-    if (bhCov.test_counts.ever_failed) {
-        status = "failed";
-    } else if (bhCov.test_counts.ever_executed && triggerCount > 0) {
-        status = "passed";
+    if (bhCov.test_counts.ever_executed) {
+        if (bhCov.test_counts.ever_failed) {
+            status = "failed";
+        } else if (bhCov.test_counts.ever_passed) {
+            status = "passed";
+        }
     }
 
     return {
         name: bhCov.name,
         executed: bhCov.test_counts.ever_executed,
         passed: !bhCov.test_counts.ever_failed,
-        triggerCount,
+        triggerCount: bhCov.triggered_n_times,
+        style,
+        isTriggered: style == "triggered",
+        isGlobal: style == "global",
         status,
         cases: Object.values(bhCov.case_coverage).map(caseViewModel),
     };
 }
 
 function caseViewModel(cCov: api.CaseCoverage): CaseViewModel {
+    let status: Status = "not-executed";
+
+    if (cCov.case_type == "Prohibited") {
+        if (!cCov.ever_matched || cCov.matched_n_times > 0) {
+            status = "failed";
+        } else {
+            status = "passed";
+        }
+    } else if (cCov.ever_matched) {
+        status = "passed";
+    }
+
     return {
         name: cCov.name,
-        status: cCov.ever_matched ? "passed" : "not-executed",
+        caseType: cCov.case_type,
+        status,
         everMatched: cCov.ever_matched,
         matchCount: cCov.matched_n_times,
     };

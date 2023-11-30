@@ -1836,6 +1836,11 @@
                     "test_counts": {
                         "$ref": "#/components/schemas/TestCounts"
                     },
+                    "triggered_n_times": {
+                        "type": "integer",
+                        "nullable": true,
+                        "minimum": 0
+                    },
                     "vacuous_n_times": {
                         "type": "integer",
                         "minimum": 0
@@ -1902,8 +1907,11 @@
             },
             "CaseCoverage": {
                 "type": "object",
-                "required": ["name", "matched_n_times", "ever_matched"],
+                "required": ["name", "matched_n_times", "ever_matched", "case_type"],
                 "properties": {
+                    "case_type": {
+                        "$ref": "#/components/schemas/BehaviorCaseType"
+                    },
                     "ever_matched": {
                         "type": "boolean"
                     },
@@ -2272,7 +2280,8 @@
                     "behaviors",
                     "regions_passing",
                     "regions_failing",
-                    "regions_unknown"
+                    "regions_unknown",
+                    "regions_vacuous"
                 ],
                 "properties": {
                     "behaviors": {
@@ -2292,6 +2301,11 @@
                         "minimum": 0
                     },
                     "regions_unknown": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0
+                    },
+                    "regions_vacuous": {
                         "type": "integer",
                         "format": "int32",
                         "minimum": 0
