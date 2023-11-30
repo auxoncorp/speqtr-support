@@ -2,9 +2,6 @@
  * Access to configuration and state from the Modality CLI's view of the world.
  */
 
-import * as path from "path";
-import * as os from "os";
-import * as fs from "fs";
 import * as vscode from "vscode";
 import * as util from "util";
 import * as child_process from "child_process";
@@ -78,13 +75,20 @@ export async function activeSegments(): Promise<api.WorkspaceSegmentMetadata[]> 
 }
 
 /** Read the modality CLI's auth token. */
-export function userAuthToken(): string | null {
-    const authTokenPath = path.join(cliConfigDir(), ".user_auth_token");
-    if (fs.statSync(authTokenPath)) {
-        return fs.readFileSync(authTokenPath, "utf8");
-    } else {
+export async function userAuthToken(): Promise<string | null> {
+    const modality = toolPath("modality");
+    try {
+        const res = await execFile(modality, ["user", "auth-token", "--format", "json"], { encoding: "utf8" });
+        return JSON.parse(res.stdout).auth_token;
+    } catch (error) {
         return null;
     }
+}
+
+/** Set the modality CLI's auth token. */
+export async function setUserAuthToken(authToken: string) {
+    const modality = toolPath("modality");
+    await execFile(modality, ["user", "auth-token", "--format", "json", "--use", authToken], { encoding: "utf8" });
 }
 
 /**
@@ -138,20 +142,4 @@ export async function allowInsecureHttps(): Promise<boolean | null> {
         return null;
     }
     return res_json.insecure;
-}
-
-/**
- * Get the user-specific modality_cli config dir, for the platform
- */
-function cliConfigDir(): string {
-    let appConfigDir: string;
-    if (os.platform() === "win32") {
-        // TODO is this right for what we do on windows?
-        appConfigDir = process.env.APPDATA;
-    } else if (os.platform() === "darwin") {
-        appConfigDir = path.join(os.homedir(), "Library", "Application Support");
-    } else {
-        appConfigDir = path.join(os.homedir(), ".config");
-    }
-    return path.join(appConfigDir, "modality_cli");
 }
