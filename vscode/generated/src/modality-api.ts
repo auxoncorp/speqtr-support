@@ -208,6 +208,7 @@ export interface components {
       ever_vacuous: boolean;
       name: string;
       test_counts: components["schemas"]["TestCounts"];
+      triggered_n_times?: number | null;
       vacuous_n_times: number;
     };
     BehaviorName: string;
@@ -218,6 +219,7 @@ export interface components {
       when?: ((components["schemas"]["CaseName"] & components["schemas"]["AttributeMap"])[]) | null;
     };
     CaseCoverage: {
+      case_type: components["schemas"]["BehaviorCaseType"];
       ever_matched: boolean;
       matched_n_times: number;
       name: string;
@@ -342,6 +344,8 @@ export interface components {
       regions_passing: number;
       /** Format: int32 */
       regions_unknown: number;
+      /** Format: int32 */
+      regions_vacuous: number;
       /** Format: int64 */
       spec_eval_at_utc_seconds: number;
       spec_eval_results_id: components["schemas"]["SpecEvalResultsId"];

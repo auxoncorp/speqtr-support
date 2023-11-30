@@ -156,14 +156,6 @@
     <h2>Per-Spec Breakdown ({{specs.length}} {{pluralize specs.length 'spec' 'specs'}})</h2>
 
     <table>
-        <!-- <tr> -->
-        <!--   <th class="name">Name</th> -->
-        <!--   <th>Executed</th> -->
-        <!--   <th>Passing</th> -->
-        <!--   <th>Behaviors<br>Covered</th> -->
-        <!--   <th>Cases<br>Covered</th> -->
-        <!-- </tr> -->
-
         {{#each specs}}
         <tr class="spec">
             <td>
@@ -188,19 +180,24 @@
                     <li class="{{this.status}}">Behavior: {{this.name}}</li>
                 </ul>
             </td>
-            <td>{{this.triggerCount}} {{pluralize this.triggerCount 'match' 'matches'}}</td>
+            {{#if this.isTriggered }}
+            <td>{{this.triggerCount}} {{pluralize this.triggerCount 'trigger' 'triggers'}}</td>
+            {{else if this.isGlobal }}
+            <td>Global Behavior</td>
+            {{else}}
+            <td></td>
+            {{/if}}
             <td></td>
         </tr>
 
         {{#each this.cases}}
         <tr class="case">
-            <!-- <td><span class="test-symbol {{this.status}}">{{this.passfailSymbol}}</span>Behavior: {{this.name}}</td> -->
             <td>
                 <ul>
-                    <li class="{{this.status}}">Case: {{this.name}}</li>
+                    <li class="{{this.status}}">{{this.caseType}} Case: {{this.name}}</li>
                 </ul>
             </td>
-            <td>{{this.matchCount}} {{pluralize this.matchCount 'match' 'matches'}}</td>
+            <td>{{this.matchCount}} {{pluralize this.matchCount 'time' 'times'}}</td>
             <td></td>
         </tr>
         {{/each}} {{/each}} {{/each}}
