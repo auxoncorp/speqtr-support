@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import { LanguageClient } from "vscode-languageclient/node";
 
+import * as cliConfig from "./cliConfig";
+import * as user from "./user";
 import * as api from "./modalityApi";
 import * as workspaces from "./workspaces";
 import * as segments from "./segments";
@@ -21,11 +23,26 @@ let lspClient: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
     log = vscode.window.createOutputChannel("Auxon SpeQTr");
+
+    // If this is a fresh install, prompt for new first user creation
+    await user.handleNewUserCreation();
+
     lspClient = await lsp.activateLspClient(context);
 
     const apiUrl = await config.modalityUrl();
-    const token = config.userAuthToken();
     const allowInsecure = await config.allowInsecureHttps();
+    let token = await config.userAuthToken();
+
+    // We can't do anything without an auth token
+    while (!token) {
+        const userSuppliedAuthToken = await user.promptForValidAuthToken();
+        if (userSuppliedAuthToken) {
+            // Already validated in the input box
+            cliConfig.setUserAuthToken(userSuppliedAuthToken);
+            token = userSuppliedAuthToken;
+        }
+    }
+
     const apiClient = new api.Client(apiUrl.toString(), token, allowInsecure);
 
     terminalLinkProvider.register(context);

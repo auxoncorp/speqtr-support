@@ -12,14 +12,14 @@ import * as fs from "fs";
  * The auth token that should be used to access the modality API, both directly
  * and via the CLI.
  */
-export function userAuthToken(): string | null {
+export async function userAuthToken(): Promise<string | null> {
     const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
     const vscodeAuthToken = auxonConfig.get<null | string>("authToken");
     if (vscodeAuthToken) {
         return vscodeAuthToken.trim();
     }
 
-    const cliAuthToken = cliConfig.userAuthToken();
+    const cliAuthToken = await cliConfig.userAuthToken();
     if (cliAuthToken) {
         return cliAuthToken.trim();
     }
@@ -85,7 +85,7 @@ export async function allowInsecureHttps(): Promise<boolean> {
  */
 export async function toolEnv(): Promise<Record<string, string>> {
     const env: Record<string, string> = {
-        MODALITY_AUTH_TOKEN: userAuthToken(),
+        MODALITY_AUTH_TOKEN: await userAuthToken(),
         // TODO implement this in the CLI
         MODALITY_ALLOW_INSECURE_TLS: (await allowInsecureHttps()).toString(),
         MODALITY_URL: (await modalityUrlV1()).toString(),
