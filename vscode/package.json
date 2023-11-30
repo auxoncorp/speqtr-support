@@ -1,16 +1,25 @@
 {
     "name": "speqtr",
-    "displayName": "speqtr",
-    "description": "Syntax Highlighting and Language Server integration for Auxon's SpeQTr specification and query language",
+    "displayName": "auxon",
+    "description": "Auxon's UI extension: data visualization for Modality, and syntax highlighting and language server integration for the SpeQTr specification language",
     "publisher": "auxoncorp",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "repository": "https://github.com/auxoncorp/speqtr-support",
     "icon": "images/speqtr-icon.png",
     "engines": {
         "vscode": "^1.77.0"
     },
     "categories": [
-        "Programming Languages"
+        "Testing",
+        "Programming Languages",
+        "Visualization",
+        "Notebooks"
+    ],
+    "keywords": [
+        "auxon",
+        "modality",
+        "conform",
+        "speqtr"
     ],
     "contributes": {
         "languages": [

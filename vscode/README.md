@@ -1,14 +1,15 @@
-# SpeQTr extension for VS Code
+# Auxon's UI extension for VS Code
 
-Provides syntax highlighting and language sevices for Auxon's SpeQTr specification language.
+Auxon's UI extension provides data visualization for Modality, and syntax highlighting and language services
+for the SpeQTr specification language.
 
 ## Features
 
+-   Tree views for interacting with [Modality](https://auxon.io/products/modality) and [Conform](https://docs.auxon.io/conform/) data
 -   Syntax highlighting
 -   Error checking
--   Configures the speqtr_lsp language server.
+-   Configures the `speqtr_lsp` language server.
 -   Code lens support for running Conform specs
--   A workspace tree view
 
 ## Extension Settings
 
@@ -23,7 +24,8 @@ This extension contributes the following settings:
 ## Dependencies
 
 -   Modality CLI: See the [Modality Client documentation](https://docs.auxon.io/modality/installation/client.html)
--   Python: The Jupter notebooks require Python 3, jupyter, pandas, and plotly packages to be installed. We recommend
+-   Conform CLI: See the [Conform Client documentation](https://docs.auxon.io/conform/installation/client.html)
+-   Python: The Jupyter notebooks require Python 3, jupyter, pandas, and plotly packages to be installed. We recommend
     creating an isolated environment for this using `venv`.
 -   Extensions: The extension will automatically install the `tintinweb.graphviz-interactive-preview`
     and `ms-toolsai.jupyter` extensions by default when installed from the marketplace
