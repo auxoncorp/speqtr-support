@@ -70,8 +70,14 @@ export async function usedSegments(): Promise<ContextSegment> {
  */
 export async function activeSegments(): Promise<api.WorkspaceSegmentMetadata[]> {
     const modality = toolPath("modality");
-    const res = await execFile(modality, ["segment", "inspect", "--format", "json"], { encoding: "utf8" });
-    return JSON.parse(res.stdout).segments as api.WorkspaceSegmentMetadata[];
+    try {
+        const res = await execFile(modality, ["segment", "inspect", "--format", "json"], { encoding: "utf8" });
+        return JSON.parse(res.stdout).segments as api.WorkspaceSegmentMetadata[];
+    } catch (e) {
+        // This can fail if there are no segments, just return an empty list in that case rather than
+        // throw an error in the UI
+        return [];
+    }
 }
 
 /** Read the modality CLI's auth token. */
