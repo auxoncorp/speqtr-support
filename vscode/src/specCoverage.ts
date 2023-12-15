@@ -19,7 +19,7 @@ export class SpecCoverageProvider {
     constructor(private readonly apiClient: api.Client) {}
 
     async initialize(context: vscode.ExtensionContext) {
-        const templateUri = vscode.Uri.joinPath(context.extensionUri, "src", "specCoverage.handlebars.html");
+        const templateUri = vscode.Uri.joinPath(context.extensionUri, "resources", "specCoverage.handlebars.html");
 
         const templateText = fs.readFileSync(templateUri.fsPath, "utf8");
         this.template = handlebars.compile(templateText);
