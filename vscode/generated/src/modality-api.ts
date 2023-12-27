@@ -17,6 +17,34 @@ export interface paths {
      */
     get: operations["get_events_summary_for_timeline"];
   };
+  "/v2/experiments": {
+    /**
+     * List experiments 
+     * @description List experiments
+     */
+    get: operations["list_experiments"];
+  };
+  "/v2/experiments/{experiment_name}": {
+    /**
+     * Get an experiment 
+     * @description Get an experiment
+     */
+    get: operations["get_experiment"];
+  };
+  "/v2/mutations": {
+    /**
+     * List mutations 
+     * @description List mutations
+     */
+    get: operations["list_mutations"];
+  };
+  "/v2/mutators": {
+    /**
+     * List mutators 
+     * @description List mutators
+     */
+    get: operations["list_mutators"];
+  };
   "/v2/specs": {
     /**
      * List all specs 
@@ -277,6 +305,51 @@ export interface components {
     EventsSummary: {
       events: (components["schemas"]["EventSummary"])[];
     };
+    Experiment: {
+      definition: components["schemas"]["ExperimentDefinition"];
+      /**
+       * @description N.B. Do not populate the `mutator_attributes` field of these `Mutation`s
+       * because we expect to fill in that content in the `mutators` collection.
+       */
+      mutations: ((components["schemas"]["Mutation"] & components["schemas"]["ExperimentMutationChecklist"])[])[];
+      mutators: (components["schemas"]["Mutator"])[];
+      /**
+       * @description Estimate of how many mutations have been suggested so far for this experiment,
+       * regardless of how many have been commanded/injected/etc.
+       */
+      n_proposed_mutations: number;
+      name: components["schemas"]["ExperimentName"];
+      regions: ((components["schemas"]["RegionKind"] & (((components["schemas"]["MutationId"] & components["schemas"]["ExperimentMutationChecklist"])[])[]))[])[];
+    };
+    ExperimentDefinition: {
+      mutator_constraints: {
+        [key: string]: components["schemas"]["MutatorUseConstraint"] | undefined;
+      };
+      mutator_filter?: components["schemas"]["UnstructuredMutatorFilter"] | null;
+    };
+    ExperimentMutationChecklist: {
+      /** @description Maps to the "modality.mutation.command_communicated" event name, and the `modality.mutation.success` attribute on such an event */
+      command_communicated_and_success?: ((components["schemas"]["EventCoordinate"] & (boolean | null))[]) | null;
+      /** @description Maps to the "modality.mutation.injected" event name, and the `modality.mutation.success` attribute on such an event */
+      inject_attempted_and_success?: ((components["schemas"]["EventCoordinate"] & (boolean | null))[]) | null;
+      /**
+       * @description If false, this was an interloper! A mutation introduced to the same system data that is in-scope
+       * right now for use in the experiment characterization.
+       */
+      proposed_for_the_selected_experiment: boolean;
+    };
+    ExperimentName: string;
+    /** @description Experiments operation errors */
+    ExperimentsError: OneOf<[{
+      /** @description Experiment not found */
+      ExperimentNotFound: string;
+    }, {
+      /** @description Invalid mutator filter expression */
+      InvalidMutatorFilter: string;
+    }, {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
     /** @description A graph created by grouping together events by their attribute values. */
     GroupedGraph: {
       /** @description The grouping keys used to compute this graph */
@@ -319,10 +392,68 @@ export interface components {
     MaybeAttrVal: OneOf<["None", {
       Some: components["schemas"]["AttrVal"];
     }]>;
+    Mutation: {
+      experiment_name?: components["schemas"]["ExperimentName"] | null;
+      mutation_id: components["schemas"]["MutationId"];
+      mutator_attributes: {
+        [key: string]: components["schemas"]["AttrVal"] | undefined;
+      };
+      mutator_id: components["schemas"]["MutatorId"];
+      params: {
+        [key: string]: components["schemas"]["AttrVal"] | undefined;
+      };
+    };
+    /** Format: uuid */
+    MutationId: string;
+    /** @description Mutations operation errors */
+    MutationsError: OneOf<["InvalidMutatorId", {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
+    Mutator: {
+      mutator_attributes: {
+        [key: string]: components["schemas"]["AttrVal"] | undefined;
+      };
+      mutator_id: components["schemas"]["MutatorId"];
+      mutator_state: components["schemas"]["MutatorState"];
+    };
+    /** Format: uuid */
+    MutatorId: string;
+    /** @enum {string} */
+    MutatorState: "Available" | "Retired" | "TimedOut" | "Disconnected";
+    MutatorUseConstraint: {
+      mutator_selector: components["schemas"]["UnstructuredMutatorFilter"];
+      param_constraints: {
+        [key: string]: components["schemas"]["ParamConstraint"] | undefined;
+      };
+    };
+    /** @description Mutator operation errors */
+    MutatorsError: OneOf<[{
+      /** @description Invalid mutator filter expression */
+      InvalidMutatorFilter: string;
+    }, {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
     Nanoseconds: number;
+    ParamConstraint: {
+      exact_value_set?: (components["schemas"]["AttrVal"])[] | null;
+      inclusive_value_max?: components["schemas"]["AttrVal"] | null;
+      inclusive_value_min?: components["schemas"]["AttrVal"] | null;
+    };
+    RegionKind: OneOf<[{
+      WholeWorkspace: components["schemas"]["WholeWorkspaceRegionKind"];
+    }, {
+      Segment: components["schemas"]["SegmentRegionKind"];
+    }]>;
     SegmentCoverage: {
       coverage_aggregates: components["schemas"]["CoverageAggregates"];
       spec_coverages: (components["schemas"]["SpecCoverage"])[];
+    };
+    SegmentRegionKind: {
+      id: components["schemas"]["WorkspaceSegmentId"];
+      timeline_filter?: components["schemas"]["UnstructuredTimelineFilter"] | null;
+      workspace_name: components["schemas"]["WorkspaceName"];
     };
     SegmentationRuleName: string;
     SpecContent: {
@@ -425,10 +556,26 @@ export interface components {
       /** @description Internal Server Error */
       Internal: string;
     }]>;
+    /**
+     * @description Stringy representation of an unparsed, unstructured DSL for expressing how to filter mutators,
+     * likely through attribute evaluation.
+     */
+    UnstructuredMutatorFilter: string;
+    /**
+     * @description Stringy representation of an unparsed, unstructured DSL for expressing how to filter timelines,
+     * likely through attribute evaluation.
+     */
+    UnstructuredTimelineFilter: string;
+    WholeWorkspaceRegionKind: {
+      timeline_filter?: components["schemas"]["UnstructuredTimelineFilter"] | null;
+      workspace_name: components["schemas"]["WorkspaceName"];
+      workspace_version_id: components["schemas"]["WorkspaceVersionId"];
+    };
     Workspace: {
       name: string;
       version_id: components["schemas"]["WorkspaceVersionId"];
     };
+    WorkspaceName: string;
     /** @description A specific segment of a workspace. */
     WorkspaceSegmentId: {
       rule_name: components["schemas"]["SegmentationRuleName"];
@@ -493,6 +640,126 @@ export interface operations {
       404: {
         content: {
           "application/json": components["schemas"]["EventsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List experiments 
+   * @description List experiments
+   */
+  list_experiments: {
+    responses: {
+      /** @description List experiments successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["ExperimentName"])[];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get an experiment 
+   * @description Get an experiment
+   */
+  get_experiment: {
+    responses: {
+      /** @description Get experiment successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Experiment"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Experiment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List mutations 
+   * @description List mutations
+   */
+  list_mutations: {
+    parameters: {
+      query: {
+        /** @description Mutator ID */
+        mutator_id?: string | null;
+        /** @description Experiment name */
+        experiment?: string | null;
+      };
+    };
+    responses: {
+      /** @description List mutations successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["Mutation"])[];
+        };
+      };
+      /** @description Invalid mutator_id */
+      400: {
+        content: {
+          "application/json": components["schemas"]["MutationsError"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["MutationsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List mutators 
+   * @description List mutators
+   */
+  list_mutators: {
+    parameters: {
+      query: {
+        /** @description Mutator filter expression */
+        mutator_filter?: string | null;
+      };
+    };
+    responses: {
+      /** @description List mutators successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["Mutator"])[];
+        };
+      };
+      /** @description Invalid mutator_filter */
+      400: {
+        content: {
+          "application/json": components["schemas"]["MutatorsError"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["MutatorsError"];
         };
       };
     };

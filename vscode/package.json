@@ -92,6 +92,14 @@
                 {
                     "id": "auxon.specs",
                     "name": "Specs"
+                },
+                {
+                    "id": "auxon.mutators",
+                    "name": "Mutators"
+                },
+                {
+                    "id": "auxon.experiments",
+                    "name": "Experiments"
                 }
             ]
         },
@@ -283,6 +291,19 @@
                     "command": "auxon.specs.deleteManyResults",
                     "when": "view == auxon.specs && viewItem == specResult && listMultiSelection && false",
                     "group": "2_context@2"
+                },
+                {
+                    "command": "auxon.mutators.createMutation",
+                    "when": "view == auxon.mutators && viewItem == mutator"
+                },
+                {
+                    "command": "auxon.experiments.generateMutation",
+                    "when": "view == auxon.experiments && viewItem == experiment"
+                },
+                {
+                    "command": "auxon.experiments.viewLogFromMutation",
+                    "when": "view == auxon.experiments && viewItem == experimentMutationCoordinate",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -365,6 +386,46 @@
                     "command": "auxon.specs.hideResults",
                     "when": "view == auxon.specs && auxon.specs.results == 'SHOW'",
                     "group": "7_modification@2"
+                },
+                {
+                    "command": "auxon.mutators.refresh",
+                    "when": "view == auxon.mutators",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.mutators.showUnavailable",
+                    "when": "view == auxon.mutators && auxon.mutators.unavailable == 'HIDE'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.mutators.hideUnavailable",
+                    "when": "view == auxon.mutators && auxon.mutators.unavailable == 'SHOW'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.mutators.showMutations",
+                    "when": "view == auxon.mutators && auxon.mutators.mutations == 'HIDE'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.mutators.hideMutations",
+                    "when": "view == auxon.mutators && auxon.mutators.mutations == 'SHOW'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.mutators.groupMutatorsByName",
+                    "when": "view == auxon.mutators && auxon.mutators.groupBy != 'MUTATOR_NAME'",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.mutators.disableMutatorGrouping",
+                    "when": "view == auxon.mutators && auxon.mutators.groupBy == 'MUTATOR_NAME'",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.experiments.refresh",
+                    "when": "view == auxon.experiments",
+                    "group": "navigation@1"
                 }
             ]
         },
@@ -594,6 +655,61 @@
             {
                 "command": "auxon.specFile.create",
                 "title": "Upload Spec File..."
+            },
+            {
+                "command": "auxon.mutators.refresh",
+                "title": "Refresh Mutator List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.mutators.setSelectedMutator",
+                "title": "Sets the selected mutator in the mutators tree view"
+            },
+            {
+                "command": "auxon.mutators.setSelectedMutation",
+                "title": "Sets the selected mutation in the mutators tree view"
+            },
+            {
+                "command": "auxon.mutators.createMutation",
+                "title": "Create a Mutation"
+            },
+            {
+                "command": "auxon.mutators.showUnavailable",
+                "title": "Show Unavailable"
+            },
+            {
+                "command": "auxon.mutators.hideUnavailable",
+                "title": "✓ Show Unavailable"
+            },
+            {
+                "command": "auxon.mutators.showMutations",
+                "title": "Show Mutations"
+            },
+            {
+                "command": "auxon.mutators.hideMutations",
+                "title": "✓ Show Mutations"
+            },
+            {
+                "command": "auxon.mutators.groupMutatorsByName",
+                "title": "Group By Mutator Name"
+            },
+            {
+                "command": "auxon.mutators.disableMutatorGrouping",
+                "title": "✓ Group By Mutator Name"
+            },
+            {
+                "command": "auxon.experiments.refresh",
+                "title": "Refresh Experiment List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.experiments.generateMutation",
+                "title": "Generate a New Mutation for the Experiment"
+            },
+            {
+                "command": "auxon.experiments.viewLogFromMutation",
+                "title": "View Log from this Coordinate",
+                "icon": "$(open-preview)"
             },
             {
                 "command": "auxon.modality.log",

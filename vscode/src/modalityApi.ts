@@ -18,6 +18,7 @@ export type GroupedGraph = gen.components["schemas"]["GroupedGraph"];
 export type GroupedGraphEdge = gen.components["schemas"]["GroupedGraphEdge"];
 export type GroupedGraphNode = gen.components["schemas"]["GroupedGraphNode"];
 export type SegmentCoverage = gen.components["schemas"]["SegmentCoverage"];
+export type EventCoordinate = gen.components["schemas"]["EventCoordinate"];
 export type SpecCoverage = gen.components["schemas"]["SpecCoverage"];
 export type BehaviorCoverage = gen.components["schemas"]["BehaviorCoverage"];
 export type CaseCoverage = gen.components["schemas"]["CaseCoverage"];
@@ -45,6 +46,17 @@ export type WorkspaceSegmentId = gen.components["schemas"]["WorkspaceSegmentId"]
 export type WorkspaceSegmentMetadata = gen.components["schemas"]["WorkspaceSegmentMetadata"];
 export type WorkspaceSegmentName = gen.components["schemas"]["WorkspaceSegmentName"];
 export type WorkspaceVersionId = gen.components["schemas"]["WorkspaceVersionId"];
+export type MutatorId = gen.components["schemas"]["MutatorId"];
+export type MutatorState = gen.components["schemas"]["MutatorState"];
+export type Mutator = gen.components["schemas"]["Mutator"];
+export type MutationId = gen.components["schemas"]["MutatorId"];
+export type Mutation = gen.components["schemas"]["Mutation"];
+export type MutatorUseConstraint = gen.components["schemas"]["MutatorUseConstraint"];
+export type ParamConstraint = gen.components["schemas"]["ParamConstraint"];
+export type ExperimentName = gen.components["schemas"]["ExperimentName"];
+export type ExperimentDefinition = gen.components["schemas"]["ExperimentDefinition"];
+export type ExperimentMutationChecklist = gen.components["schemas"]["ExperimentMutationChecklist"];
+export type Experiment = gen.components["schemas"]["Experiment"];
 
 type InternalClient = ReturnType<typeof createClient<gen.paths>>;
 
@@ -111,6 +123,22 @@ export class Client {
 
     spec(specName: string): SpecClient {
         return new SpecClient(this.client, specName);
+    }
+
+    mutators(): MutatorsClient {
+        return new MutatorsClient(this.client);
+    }
+
+    mutator(mutatorId: MutatorId): MutatorClient {
+        return new MutatorClient(this.client, mutatorId);
+    }
+
+    experiments(): ExperimentsClient {
+        return new ExperimentsClient(this.client);
+    }
+
+    experiment(experimentName: string): ExperimentClient {
+        return new ExperimentClient(this.client, experimentName);
     }
 }
 
@@ -415,6 +443,60 @@ export class SpecVersionClient {
                 path: {
                     spec_name: this.specName,
                     spec_version: this.specVersion,
+                },
+            },
+        });
+        return unwrapData(res);
+    }
+}
+
+export class MutatorsClient {
+    constructor(private readonly client: InternalClient) {}
+
+    async list(): Promise<Mutator[]> {
+        const res = await this.client.get("/v2/mutators", {
+            params: {
+                // @ts-ignore
+                query: [],
+            },
+        });
+        return unwrapData(res);
+    }
+}
+
+export class MutatorClient {
+    constructor(private readonly client: InternalClient, private readonly mutatorId: MutatorId) {}
+
+    async mutations(): Promise<Mutation[]> {
+        const q = [];
+        q.push(["mutator_id", this.mutatorId]);
+        const res = await this.client.get("/v2/mutations", {
+            params: {
+                // @ts-ignore
+                query: q,
+            },
+        });
+        return unwrapData(res);
+    }
+}
+
+export class ExperimentsClient {
+    constructor(private readonly client: InternalClient) {}
+
+    async list(): Promise<ExperimentName[]> {
+        const res = await this.client.get("/v2/experiments", {});
+        return unwrapData(res);
+    }
+}
+
+export class ExperimentClient {
+    constructor(private readonly client: InternalClient, private readonly experimentName: string) {}
+
+    async get(): Promise<Experiment> {
+        const res = await this.client.get("/v2/experiments/{experiment_name}", {
+            params: {
+                path: {
+                    experiment_name: this.experimentName,
                 },
             },
         });

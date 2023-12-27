@@ -10,6 +10,7 @@ import * as specs from "./specs";
 import * as specCoverage from "./specCoverage";
 import * as timelines from "./timelines";
 import * as events from "./events";
+import * as experiments from "./experiments";
 import * as lsp from "./lsp";
 import * as modalityLog from "./modalityLog";
 import * as terminalLinkProvider from "./terminalLinkProvider";
@@ -17,6 +18,8 @@ import * as specFileCommands from "./specFileCommands";
 import * as transitionGraph from "./transitionGraph";
 import * as config from "./config";
 import * as speqtrLinkProvider from "./speqtrLinkProvider";
+import * as mutators from "./mutators";
+import * as mutationCreateCommands from "./mutationCreateCommands";
 
 export let log: vscode.OutputChannel;
 let lspClient: LanguageClient;
@@ -50,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
     transitionGraph.register(context, apiClient);
     specFileCommands.register(context);
     speqtrLinkProvider.register(context);
+    mutationCreateCommands.register(context);
 
     const specCoverageProvider = new specCoverage.SpecCoverageProvider(apiClient);
     await specCoverageProvider.initialize(context);
@@ -59,6 +63,8 @@ export async function activate(context: vscode.ExtensionContext) {
     const timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClient);
     const eventsTreeDataProvider = new events.EventsTreeDataProvider(apiClient);
     const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider);
+    const mutatorsTreeDataProvider = new mutators.MutatorsTreeDataProvider(apiClient);
+    const experimentsTreeDataProvider = new experiments.ExperimentsTreeDataProvider(apiClient);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);
@@ -70,6 +76,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
         eventsTreeDataProvider.activeWorkspaceVersionId = ws_ver;
         eventsTreeDataProvider.refresh();
+
+        mutatorsTreeDataProvider.refresh();
+        experimentsTreeDataProvider.refresh();
     });
 
     segmentsTreeDataProvider.onDidChangeUsedSegments((ev) => {
@@ -81,6 +90,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
         eventsTreeDataProvider.activeSegments = ev.activeSegmentIds;
         eventsTreeDataProvider.refresh();
+
+        mutatorsTreeDataProvider.refresh();
+        experimentsTreeDataProvider.refresh();
     });
 
     workspacesTreeDataProvider.register(context);
@@ -88,6 +100,8 @@ export async function activate(context: vscode.ExtensionContext) {
     timelinesTreeDataProvider.register(context);
     eventsTreeDataProvider.register(context);
     specsTreeDataProvider.register(context);
+    mutatorsTreeDataProvider.register(context);
+    experimentsTreeDataProvider.register(context);
 }
 
 export function deactivate(): Thenable<void> | undefined {

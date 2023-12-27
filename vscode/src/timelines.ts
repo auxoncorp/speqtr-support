@@ -1,5 +1,5 @@
 /**
- * TreeDataProvider for the timeline list , in the left side panel.
+ * TreeDataProvider for the mutator list, in the left side panel.
  */
 
 import * as api from "./modalityApi";
@@ -368,6 +368,7 @@ abstract class TimelineTreeItemData {
 export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
     constructor(public name: string, private childItems: TimelineTreeItemData[]) {
         super();
+        super.iconPath = new vscode.ThemeIcon("git-pull-request-draft");
     }
 
     contextValue = "timelineGroup";
