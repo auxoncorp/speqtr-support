@@ -368,6 +368,7 @@ abstract class TimelineTreeItemData {
 export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
     constructor(public name: string, private childItems: TimelineTreeItemData[]) {
         super();
+        super.iconPath = new vscode.ThemeIcon("git-pull-request-draft");
     }
 
     contextValue = "timelineGroup";
