@@ -65,14 +65,24 @@
         "viewsContainers": {
             "activitybar": [
                 {
-                    "id": "auxon-explorer",
-                    "title": "Auxon",
-                    "icon": "images/Auxon_symbol-whitesquare.svg"
+                    "id": "modality-explorer",
+                    "title": "Modality",
+                    "icon": "images/Modality_symbol-whitesquare.svg"
+                },
+                {
+                    "id": "conform-explorer",
+                    "title": "Conform",
+                    "icon": "images/Conform_symbol-whitesquare.svg"
+                },
+                {
+                    "id": "deviant-explorer",
+                    "title": "Deviant",
+                    "icon": "images/Deviant_symbol-whitesquare.svg"
                 }
             ]
         },
         "views": {
-            "auxon-explorer": [
+            "modality-explorer": [
                 {
                     "id": "auxon.workspaces",
                     "name": "Workspaces"
@@ -88,10 +98,18 @@
                 {
                     "id": "auxon.events",
                     "name": "Events"
-                },
+                }
+            ],
+            "conform-explorer": [
                 {
                     "id": "auxon.specs",
                     "name": "Specs"
+                }
+            ],
+            "deviant-explorer": [
+                {
+                    "id": "auxon.mutators",
+                    "name": "Mutators"
                 }
             ]
         },
@@ -369,6 +387,11 @@
                     "command": "auxon.specs.hideResults",
                     "when": "view == auxon.specs && auxon.specs.results == 'SHOW'",
                     "group": "7_modification@2"
+                },
+                {
+                    "command": "auxon.mutators.refresh",
+                    "when": "view == auxon.mutators",
+                    "group": "navigation@1"
                 }
             ]
         },
@@ -607,6 +630,11 @@
                 "command": "auxon.modality.log",
                 "title": "View Log",
                 "icon": "$(open-preview)"
+            },
+            {
+                "command": "auxon.mutators.refresh",
+                "title": "Refresh Mutator List",
+                "icon": "$(refresh)"
             }
         ],
         "configuration": {
