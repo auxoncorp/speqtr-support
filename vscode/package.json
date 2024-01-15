@@ -131,7 +131,7 @@
                 },
                 {
                     "command": "auxon.modality.log",
-                    "when": "view == auxon.segments || view == auxon.timelines",
+                    "when": "view == auxon.segments || view == auxon.timelines || (view == auxon.events && viewItem == event)",
                     "group": "inline"
                 },
                 {
@@ -173,6 +173,10 @@
                 {
                     "command": "auxon.events.createEventAttrNotebook",
                     "when": "view == auxon.events && viewItem == eventAttribute"
+                },
+                {
+                    "command": "auxon.events.logSelected",
+                    "when": "view == auxon.events && listMultiSelection && viewItem == event"
                 },
                 {
                     "command": "auxon.specs.showLatest",
@@ -467,6 +471,10 @@
                 "title": "View Attribute Plots in a Jupyter Notebook"
             },
             {
+                "command": "auxon.events.logSelected",
+                "title": "Log Selected Events"
+            },
+            {
                 "command": "auxon.specs.refresh",
                 "title": "Refresh Spec List",
                 "icon": "$(refresh)"
@@ -597,7 +605,7 @@
             },
             {
                 "command": "auxon.modality.log",
-                "title": "View log",
+                "title": "View Log",
                 "icon": "$(open-preview)"
             }
         ],
