@@ -100,6 +100,16 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
             items.push(new SegmentTreeItemData(segment, isActive));
         }
 
+        items.sort((a, b) => {
+            if (a === null || a.name === null) {
+                return 1;
+            }
+            if (b === null || b.name === null) {
+                return -1;
+            }
+            return a.segment.latest_receive_time - b.segment.latest_receive_time;
+        });
+
         if (
             !isDeepStrictEqual(usedSegmentConfig, this.usedSegmentConfig) ||
             !isDeepStrictEqual(activeSegmentIds, this.activeSegmentIds)
