@@ -17,6 +17,8 @@ import * as specFileCommands from "./specFileCommands";
 import * as transitionGraph from "./transitionGraph";
 import * as config from "./config";
 import * as speqtrLinkProvider from "./speqtrLinkProvider";
+import * as mutators from "./mutators";
+import * as mutations from "./mutations";
 
 export let log: vscode.OutputChannel;
 let lspClient: LanguageClient;
@@ -59,6 +61,8 @@ export async function activate(context: vscode.ExtensionContext) {
     const timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClient);
     const eventsTreeDataProvider = new events.EventsTreeDataProvider(apiClient);
     const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider);
+    const mutatorsTreeDataProvider = new mutators.MutatorsTreeDataProvider(apiClient);
+    const mutationsTreeDataProvider = new mutations.MutationsTreeDataProvider(apiClient);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);
@@ -70,6 +74,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
         eventsTreeDataProvider.activeWorkspaceVersionId = ws_ver;
         eventsTreeDataProvider.refresh();
+
+        mutatorsTreeDataProvider.refresh();
+        mutationsTreeDataProvider.refresh();
     });
 
     segmentsTreeDataProvider.onDidChangeUsedSegments((ev) => {
@@ -81,6 +88,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
         eventsTreeDataProvider.activeSegments = ev.activeSegmentIds;
         eventsTreeDataProvider.refresh();
+
+        mutatorsTreeDataProvider.refresh();
+        mutationsTreeDataProvider.refresh();
     });
 
     workspacesTreeDataProvider.register(context);
@@ -88,6 +98,8 @@ export async function activate(context: vscode.ExtensionContext) {
     timelinesTreeDataProvider.register(context);
     eventsTreeDataProvider.register(context);
     specsTreeDataProvider.register(context);
+    mutatorsTreeDataProvider.register(context);
+    mutationsTreeDataProvider.register(context);
 }
 
 export function deactivate(): Thenable<void> | undefined {

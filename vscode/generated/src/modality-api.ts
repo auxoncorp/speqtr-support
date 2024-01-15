@@ -17,6 +17,20 @@ export interface paths {
      */
     get: operations["get_events_summary_for_timeline"];
   };
+  "/v2/mutations": {
+    /**
+     * List mutations 
+     * @description List mutations
+     */
+    get: operations["list_mutations"];
+  };
+  "/v2/mutators": {
+    /**
+     * List mutators 
+     * @description List mutators
+     */
+    get: operations["list_mutators"];
+  };
   "/v2/specs": {
     /**
      * List all specs 
@@ -319,6 +333,43 @@ export interface components {
     MaybeAttrVal: OneOf<["None", {
       Some: components["schemas"]["AttrVal"];
     }]>;
+    Mutation: {
+      experiment_name?: string | null;
+      mutation_id: components["schemas"]["MutationId"];
+      mutator_attributes: {
+        [key: string]: components["schemas"]["AttrVal"] | undefined;
+      };
+      mutator_id: components["schemas"]["MutatorId"];
+      params: {
+        [key: string]: components["schemas"]["AttrVal"] | undefined;
+      };
+    };
+    /** Format: uuid */
+    MutationId: string;
+    /** @description Mutations operation errors */
+    MutationsError: OneOf<["InvalidMutatorId", {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
+    Mutator: {
+      mutator_attributes: {
+        [key: string]: components["schemas"]["AttrVal"] | undefined;
+      };
+      mutator_id: components["schemas"]["MutatorId"];
+      mutator_state: components["schemas"]["MutatorState"];
+    };
+    /** Format: uuid */
+    MutatorId: string;
+    /** @enum {string} */
+    MutatorState: "Available" | "Retired" | "TimedOut" | "Disconnected";
+    /** @description Mutator operation errors */
+    MutatorsError: OneOf<[{
+      /** @description Invalid mutator filter expression */
+      InvalidMutatorFilter: string;
+    }, {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
     Nanoseconds: number;
     SegmentCoverage: {
       coverage_aggregates: components["schemas"]["CoverageAggregates"];
@@ -493,6 +544,76 @@ export interface operations {
       404: {
         content: {
           "application/json": components["schemas"]["EventsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List mutations 
+   * @description List mutations
+   */
+  list_mutations: {
+    parameters: {
+      query: {
+        /** @description Mutator ID */
+        mutator_id?: string | null;
+        /** @description Experiment name */
+        experiment?: string | null;
+      };
+    };
+    responses: {
+      /** @description List mutations successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["Mutation"])[];
+        };
+      };
+      /** @description Invalid mutator_id */
+      400: {
+        content: {
+          "application/json": components["schemas"]["MutationsError"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["MutationsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List mutators 
+   * @description List mutators
+   */
+  list_mutators: {
+    parameters: {
+      query: {
+        /** @description Mutator filter expression */
+        mutator_filter?: string | null;
+      };
+    };
+    responses: {
+      /** @description List mutators successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["Mutator"])[];
+        };
+      };
+      /** @description Invalid mutator_filter */
+      400: {
+        content: {
+          "application/json": components["schemas"]["MutatorsError"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["MutatorsError"];
         };
       };
     };

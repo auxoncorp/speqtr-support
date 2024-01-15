@@ -110,6 +110,10 @@
                 {
                     "id": "auxon.mutators",
                     "name": "Mutators"
+                },
+                {
+                    "id": "auxon.mutations",
+                    "name": "Mutations"
                 }
             ]
         },
@@ -392,6 +396,51 @@
                     "command": "auxon.mutators.refresh",
                     "when": "view == auxon.mutators",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.mutators.showUnavailable",
+                    "when": "view == auxon.mutators && auxon.mutators.unavailable == 'HIDE'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.mutators.hideUnavailable",
+                    "when": "view == auxon.mutators && auxon.mutators.unavailable == 'SHOW'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.mutators.groupMutatorsByName",
+                    "when": "view == auxon.mutators && auxon.mutators.groupBy != 'MUTATOR_NAME'",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.mutators.disableMutatorGrouping",
+                    "when": "view == auxon.mutators && auxon.mutators.groupBy == 'MUTATOR_NAME'",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.mutations.refresh",
+                    "when": "view == auxon.mutations",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.mutations.groupMutationsByName",
+                    "when": "view == auxon.mutations && auxon.mutations.groupBy != 'MUTATOR_NAME'",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.mutations.disableMutationGrouping",
+                    "when": "view == auxon.mutations && auxon.mutations.groupBy == 'MUTATOR_NAME'",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.mutations.filterBySelectedMutator",
+                    "when": "view == auxon.mutations && auxon.mutations.filterBy != 'MUTATOR_ID'",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.mutations.disableMutationFiltering",
+                    "when": "view == auxon.mutations && auxon.mutations.filterBy == 'MUTATOR_ID'",
+                    "group": "7_modification@3"
                 }
             ]
         },
@@ -635,6 +684,55 @@
                 "command": "auxon.mutators.refresh",
                 "title": "Refresh Mutator List",
                 "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.mutators.setSelectedMutator",
+                "title": "Sets the selected mutator in the mutators tree view"
+            },
+            {
+                "command": "auxon.mutators.showUnavailable",
+                "title": "Show Unavailable"
+            },
+            {
+                "command": "auxon.mutators.hideUnavailable",
+                "title": "✓ Show Unavailable"
+            },
+            {
+                "command": "auxon.mutators.groupMutatorsByName",
+                "title": "Group By Mutator Name"
+            },
+            {
+                "command": "auxon.mutators.disableMutatorGrouping",
+                "title": "✓ Group By Mutator Name"
+            },
+            {
+                "command": "auxon.mutations.refresh",
+                "title": "Refresh Mutation List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.mutations.setSelectedMutator",
+                "title": "Set the selected mutator in the mutations tree view"
+            },
+            {
+                "command": "auxon.mutations.setSelectedMutation",
+                "title": "Sets the selected mutation in the mutations tree view"
+            },
+            {
+                "command": "auxon.mutations.groupMutationsByName",
+                "title": "Group By Mutator Name"
+            },
+            {
+                "command": "auxon.mutations.disableMutationGrouping",
+                "title": "✓ Group By Mutator Name"
+            },
+            {
+                "command": "auxon.mutations.filterBySelectedMutator",
+                "title": "Filter By Selected Mutator"
+            },
+            {
+                "command": "auxon.mutations.disableMutationFiltering",
+                "title": "✓ Filter By Selected Mutator"
             }
         ],
         "configuration": {

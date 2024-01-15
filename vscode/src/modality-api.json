@@ -73,6 +73,145 @@
                 ]
             }
         },
+        "/v2/mutations": {
+            "get": {
+                "tags": ["mutations"],
+                "summary": "List mutations",
+                "description": "List mutations",
+                "operationId": "list_mutations",
+                "parameters": [
+                    {
+                        "name": "mutator_id",
+                        "in": "query",
+                        "description": "Mutator ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "experiment",
+                        "in": "query",
+                        "description": "Experiment name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List mutations successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Mutation"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid mutator_id",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutationsError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutationsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
+        "/v2/mutators": {
+            "get": {
+                "tags": ["mutators"],
+                "summary": "List mutators",
+                "description": "List mutators",
+                "operationId": "list_mutators",
+                "parameters": [
+                    {
+                        "name": "mutator_filter",
+                        "in": "query",
+                        "description": "Mutator filter expression",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List mutators successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Mutator"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid mutator_filter",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
         "/v2/specs": {
             "get": {
                 "tags": ["specs"],
@@ -2218,6 +2357,108 @@
                     }
                 ],
                 "description": "A serialization helper type, for when you actually want Option<AttrVal>. (We're\nnot allowed to implement ToSchema on that...)"
+            },
+            "Mutation": {
+                "type": "object",
+                "required": ["mutation_id", "mutator_id", "params", "mutator_attributes"],
+                "properties": {
+                    "experiment_name": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "mutation_id": {
+                        "$ref": "#/components/schemas/MutationId"
+                    },
+                    "mutator_attributes": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/AttrVal"
+                        }
+                    },
+                    "mutator_id": {
+                        "$ref": "#/components/schemas/MutatorId"
+                    },
+                    "params": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/AttrVal"
+                        }
+                    }
+                }
+            },
+            "MutationId": {
+                "type": "string",
+                "format": "uuid"
+            },
+            "MutationsError": {
+                "oneOf": [
+                    {
+                        "type": "string",
+                        "enum": ["InvalidMutatorId"]
+                    },
+                    {
+                        "type": "object",
+                        "required": ["Internal"],
+                        "properties": {
+                            "Internal": {
+                                "type": "string",
+                                "description": "Internal Server Error"
+                            }
+                        }
+                    }
+                ],
+                "description": "Mutations operation errors"
+            },
+            "Mutator": {
+                "type": "object",
+                "required": ["mutator_id", "mutator_attributes", "mutator_state"],
+                "properties": {
+                    "mutator_attributes": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/AttrVal"
+                        }
+                    },
+                    "mutator_id": {
+                        "$ref": "#/components/schemas/MutatorId"
+                    },
+                    "mutator_state": {
+                        "$ref": "#/components/schemas/MutatorState"
+                    }
+                }
+            },
+            "MutatorId": {
+                "type": "string",
+                "format": "uuid"
+            },
+            "MutatorState": {
+                "type": "string",
+                "enum": ["Available", "Retired", "TimedOut", "Disconnected"]
+            },
+            "MutatorsError": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "required": ["InvalidMutatorFilter"],
+                        "properties": {
+                            "InvalidMutatorFilter": {
+                                "type": "string",
+                                "description": "Invalid mutator filter expression"
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": ["Internal"],
+                        "properties": {
+                            "Internal": {
+                                "type": "string",
+                                "description": "Internal Server Error"
+                            }
+                        }
+                    }
+                ],
+                "description": "Mutator operation errors"
             },
             "Nanoseconds": {
                 "type": "integer"
