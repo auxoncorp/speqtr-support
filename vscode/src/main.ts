@@ -25,7 +25,7 @@ export let log: vscode.OutputChannel;
 let lspClient: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
-    log = vscode.window.createOutputChannel("Auxon SpeQTr");
+    log = vscode.window.createOutputChannel("Auxon");
 
     // If this is a fresh install, prompt for new first user creation
     await user.handleNewUserCreation();

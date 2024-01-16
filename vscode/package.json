@@ -66,17 +66,17 @@
             "activitybar": [
                 {
                     "id": "modality-explorer",
-                    "title": "Modality",
+                    "title": "Auxon Modality",
                     "icon": "images/Modality_symbol-whitesquare.svg"
                 },
                 {
                     "id": "conform-explorer",
-                    "title": "Conform",
+                    "title": "Auxon Conform",
                     "icon": "images/Conform_symbol-whitesquare.svg"
                 },
                 {
                     "id": "deviant-explorer",
-                    "title": "Deviant",
+                    "title": "Auxon Deviant",
                     "icon": "images/Deviant_symbol-whitesquare.svg"
                 }
             ]
@@ -778,7 +778,7 @@
         ],
         "configuration": {
             "type": "object",
-            "title": "Auxon SpeQTr",
+            "title": "Auxon",
             "properties": {
                 "auxon.tooldir": {
                     "type": [
