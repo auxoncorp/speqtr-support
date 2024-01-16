@@ -53,6 +53,9 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
             }),
             vscode.commands.registerCommand("auxon.mutators.groupMutatorsByName", () => {
                 this.groupMutatorsByName();
+            }),
+            vscode.commands.registerCommand("auxon.mutators.createMutation", (itemData) => {
+                this.createMutation(itemData);
             })
         );
 
@@ -154,6 +157,15 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
     groupMutatorsByName() {
         this.workspaceState.setGroupByMutatorName(true);
         this.refresh();
+    }
+
+    createMutation(item: MutatorsTreeItemData) {
+        if (!(item instanceof NamedMutatorTreeItemData)) {
+            throw new Error("Internal error: mutators tree node not of expected type");
+        }
+        // N.B. we could check for (un)available status here first, but currently we
+        // just pipe the CLI stderr message through
+        vscode.commands.executeCommand("auxon.deviant.runCreateMutationWizard", item.mutator);
     }
 }
 
@@ -359,6 +371,7 @@ export class MutatorParameterTreeItemData extends MutatorsTreeItemData {
         if (this.param.description) {
             children.push(new MutatorDetailLeafTreeItemData(`${this.param.description}`));
         }
+        children.push(new MutatorDetailLeafTreeItemData(`value_type: ${this.param.valueType}`));
         for (const [k, v] of this.param.attrs) {
             children.push(new MutatorDetailLeafTreeItemData(`${k}: ${v}`));
         }
@@ -424,9 +437,10 @@ export class Mutator {
     }
 }
 
-class MutatorParameter {
+export class MutatorParameter {
     name = "<unnamed>";
     description?: string = undefined;
+    valueType: string;
     attrs: Map<string, api.AttrVal>;
 
     constructor(private paramAttrs: Map<string, api.AttrVal>) {
@@ -436,6 +450,8 @@ class MutatorParameter {
                 this.name = v as string;
             } else if (k == "description") {
                 this.description = v as string;
+            } else if (k == "value_type") {
+                this.valueType = v as string;
             } else {
                 this.attrs.set(k, v);
             }

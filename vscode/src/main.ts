@@ -19,6 +19,7 @@ import * as config from "./config";
 import * as speqtrLinkProvider from "./speqtrLinkProvider";
 import * as mutators from "./mutators";
 import * as mutations from "./mutations";
+import * as deviantCommands from "./deviantCommands";
 
 export let log: vscode.OutputChannel;
 let lspClient: LanguageClient;
@@ -52,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
     transitionGraph.register(context, apiClient);
     specFileCommands.register(context);
     speqtrLinkProvider.register(context);
+    deviantCommands.register(context);
 
     const specCoverageProvider = new specCoverage.SpecCoverageProvider(apiClient);
     await specCoverageProvider.initialize(context);

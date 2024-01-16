@@ -309,6 +309,16 @@
                     "command": "auxon.specs.deleteManyResults",
                     "when": "view == auxon.specs && viewItem == specResult && listMultiSelection && false",
                     "group": "2_context@2"
+                },
+                {
+                    "command": "auxon.mutators.createMutation",
+                    "when": "view == auxon.mutators && viewItem == mutator",
+                    "group": "inline"
+                },
+                {
+                    "command": "auxon.mutations.clearMutation",
+                    "when": "view == auxon.mutations && viewItem == mutation",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -391,6 +401,11 @@
                     "command": "auxon.specs.hideResults",
                     "when": "view == auxon.specs && auxon.specs.results == 'SHOW'",
                     "group": "7_modification@2"
+                },
+                {
+                    "command": "auxon.deviant.clearAllMutations",
+                    "when": "view == auxon.mutations",
+                    "group": "7_modification@1"
                 },
                 {
                     "command": "auxon.mutators.refresh",
@@ -681,6 +696,22 @@
                 "icon": "$(open-preview)"
             },
             {
+                "command": "auxon.deviant.clearMutation",
+                "title": "Clear mutations using the deviant CLI"
+            },
+            {
+                "command": "auxon.deviant.clearAllMutations",
+                "title": "Clear All Mutations"
+            },
+            {
+                "command": "auxon.deviant.createMutation",
+                "title": "Create a mutation using the deviant CLI"
+            },
+            {
+                "command": "auxon.deviant.runCreateMutationWizard",
+                "title": "Create a Mutation"
+            },
+            {
                 "command": "auxon.mutators.refresh",
                 "title": "Refresh Mutator List",
                 "icon": "$(refresh)"
@@ -704,6 +735,11 @@
             {
                 "command": "auxon.mutators.disableMutatorGrouping",
                 "title": "✓ Group By Mutator Name"
+            },
+            {
+                "command": "auxon.mutators.createMutation",
+                "title": "Create a Mutation",
+                "icon": "$(zap)"
             },
             {
                 "command": "auxon.mutations.refresh",
@@ -733,6 +769,11 @@
             {
                 "command": "auxon.mutations.disableMutationFiltering",
                 "title": "✓ Filter By Selected Mutator"
+            },
+            {
+                "command": "auxon.mutations.clearMutation",
+                "title": "Clear Mutation",
+                "icon": "$(notebook-state-error)"
             }
         ],
         "configuration": {

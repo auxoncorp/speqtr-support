@@ -64,6 +64,9 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
             }),
             vscode.commands.registerCommand("auxon.mutations.filterBySelectedMutator", () => {
                 this.filterBySelectedMutator();
+            }),
+            vscode.commands.registerCommand("auxon.mutations.clearMutation", (itemData) => {
+                this.clearMutation(itemData);
             })
         );
 
@@ -186,6 +189,13 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
         this.selectedMutatorId = null;
         this.refresh();
     }
+
+    clearMutation(item: MutationsTreeItemData) {
+        if (!(item instanceof NamedMutationTreeItemData)) {
+            throw new Error("Internal error: mutations tree node not of expected type");
+        }
+        vscode.commands.executeCommand("auxon.deviant.clearMutation", { mutationId: item.mutationId });
+    }
 }
 
 // This is the base of all the tree item data classes
@@ -214,7 +224,7 @@ abstract class MutationsTreeItemData {
         item.iconPath = this.iconPath;
 
         // Mutator selection populates mutations view
-        if (this.contextValue == "namedMutation" && !workspaceData.getFilterBySelectedMutator()) {
+        if (this.contextValue == "mutation" && !workspaceData.getFilterBySelectedMutator()) {
             const command = {
                 title: "Sets the selected mutator in the mutators tree view",
                 command: "auxon.mutators.setSelectedMutator",
@@ -291,7 +301,7 @@ export class MutationsGroupByNameTreeItemData extends MutationsTreeItemData {
 }
 
 export class NamedMutationTreeItemData extends MutationsTreeItemData {
-    contextValue = "namedMutation";
+    contextValue = "mutation";
     constructor(public mutation: Mutation) {
         super(mutation.mutatorName);
         this.id = `${mutation.mutationId}`;
