@@ -111,7 +111,7 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
                     root.insertNode(new Mutation(m));
                 }
                 root.updateDescriptions();
-                items = await root.children(this.apiClient, this.workspaceState);
+                items = root.children();
             } else {
                 items = mutations.map((m) => new NamedMutationTreeItemData(new Mutation(m)));
             }
@@ -120,7 +120,7 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
             this.data = items.sort((a, b) => compare(a.mutatorName, b.mutatorName));
             return this.data;
         } else {
-            return await element.children(this.apiClient, this.workspaceState);
+            return element.children();
         }
     }
 
@@ -213,7 +213,7 @@ abstract class MutationsTreeItemData {
 
     treeItem(workspaceData: MutationsTreeMemento): vscode.TreeItem {
         let state = vscode.TreeItemCollapsibleState.Collapsed;
-        if (!this.canHaveChildren(workspaceData)) {
+        if (!this.canHaveChildren()) {
             state = vscode.TreeItemCollapsibleState.None;
         }
 
@@ -236,11 +236,11 @@ abstract class MutationsTreeItemData {
         return item;
     }
 
-    canHaveChildren(_workspaceData: MutationsTreeMemento): boolean {
+    canHaveChildren(): boolean {
         return false;
     }
 
-    async children(_apiClient: api.Client, _workspaceState: MutationsTreeMemento): Promise<MutationsTreeItemData[]> {
+    children(): MutationsTreeItemData[] {
         return [];
     }
 }
@@ -254,14 +254,11 @@ export class MutationsGroupByNameTreeItemData extends MutationsTreeItemData {
         this.tooltip = new vscode.MarkdownString(tooltip);
     }
 
-    override canHaveChildren(_workspaceData: MutationsTreeMemento): boolean {
+    override canHaveChildren(): boolean {
         return true;
     }
 
-    override async children(
-        _apiClient: api.Client,
-        _workspaceState: MutationsTreeMemento
-    ): Promise<MutationsTreeItemData[]> {
+    override children(): MutationsTreeItemData[] {
         return this.childItems;
     }
 
@@ -315,15 +312,12 @@ export class NamedMutationTreeItemData extends MutationsTreeItemData {
         super.iconPath = new vscode.ThemeIcon("zap");
     }
 
-    override canHaveChildren(_workspaceData: MutationsTreeMemento): boolean {
+    override canHaveChildren(): boolean {
         // TODO - always true once created-at/etc is added
         return this.mutation.experimentName != null || this.mutation.params.size != 0;
     }
 
-    override async children(
-        _apiClient: api.Client,
-        _workspaceState: MutationsTreeMemento
-    ): Promise<MutationsTreeItemData[]> {
+    override children(): MutationsTreeItemData[] {
         const children = [];
         if (this.mutation.experimentName) {
             children.push(new MutationDetailLeafTreeItemData(`Experiment: ${this.mutation.experimentName}`));
@@ -341,14 +335,11 @@ export class MutationParametersTreeItemData extends MutationsTreeItemData {
         super("Parameters");
     }
 
-    override canHaveChildren(_workspaceData: MutationsTreeMemento): boolean {
+    override canHaveChildren(): boolean {
         return true;
     }
 
-    override async children(
-        _apiClient: api.Client,
-        _workspaceState: MutationsTreeMemento
-    ): Promise<MutationsTreeItemData[]> {
+    override children(): MutationsTreeItemData[] {
         const children = [];
         for (const [paramName, paramValue] of this.mutation.params) {
             children.push(new MutationDetailLeafTreeItemData(`${paramName}: ${paramValue}`));

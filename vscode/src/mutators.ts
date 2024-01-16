@@ -83,7 +83,7 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
     }
 
     getTreeItem(element: MutatorsTreeItemData): vscode.TreeItem {
-        return element.treeItem(this.workspaceState);
+        return element.treeItem();
     }
 
     async getChildren(element?: MutatorsTreeItemData): Promise<MutatorsTreeItemData[]> {
@@ -99,7 +99,7 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
                     root.insertNode(new Mutator(m));
                 }
                 root.updateDescriptions();
-                items = await root.children(this.apiClient, this.workspaceState);
+                items = root.children();
             } else {
                 items = mutators.map((m) => new NamedMutatorTreeItemData(new Mutator(m)));
             }
@@ -107,7 +107,7 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
             this.data = items.sort((a, b) => compare(a.name, b.name));
             return this.data;
         } else {
-            return await element.children(this.apiClient, this.workspaceState);
+            return element.children();
         }
     }
 
@@ -181,9 +181,9 @@ abstract class MutatorsTreeItemData {
 
     constructor(public name: string) {}
 
-    treeItem(workspaceData: MutatorsTreeMemento): vscode.TreeItem {
+    treeItem(): vscode.TreeItem {
         let state = vscode.TreeItemCollapsibleState.Collapsed;
-        if (!this.canHaveChildren(workspaceData)) {
+        if (!this.canHaveChildren()) {
             state = vscode.TreeItemCollapsibleState.None;
         }
 
@@ -206,11 +206,11 @@ abstract class MutatorsTreeItemData {
         return item;
     }
 
-    canHaveChildren(_workspaceData: MutatorsTreeMemento): boolean {
+    canHaveChildren(): boolean {
         return false;
     }
 
-    async children(_apiClient: api.Client, _workspaceState: MutatorsTreeMemento): Promise<MutatorsTreeItemData[]> {
+    children(): MutatorsTreeItemData[] {
         return [];
     }
 }
@@ -224,14 +224,11 @@ export class MutatorsGroupByNameTreeItemData extends MutatorsTreeItemData {
         this.tooltip = new vscode.MarkdownString(tooltip);
     }
 
-    override canHaveChildren(_workspaceData: MutatorsTreeMemento): boolean {
+    override canHaveChildren(): boolean {
         return true;
     }
 
-    override async children(
-        _apiClient: api.Client,
-        _workspaceState: MutatorsTreeMemento
-    ): Promise<MutatorsTreeItemData[]> {
+    override children(): MutatorsTreeItemData[] {
         return this.childItems;
     }
 
@@ -275,14 +272,11 @@ export class NamedMutatorTreeItemData extends MutatorsTreeItemData {
         this.iconPath = new vscode.ThemeIcon("outline-view-icon");
     }
 
-    override canHaveChildren(_workspaceData: MutatorsTreeMemento): boolean {
+    override canHaveChildren(): boolean {
         return true;
     }
 
-    override async children(
-        _apiClient: api.Client,
-        _workspaceState: MutatorsTreeMemento
-    ): Promise<MutatorsTreeItemData[]> {
+    override children(): MutatorsTreeItemData[] {
         const children = [];
         if (this.mutator.description) {
             children.push(new MutatorDetailLeafTreeItemData(`${this.mutator.description}`));
@@ -314,14 +308,11 @@ export class MutatorOrgMetadataTreeItemData extends MutatorsTreeItemData {
         super.iconPath = new vscode.ThemeIcon("organization");
     }
 
-    override canHaveChildren(_workspaceData: MutatorsTreeMemento): boolean {
+    override canHaveChildren(): boolean {
         return true;
     }
 
-    override async children(
-        _apiClient: api.Client,
-        _workspaceState: MutatorsTreeMemento
-    ): Promise<MutatorsTreeItemData[]> {
+    override children(): MutatorsTreeItemData[] {
         const children = [];
         for (const [k, v] of this.orgMetadataAttrs) {
             children.push(new MutatorDetailLeafTreeItemData(`${k}: ${v}`));
@@ -337,14 +328,11 @@ export class MutatorParametersTreeItemData extends MutatorsTreeItemData {
         super.iconPath = new vscode.ThemeIcon("output");
     }
 
-    override canHaveChildren(_workspaceData: MutatorsTreeMemento): boolean {
+    override canHaveChildren(): boolean {
         return true;
     }
 
-    override async children(
-        _apiClient: api.Client,
-        _workspaceState: MutatorsTreeMemento
-    ): Promise<MutatorsTreeItemData[]> {
+    override children(): MutatorsTreeItemData[] {
         const children = [];
         for (const p of this.params) {
             children.push(new MutatorParameterTreeItemData(p));
@@ -359,14 +347,11 @@ export class MutatorParameterTreeItemData extends MutatorsTreeItemData {
         super(param.name);
     }
 
-    override canHaveChildren(_workspaceData: MutatorsTreeMemento): boolean {
+    override canHaveChildren(): boolean {
         return true;
     }
 
-    override async children(
-        _apiClient: api.Client,
-        _workspaceState: MutatorsTreeMemento
-    ): Promise<MutatorsTreeItemData[]> {
+    override children(): MutatorsTreeItemData[] {
         const children = [];
         if (this.param.description) {
             children.push(new MutatorDetailLeafTreeItemData(`${this.param.description}`));
