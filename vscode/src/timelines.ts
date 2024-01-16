@@ -433,7 +433,15 @@ export class TimelineGroupTreeItemData extends TimelineTreeItemData {
     }
 
     override children(): TimelineTreeItemData[] {
-        const timelines = this.timeline_group.timelines.sort();
+        const timelines = this.timeline_group.timelines.sort((a, b) => {
+            if (a === null || a.name === null) {
+                return 1;
+            }
+            if (b === null || b.name === null) {
+                return -1;
+            }
+            return a.name.localeCompare(b.name);
+        });
         return timelines.map((timeline_overview) => new TimelineLeafTreeItemData(timeline_overview));
     }
 }

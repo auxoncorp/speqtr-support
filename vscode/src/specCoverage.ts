@@ -145,7 +145,7 @@ function specViewModel(sc: api.SpecCoverage): SpecViewModel {
         }
         for (const [_c_name, caseCoverage] of Object.entries(behaviorCoverage.case_coverage)) {
             numSpecCases += 1;
-            if (caseCoverage.ever_matched) {
+            if (caseCoverage.ever_matched || (caseCoverage.case_type == "Prohibited" && !caseCoverage.ever_matched)) {
                 numSpecCasesCovered += 1;
             }
         }
@@ -223,7 +223,7 @@ function caseViewModel(cCov: api.CaseCoverage): CaseViewModel {
     let status: Status = "not-executed";
 
     if (cCov.case_type == "Prohibited") {
-        if (!cCov.ever_matched || cCov.matched_n_times > 0) {
+        if (cCov.ever_matched || cCov.matched_n_times > 0) {
             status = "failed";
         } else {
             status = "passed";

@@ -5,6 +5,7 @@ import * as commonNotebookCells from "../templates/common.json";
 import * as eventTimingNotebookCells from "../templates/eventTiming.json";
 import * as eventAttributeValuesNotebookCells from "../templates/eventAttributeValues.json";
 import * as eventMultiAttributeValuesNotebookCells from "../templates/eventMultiAttributeValues.json";
+import * as modalityLog from "./modalityLog";
 
 export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTreeItemData> {
     selectedTimelineId?: api.TimelineId = undefined;
@@ -30,6 +31,7 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
         context.subscriptions.push(
             this.view,
             vscode.commands.registerCommand("auxon.events.refresh", () => this.refresh()),
+            vscode.commands.registerCommand("auxon.events.logSelected", () => this.logSelectedCommand()),
             vscode.commands.registerCommand("auxon.events.setSelectedTimeline", (timelineId, timelineName) =>
                 this.setSelectedTimeline(timelineId, timelineName)
             ),
@@ -73,7 +75,7 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
                         attrs.push(attr.replace("event.", ""));
                     }
                 }
-                children.push(new EventNameTreeItemData(name, summary.n_instances, attrs));
+                children.push(new EventNameTreeItemData(name, summary.n_instances, attrs, this.selectedTimelineId));
             }
 
             children.sort((a, b) => a.eventName.localeCompare(b.eventName));
@@ -93,6 +95,19 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
             this.selectedTimelineName = timelineName;
             this.refresh();
         }
+    }
+
+    logSelectedCommand() {
+        const thingsToLog = [];
+        const literalTimelineId = "%" + this.selectedTimelineId.replace(/-/g, "");
+
+        for (const itemData of this.view.selection) {
+            thingsToLog.push(`${itemData.eventName}@*(_.timeline.id=${literalTimelineId})`);
+        }
+        vscode.commands.executeCommand(
+            modalityLog.MODALITY_LOG_COMMAND,
+            new modalityLog.ModalityLogCommandArgs({ thingToLog: thingsToLog })
+        );
     }
 
     async createEventTimingNotebook(item: EventNameTreeItemData) {
@@ -225,7 +240,19 @@ export type EventsTreeItemData = EventNameTreeItemData | EventAttributeTreeItemD
 export type EventsTreeItem = EventNameTreeItem | EventAttributeTreeItem;
 
 export class EventNameTreeItemData {
-    constructor(public eventName: string, public numInstances: number, public attributes: string[]) {}
+    constructor(
+        public eventName: string,
+        public numInstances: number,
+        public attributes: string[],
+        public timelineId: api.TimelineId
+    ) {}
+
+    getModalityLogCommandArgs(): modalityLog.ModalityLogCommandArgs {
+        const literalTimelineId = "%" + this.timelineId.replace(/-/g, "");
+        return new modalityLog.ModalityLogCommandArgs({
+            thingToLog: `${this.eventName}@*(_.timeline.id=${literalTimelineId})`,
+        });
+    }
 }
 
 class EventNameTreeItem extends vscode.TreeItem {
