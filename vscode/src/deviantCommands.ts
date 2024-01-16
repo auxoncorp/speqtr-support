@@ -49,7 +49,7 @@ export type MutationCreateCommandArgs = {
 async function runDeviantMutationCreateCommand(args: MutationCreateCommandArgs) {
     const deviantPath = config.toolPath("deviant");
 
-    const commandArgs = ["mutation", "create"];
+    const commandArgs = ["mutation", "create", "--format", "json"];
 
     if (args.mutatorId) {
         commandArgs.push("--mutator-id", args.mutatorId);
@@ -67,7 +67,8 @@ async function runDeviantMutationCreateCommand(args: MutationCreateCommandArgs) 
 
     try {
         const res = await execFile(deviantPath, commandArgs, { encoding: "utf8" });
-        await vscode.window.showInformationMessage(res.stdout);
+        const output = JSON.parse(res.stdout) as string;
+        await vscode.window.showInformationMessage(`Created mutation '${output["mutation_id"]}'`);
     } catch (e) {
         vscode.window.showErrorMessage(e.stderr.trim());
     }
