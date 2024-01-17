@@ -13,7 +13,7 @@ class MutatorsTreeMemento {
     }
 
     getGroupByMutatorName(): boolean {
-        return this.memento.get("mutatorsTree_groupByMutatorName", false);
+        return this.memento.get("mutatorsTree_groupByMutatorName", true);
     }
 
     async setGroupByMutatorName(val: boolean): Promise<void> {
