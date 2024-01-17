@@ -16,7 +16,10 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     activeWorkspaceVersionId: string;
     usedSegmentConfig: cliConfig.ContextSegment;
     activeSegmentIds: api.WorkspaceSegmentId[];
-    view: vscode.TreeView<SegmentTreeItemData>;
+    modalityView: vscode.TreeView<SegmentTreeItemData>;
+    conformView: vscode.TreeView<SegmentTreeItemData>;
+    deviantView: vscode.TreeView<SegmentTreeItemData>;
+    activeView: vscode.TreeView<SegmentTreeItemData>;
 
     private _onDidChangeTreeData: vscode.EventEmitter<SegmentTreeItemData | SegmentTreeItemData[] | undefined> =
         new vscode.EventEmitter();
@@ -29,13 +32,46 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     constructor(private readonly apiClient: api.Client, private readonly cov: specCoverage.SpecCoverageProvider) {}
 
     register(context: vscode.ExtensionContext) {
-        this.view = vscode.window.createTreeView("auxon.segments", {
+        this.modalityView = vscode.window.createTreeView("auxon.modality_segments", {
             treeDataProvider: this,
             canSelectMany: true,
         });
+        const modalityViewListener = this.modalityView.onDidChangeVisibility(async (ev) => {
+            if (ev.visible) {
+                this.activeView = this.modalityView;
+            }
+        });
+
+        this.conformView = vscode.window.createTreeView("auxon.conform_segments", {
+            treeDataProvider: this,
+            canSelectMany: true,
+        });
+        const conformViewListener = this.conformView.onDidChangeVisibility(async (ev) => {
+            if (ev.visible) {
+                this.activeView = this.conformView;
+            }
+        });
+
+        this.deviantView = vscode.window.createTreeView("auxon.deviant_segments", {
+            treeDataProvider: this,
+            canSelectMany: true,
+        });
+        const deviantViewListener = this.deviantView.onDidChangeVisibility(async (ev) => {
+            if (ev.visible) {
+                this.activeView = this.deviantView;
+            }
+        });
+
+        // Default to the modality view
+        this.activeView = this.modalityView;
 
         context.subscriptions.push(
-            this.view,
+            this.modalityView,
+            modalityViewListener,
+            this.conformView,
+            conformViewListener,
+            this.deviantView,
+            deviantViewListener,
             vscode.commands.registerCommand("auxon.segments.refresh", () => this.refresh()),
             vscode.commands.registerCommand("auxon.segments.setActive", (itemData) => this.setActiveCommand(itemData)),
             vscode.commands.registerCommand("auxon.segments.setActiveFromSelection", () =>
@@ -122,11 +158,11 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
         }
 
         if (usedSegmentConfig.type == "WholeWorkspace") {
-            this.view.message =
+            this.activeView.message =
                 "The whole workspace is currently active as a single universe, without any segmentation applied.";
             return [];
         } else {
-            this.view.message = null;
+            this.activeView.message = null;
             return items;
         }
     }
@@ -141,7 +177,7 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     async setActiveFromSelectionCommand() {
         const args = ["segment", "use"];
         let ruleName: string;
-        for (const item of this.view.selection) {
+        for (const item of this.activeView.selection) {
             if (!ruleName) {
                 ruleName = item.segment.id.rule_name;
                 args.push("--segmentation-rule", item.segment.id.rule_name);

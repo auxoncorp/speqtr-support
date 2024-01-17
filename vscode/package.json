@@ -84,11 +84,11 @@
         "views": {
             "modality-explorer": [
                 {
-                    "id": "auxon.workspaces",
+                    "id": "auxon.modality_workspaces",
                     "name": "Workspaces"
                 },
                 {
-                    "id": "auxon.segments",
+                    "id": "auxon.modality_segments",
                     "name": "Segments"
                 },
                 {
@@ -102,11 +102,27 @@
             ],
             "conform-explorer": [
                 {
+                    "id": "auxon.conform_workspaces",
+                    "name": "Workspaces"
+                },
+                {
+                    "id": "auxon.conform_segments",
+                    "name": "Segments"
+                },
+                {
                     "id": "auxon.specs",
                     "name": "Specs"
                 }
             ],
             "deviant-explorer": [
+                {
+                    "id": "auxon.deviant_workspaces",
+                    "name": "Workspaces"
+                },
+                {
+                    "id": "auxon.deviant_segments",
+                    "name": "Segments"
+                },
                 {
                     "id": "auxon.mutators",
                     "name": "Mutators"
@@ -148,29 +164,29 @@
             "view/item/context": [
                 {
                     "command": "auxon.workspaces.setActive",
-                    "when": "view == auxon.workspaces && viewItem == workspace",
+                    "when": "view =~ /auxon\\.[a-zA-Z]*_workspaces/ && viewItem == workspace",
                     "group": "navigation@1"
                 },
                 {
                     "command": "auxon.modality.log",
-                    "when": "view == auxon.segments || view == auxon.timelines || (view == auxon.events && viewItem == event)",
+                    "when": "view =~ /auxon\\.[a-zA-Z]*_segments/ || view == auxon.timelines || (view == auxon.events && viewItem == event)",
                     "group": "inline"
                 },
                 {
                     "command": "auxon.segments.setActive",
-                    "when": "(view == auxon.segments && viewItem == segment) && !listMultiSelection"
+                    "when": "(view =~ /auxon\\.[a-zA-Z]*_segments/ && viewItem == segment) && !listMultiSelection"
                 },
                 {
                     "command": "auxon.segments.setActiveFromSelection",
-                    "when": "(view == auxon.segments && viewItem == segment) && listMultiSelection"
+                    "when": "(view =~ /auxon\\.[a-zA-Z]*_segments/ && viewItem == segment) && listMultiSelection"
                 },
                 {
                     "command": "auxon.segments.transitionGraph",
-                    "when": "view == auxon.segments"
+                    "when": "view =~ /auxon\\.[a-zA-Z]*_segments/"
                 },
                 {
                     "command": "auxon.segments.specCoverage",
-                    "when": "view == auxon.segments"
+                    "when": "view =~ /auxon\\.[a-zA-Z]*_segments/"
                 },
                 {
                     "command": "auxon.timelines.inspect",
@@ -324,27 +340,27 @@
             "view/title": [
                 {
                     "command": "auxon.workspaces.refresh",
-                    "when": "view == auxon.workspaces",
+                    "when": "view =~ /auxon\\.[a-zA-Z]*_workspaces/",
                     "group": "navigation@1"
                 },
                 {
                     "command": "auxon.segments.refresh",
-                    "when": "view == auxon.segments",
+                    "when": "view =~ /auxon\\.[a-zA-Z]*_segments/",
                     "group": "navigation@1"
                 },
                 {
                     "command": "auxon.segments.setLatestActive",
-                    "when": "view == auxon.segments",
+                    "when": "view =~ /auxon\\.[a-zA-Z]*_segments/",
                     "group": "7_modification@1"
                 },
                 {
                     "command": "auxon.segments.setAllActive",
-                    "when": "view == auxon.segments",
+                    "when": "view =~ /auxon\\.[a-zA-Z]*_segments/",
                     "group": "7_modification@2"
                 },
                 {
                     "command": "auxon.segments.setWholeWorkspaceActive",
-                    "when": "view == auxon.segments",
+                    "when": "view =~ /auxon\\.[a-zA-Z]*_segments/",
                     "group": "7_modification@3"
                 },
                 {
@@ -697,7 +713,7 @@
             },
             {
                 "command": "auxon.deviant.clearMutation",
-                "title": "Clear mutations using the deviant CLI"
+                "title": "Clear Mutation"
             },
             {
                 "command": "auxon.deviant.clearAllMutations",
@@ -705,7 +721,7 @@
             },
             {
                 "command": "auxon.deviant.createMutation",
-                "title": "Create a mutation using the deviant CLI"
+                "title": "Create Mutation"
             },
             {
                 "command": "auxon.deviant.runCreateMutationWizard",

@@ -24,7 +24,13 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
 
     register(context: vscode.ExtensionContext) {
         context.subscriptions.push(
-            vscode.window.createTreeView("auxon.workspaces", {
+            vscode.window.createTreeView("auxon.modality_workspaces", {
+                treeDataProvider: this,
+            }),
+            vscode.window.createTreeView("auxon.conform_workspaces", {
+                treeDataProvider: this,
+            }),
+            vscode.window.createTreeView("auxon.deviant_workspaces", {
                 treeDataProvider: this,
             }),
             vscode.commands.registerCommand("auxon.workspaces.refresh", () => this.refresh()),
