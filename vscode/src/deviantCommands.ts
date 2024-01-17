@@ -34,10 +34,12 @@ async function runDeviantMutationClearCommand(args: MutationClearCommandArgs) {
 
     try {
         const res = await execFile(deviantPath, commandArgs, { encoding: "utf8" });
-        await vscode.window.showInformationMessage(res.stdout);
+        const _dont_wait = vscode.window.showInformationMessage(res.stdout);
     } catch (e) {
         vscode.window.showErrorMessage(e.stderr.trim());
     }
+
+    vscode.commands.executeCommand("auxon.mutations.refresh");
 }
 
 export type MutationCreateCommandArgs = {
@@ -68,10 +70,12 @@ async function runDeviantMutationCreateCommand(args: MutationCreateCommandArgs) 
     try {
         const res = await execFile(deviantPath, commandArgs, { encoding: "utf8" });
         const output = JSON.parse(res.stdout) as string;
-        await vscode.window.showInformationMessage(`Created mutation '${output["mutation_id"]}'`);
+        const _dont_wait = vscode.window.showInformationMessage(`Created mutation '${output["mutation_id"]}'`);
     } catch (e) {
         vscode.window.showErrorMessage(e.stderr.trim());
     }
+
+    vscode.commands.executeCommand("auxon.mutations.refresh");
 }
 
 // TODO - add linked experiment option
