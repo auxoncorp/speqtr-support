@@ -312,6 +312,24 @@ export class SegmentClient {
 
         return unwrapData(res);
     }
+
+    async mutations(mutatorId?: MutatorId): Promise<Mutation[]> {
+        const q = [];
+        if (typeof mutatorId !== "undefined") {
+            q.push(["mutator_id", mutatorId]);
+        }
+        const res = await this.client.get(
+            "/v2/mutations/{workspace_version_id}/segments/{rule_name}/{segment_name}",
+            {
+                params: { 
+                    path: this.segmentId,
+                    // @ts-ignore
+                    query: q,
+                },
+            }
+        );
+        return unwrapData(res);
+    }
 }
 
 export class TimelinesClient {

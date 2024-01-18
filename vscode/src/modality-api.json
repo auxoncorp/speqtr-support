@@ -76,8 +76,8 @@
         "/v2/mutations": {
             "get": {
                 "tags": ["mutations"],
-                "summary": "List mutations",
-                "description": "List mutations",
+                "summary": "List all mutations",
+                "description": "List all mutations",
                 "operationId": "list_mutations",
                 "parameters": [
                     {
@@ -129,6 +129,118 @@
                     },
                     "403": {
                         "description": "Operation not authorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutationsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
+        "/v2/mutations/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
+            "get": {
+                "tags": ["mutations"],
+                "summary": "List all mutations for the given segment",
+                "description": "List all mutations for the given segment",
+                "operationId": "list_segment_mutations",
+                "parameters": [
+                    {
+                        "name": "workspace_version_id",
+                        "in": "path",
+                        "description": "Workspace Version Id",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceVersionId"
+                        }
+                    },
+                    {
+                        "name": "rule_name",
+                        "in": "path",
+                        "description": "Segmentation Rule Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/SegmentationRuleName"
+                        }
+                    },
+                    {
+                        "name": "segment_name",
+                        "in": "path",
+                        "description": "Segment Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceSegmentName"
+                        }
+                    },
+                    {
+                        "name": "mutator_id",
+                        "in": "query",
+                        "description": "Mutator ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "experiment",
+                        "in": "query",
+                        "description": "Experiment name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List mutations successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Mutation"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid workspace_version_id",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutationsError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Workspace or segment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutationsError"
+                                }
+                            }
+                        }
                     },
                     "500": {
                         "description": "Internal Server Error",
@@ -2360,9 +2472,13 @@
             },
             "Mutation": {
                 "type": "object",
-                "required": ["mutation_id", "mutator_id", "params", "mutator_attributes"],
+                "required": ["mutation_id", "mutator_id", "params", "mutator_attributes", "created_at_utc_seconds"],
                 "properties": {
-                    "experiment_name": {
+                    "created_at_utc_seconds": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "linked_experiment": {
                         "type": "string",
                         "nullable": true
                     },
@@ -2383,6 +2499,14 @@
                         "additionalProperties": {
                             "$ref": "#/components/schemas/AttrVal"
                         }
+                    },
+                    "region_details_summary": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MutationRegionDetailsSummary"
+                            }
+                        ],
+                        "nullable": true
                     }
                 }
             },
@@ -2390,11 +2514,103 @@
                 "type": "string",
                 "format": "uuid"
             },
+            "MutationRegionDetails": {
+                "type": "object",
+                "properties": {
+                    "clear_communicated_and_success": {
+                        "type": "array",
+                        "items": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/EventCoordinate"
+                                },
+                                {
+                                    "type": "boolean",
+                                    "nullable": true
+                                }
+                            ]
+                        },
+                        "description": "Maps to the \"modality.mutation.clear_communicated\" event name,\nand the `modality.mutation.success` attribute on such an event",
+                        "nullable": true
+                    },
+                    "command_communicated_and_success": {
+                        "type": "array",
+                        "items": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/EventCoordinate"
+                                },
+                                {
+                                    "type": "boolean",
+                                    "nullable": true
+                                }
+                            ]
+                        },
+                        "description": "Maps to the \"modality.mutation.command_communicated\" event name,\nand the `modality.mutation.success` attribute on such an event",
+                        "nullable": true
+                    },
+                    "inject_attempted_and_success": {
+                        "type": "array",
+                        "items": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/EventCoordinate"
+                                },
+                                {
+                                    "type": "boolean",
+                                    "nullable": true
+                                }
+                            ]
+                        },
+                        "description": "Maps to the \"modality.mutation.injected\" event name,\nand the `modality.mutation.success` attribute on such an event",
+                        "nullable": true
+                    }
+                }
+            },
+            "MutationRegionDetailsSummary": {
+                "type": "object",
+                "required": ["overall", "regions"],
+                "properties": {
+                    "overall": {
+                        "$ref": "#/components/schemas/MutationRegionDetails"
+                    },
+                    "regions": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/RegionKind"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/MutationRegionDetails"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
             "MutationsError": {
                 "oneOf": [
                     {
                         "type": "string",
                         "enum": ["InvalidMutatorId"]
+                    },
+                    {
+                        "type": "object",
+                        "required": ["WorkspaceNotFound"],
+                        "properties": {
+                            "WorkspaceNotFound": {
+                                "type": "string",
+                                "description": "Workspace not found"
+                            }
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "enum": ["SegmentNotFound"]
                     },
                     {
                         "type": "object",
@@ -2463,6 +2679,28 @@
             "Nanoseconds": {
                 "type": "integer"
             },
+            "RegionKind": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "required": ["WholeWorkspace"],
+                        "properties": {
+                            "WholeWorkspace": {
+                                "$ref": "#/components/schemas/WholeWorkspaceRegionKind"
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": ["Segment"],
+                        "properties": {
+                            "Segment": {
+                                "$ref": "#/components/schemas/SegmentRegionKind"
+                            }
+                        }
+                    }
+                ]
+            },
             "SegmentCoverage": {
                 "type": "object",
                 "required": ["spec_coverages", "coverage_aggregates"],
@@ -2475,6 +2713,26 @@
                         "items": {
                             "$ref": "#/components/schemas/SpecCoverage"
                         }
+                    }
+                }
+            },
+            "SegmentRegionKind": {
+                "type": "object",
+                "required": ["workspace_name", "id"],
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/WorkspaceSegmentId"
+                    },
+                    "timeline_filter": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/UnstructuredTimelineFilter"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "workspace_name": {
+                        "$ref": "#/components/schemas/WorkspaceName"
                     }
                 }
             },
@@ -2804,6 +3062,30 @@
                 ],
                 "description": "Timelines operation errors"
             },
+            "UnstructuredTimelineFilter": {
+                "type": "string",
+                "description": "Stringy representation of an unparsed, unstructured DSL for expressing how to filter timelines,\nlikely through attribute evaluation."
+            },
+            "WholeWorkspaceRegionKind": {
+                "type": "object",
+                "required": ["workspace_name", "workspace_version_id"],
+                "properties": {
+                    "timeline_filter": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/UnstructuredTimelineFilter"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "workspace_name": {
+                        "$ref": "#/components/schemas/WorkspaceName"
+                    },
+                    "workspace_version_id": {
+                        "$ref": "#/components/schemas/WorkspaceVersionId"
+                    }
+                }
+            },
             "Workspace": {
                 "type": "object",
                 "required": ["name", "version_id"],
@@ -2815,6 +3097,9 @@
                         "$ref": "#/components/schemas/WorkspaceVersionId"
                     }
                 }
+            },
+            "WorkspaceName": {
+                "type": "string"
             },
             "WorkspaceSegmentId": {
                 "type": "object",

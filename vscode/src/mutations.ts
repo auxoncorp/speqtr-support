@@ -4,8 +4,6 @@ import * as api from "./modalityApi";
 class MutationsTreeMemento {
     constructor(private readonly memento: vscode.Memento) {}
 
-    // TODO filters/selections
-    // - all-of-history vs selected-segment
     getGroupByMutatorName(): boolean {
         return this.memento.get("mutationsTree_groupByMutatorName", false);
     }
@@ -32,8 +30,8 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     workspaceState?: MutationsTreeMemento;
     data: MutationsTreeItemData[];
     view: vscode.TreeView<MutationsTreeItemData>;
-
-    selectedMutatorId?: api.MutatorId;
+    selectedMutatorId?: api.MutatorId = undefined;
+    activeSegmentId?: api.WorkspaceSegmentId = undefined;
 
     constructor(private readonly apiClient: api.Client) {}
 
@@ -93,31 +91,42 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     }
 
     async getChildren(element?: MutationsTreeItemData): Promise<MutationsTreeItemData[]> {
+        if (!this.activeSegmentId) {
+            return [];
+        }
+
         if (this.workspaceState.getFilterBySelectedMutator() && this.selectedMutatorId == null) {
             // Need a selected mutator to populate with
             return [];
         } else if (!element) {
             let mutations = [];
+
             if (this.workspaceState.getFilterBySelectedMutator()) {
-                mutations = await this.apiClient.mutator(this.selectedMutatorId).mutations();
+                mutations = await this.apiClient.segment(this.activeSegmentId).mutations(this.selectedMutatorId)
             } else {
-                mutations = await this.apiClient.mutations().list();
+                mutations = await this.apiClient.segment(this.activeSegmentId).mutations()
             }
 
-            let items = [];
+            this.data = [];
             if (this.workspaceState.getGroupByMutatorName()) {
                 const root = new MutationsGroupByNameTreeItemData("", []);
                 for (const m of mutations) {
                     root.insertNode(new Mutation(m));
                 }
                 root.updateDescriptions();
-                items = root.children();
+                root.sortMutationsByCreatedAt();
+                const { compare } = Intl.Collator("en-US");
+                this.data = root.children().sort((a, b) => compare(a.name, b.name));
             } else {
-                items = mutations.map((m) => new NamedMutationTreeItemData(new Mutation(m)));
+                this.data = mutations.map((m) => new NamedMutationTreeItemData(new Mutation(m)));
+                this.data.sort((a, b) => {
+                    if (!(a instanceof NamedMutationTreeItemData) || !(b instanceof NamedMutationTreeItemData)) {
+                        throw new Error("Internal error: mutations tree node not of expected type");
+                    }
+                    // Most recent first
+                    return b.mutation.createdAt.getTime() - a.mutation.createdAt.getTime();
+                });
             }
-            // TODO - sort by created-at when it's added
-            const { compare } = Intl.Collator("en-US");
-            this.data = items.sort((a, b) => compare(a.mutatorName, b.mutatorName));
             return this.data;
         } else {
             return element.children();
@@ -136,6 +145,15 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
             }
         }
         return undefined;
+    }
+
+    setActiveSegmentIds(segmentIds?: api.WorkspaceSegmentId[]) {
+        if (segmentIds && segmentIds.length == 1) {
+            this.activeSegmentId = segmentIds[0];
+        } else {
+            this.activeSegmentId = undefined;
+        }
+        this.refresh();
     }
 
     // Set the selected mutator when grouping by mutator name or only showing a single mutator
@@ -295,6 +313,20 @@ export class MutationsGroupByNameTreeItemData extends MutationsTreeItemData {
             }
         }
     }
+
+    sortMutationsByCreatedAt() {
+        for (const group of this.childItems) {
+            if (group instanceof MutationsGroupByNameTreeItemData && group.childItems.length > 0) {
+                group.childItems.sort((a, b) => {
+                    if (!(a instanceof NamedMutationTreeItemData) || !(b instanceof NamedMutationTreeItemData)) {
+                        throw new Error("Internal error: mutations tree node not of expected type");
+                    }
+                    // Most recent first
+                    return b.mutation.createdAt.getTime() - a.mutation.createdAt.getTime();
+                });
+            }
+        }
+    }
 }
 
 export class NamedMutationTreeItemData extends MutationsTreeItemData {
@@ -313,12 +345,12 @@ export class NamedMutationTreeItemData extends MutationsTreeItemData {
     }
 
     override canHaveChildren(): boolean {
-        // TODO - always true once created-at/etc is added
-        return this.mutation.experimentName != null || this.mutation.params.size != 0;
+        return true;
     }
 
     override children(): MutationsTreeItemData[] {
         const children = [];
+        children.push(new MutationDetailLeafTreeItemData(`Created At: ${this.mutation.createdAt}`));
         if (this.mutation.experimentName) {
             children.push(new MutationDetailLeafTreeItemData(`Experiment: ${this.mutation.experimentName}`));
         }
@@ -363,14 +395,17 @@ class Mutation {
     mutatorName = "<unnamed>";
     mutatorDescription?: string = undefined;
     mutationId: api.MutationId;
+    createdAt: Date;
     experimentName?: string = undefined;
     params: Map<string, api.AttrVal>;
 
     constructor(private mutation: api.Mutation) {
         this.mutatorId = mutation.mutator_id;
         this.mutationId = mutation.mutation_id;
-        if (mutation.experiment_name) {
-            this.experimentName = mutation.experiment_name;
+        this.createdAt = new Date(0);
+        this.createdAt.setUTCSeconds(mutation.created_at_utc_seconds);
+        if (mutation.linked_experiment) {
+            this.experimentName = mutation.linked_experiment;
         }
         if (Object.prototype.hasOwnProperty.call(mutation.mutator_attributes, "mutator.name")) {
             this.mutatorName = mutation.mutator_attributes["mutator.name"] as string;

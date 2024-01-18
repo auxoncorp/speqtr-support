@@ -19,10 +19,17 @@ export interface paths {
   };
   "/v2/mutations": {
     /**
-     * List mutations 
-     * @description List mutations
+     * List all mutations 
+     * @description List all mutations
      */
     get: operations["list_mutations"];
+  };
+  "/v2/mutations/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
+    /**
+     * List all mutations for the given segment 
+     * @description List all mutations for the given segment
+     */
+    get: operations["list_segment_mutations"];
   };
   "/v2/mutators": {
     /**
@@ -334,7 +341,9 @@ export interface components {
       Some: components["schemas"]["AttrVal"];
     }]>;
     Mutation: {
-      experiment_name?: string | null;
+      /** Format: int64 */
+      created_at_utc_seconds: number;
+      linked_experiment?: string | null;
       mutation_id: components["schemas"]["MutationId"];
       mutator_attributes: {
         [key: string]: components["schemas"]["AttrVal"] | undefined;
@@ -343,11 +352,36 @@ export interface components {
       params: {
         [key: string]: components["schemas"]["AttrVal"] | undefined;
       };
+      region_details_summary?: components["schemas"]["MutationRegionDetailsSummary"] | null;
     };
     /** Format: uuid */
     MutationId: string;
+    MutationRegionDetails: {
+      /**
+       * @description Maps to the "modality.mutation.clear_communicated" event name,
+       * and the `modality.mutation.success` attribute on such an event
+       */
+      clear_communicated_and_success?: ((components["schemas"]["EventCoordinate"] & (boolean | null))[]) | null;
+      /**
+       * @description Maps to the "modality.mutation.command_communicated" event name,
+       * and the `modality.mutation.success` attribute on such an event
+       */
+      command_communicated_and_success?: ((components["schemas"]["EventCoordinate"] & (boolean | null))[]) | null;
+      /**
+       * @description Maps to the "modality.mutation.injected" event name,
+       * and the `modality.mutation.success` attribute on such an event
+       */
+      inject_attempted_and_success?: ((components["schemas"]["EventCoordinate"] & (boolean | null))[]) | null;
+    };
+    MutationRegionDetailsSummary: {
+      overall: components["schemas"]["MutationRegionDetails"];
+      regions: ((components["schemas"]["RegionKind"] & components["schemas"]["MutationRegionDetails"])[])[];
+    };
     /** @description Mutations operation errors */
     MutationsError: OneOf<["InvalidMutatorId", {
+      /** @description Workspace not found */
+      WorkspaceNotFound: string;
+    }, "SegmentNotFound", {
       /** @description Internal Server Error */
       Internal: string;
     }]>;
@@ -371,9 +405,19 @@ export interface components {
       Internal: string;
     }]>;
     Nanoseconds: number;
+    RegionKind: OneOf<[{
+      WholeWorkspace: components["schemas"]["WholeWorkspaceRegionKind"];
+    }, {
+      Segment: components["schemas"]["SegmentRegionKind"];
+    }]>;
     SegmentCoverage: {
       coverage_aggregates: components["schemas"]["CoverageAggregates"];
       spec_coverages: (components["schemas"]["SpecCoverage"])[];
+    };
+    SegmentRegionKind: {
+      id: components["schemas"]["WorkspaceSegmentId"];
+      timeline_filter?: components["schemas"]["UnstructuredTimelineFilter"] | null;
+      workspace_name: components["schemas"]["WorkspaceName"];
     };
     SegmentationRuleName: string;
     SpecContent: {
@@ -476,10 +520,21 @@ export interface components {
       /** @description Internal Server Error */
       Internal: string;
     }]>;
+    /**
+     * @description Stringy representation of an unparsed, unstructured DSL for expressing how to filter timelines,
+     * likely through attribute evaluation.
+     */
+    UnstructuredTimelineFilter: string;
+    WholeWorkspaceRegionKind: {
+      timeline_filter?: components["schemas"]["UnstructuredTimelineFilter"] | null;
+      workspace_name: components["schemas"]["WorkspaceName"];
+      workspace_version_id: components["schemas"]["WorkspaceVersionId"];
+    };
     Workspace: {
       name: string;
       version_id: components["schemas"]["WorkspaceVersionId"];
     };
+    WorkspaceName: string;
     /** @description A specific segment of a workspace. */
     WorkspaceSegmentId: {
       rule_name: components["schemas"]["SegmentationRuleName"];
@@ -549,8 +604,8 @@ export interface operations {
     };
   };
   /**
-   * List mutations 
-   * @description List mutations
+   * List all mutations 
+   * @description List all mutations
    */
   list_mutations: {
     parameters: {
@@ -576,6 +631,56 @@ export interface operations {
       };
       /** @description Operation not authorized */
       403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["MutationsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List all mutations for the given segment 
+   * @description List all mutations for the given segment
+   */
+  list_segment_mutations: {
+    parameters: {
+      query: {
+        /** @description Mutator ID */
+        mutator_id?: string | null;
+        /** @description Experiment name */
+        experiment?: string | null;
+      };
+      path: {
+        /** @description Workspace Version Id */
+        workspace_version_id: components["schemas"]["WorkspaceVersionId"];
+        /** @description Segmentation Rule Name */
+        rule_name: components["schemas"]["SegmentationRuleName"];
+        /** @description Segment Name */
+        segment_name: components["schemas"]["WorkspaceSegmentName"];
+      };
+    };
+    responses: {
+      /** @description List mutations successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["Mutation"])[];
+        };
+      };
+      /** @description Invalid workspace_version_id */
+      400: {
+        content: {
+          "application/json": components["schemas"]["MutationsError"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Workspace or segment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["MutationsError"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {

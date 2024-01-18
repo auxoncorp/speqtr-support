@@ -92,7 +92,7 @@ export async function activate(context: vscode.ExtensionContext) {
         eventsTreeDataProvider.refresh();
 
         mutatorsTreeDataProvider.refresh();
-        mutationsTreeDataProvider.refresh();
+        mutationsTreeDataProvider.setActiveSegmentIds(ev.activeSegmentIds);
     });
 
     workspacesTreeDataProvider.register(context);
