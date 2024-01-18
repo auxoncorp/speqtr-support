@@ -335,6 +335,11 @@
                     "command": "auxon.mutations.clearMutation",
                     "when": "view == auxon.mutations && viewItem == mutation",
                     "group": "inline"
+                },
+                {
+                    "command": "auxon.mutations.viewLogFromMutation",
+                    "when": "view == auxon.mutations && viewItem == mutationCoordinate",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -472,6 +477,16 @@
                     "command": "auxon.mutations.disableMutationFiltering",
                     "when": "view == auxon.mutations && auxon.mutations.filterBy == 'MUTATOR_ID'",
                     "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.mutations.showCleared",
+                    "when": "view == auxon.mutations && auxon.mutations.cleared == 'HIDE'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.mutations.hideCleared",
+                    "when": "view == auxon.mutations && auxon.mutations.cleared == 'SHOW'",
+                    "group": "7_modification@1"
                 }
             ]
         },
@@ -787,9 +802,22 @@
                 "title": "✓ Filter By Selected Mutator"
             },
             {
+                "command": "auxon.mutations.showCleared",
+                "title": "Show Cleared Mutations"
+            },
+            {
+                "command": "auxon.mutations.hideCleared",
+                "title": "✓ Show Cleared Mutations"
+            },
+            {
                 "command": "auxon.mutations.clearMutation",
                 "title": "Clear Mutation",
                 "icon": "$(notebook-state-error)"
+            },
+            {
+                "command": "auxon.mutations.viewLogFromMutation",
+                "title": "View Log from this Coordinate",
+                "icon": "$(open-preview)"
             }
         ],
         "configuration": {

@@ -276,7 +276,7 @@ export interface components {
       percentage_specs_passing: number;
     };
     EventCoordinate: {
-      opaque_event_id?: (number)[];
+      id?: (number)[];
       timeline_id?: components["schemas"]["TimelineId"];
     };
     EventSummary: {

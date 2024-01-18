@@ -2283,7 +2283,7 @@
             "EventCoordinate": {
                 "type": "object",
                 "properties": {
-                    "opaque_event_id": {
+                    "id": {
                         "type": "array",
                         "items": {
                             "type": "integer",

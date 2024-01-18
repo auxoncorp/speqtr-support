@@ -24,6 +24,7 @@ export type CaseCoverage = gen.components["schemas"]["CaseCoverage"];
 export type CoverageAggregates = gen.components["schemas"]["CoverageAggregates"];
 export type LogicalTime = gen.components["schemas"]["LogicalTime"];
 export type Nanoseconds = gen.components["schemas"]["Nanoseconds"];
+export type EventCoordinate = gen.components["schemas"]["EventCoordinate"];
 export type SegmentationRuleName = gen.components["schemas"]["SegmentationRuleName"];
 export type SpecContent = gen.components["schemas"]["SpecContent"];
 export type SpecStructure = gen.components["schemas"]["SpecStructure"];
@@ -50,6 +51,7 @@ export type MutatorState = gen.components["schemas"]["MutatorState"];
 export type Mutator = gen.components["schemas"]["Mutator"];
 export type MutationId = gen.components["schemas"]["MutatorId"];
 export type Mutation = gen.components["schemas"]["Mutation"];
+export type MutationRegionDetails = gen.components["schemas"]["MutationRegionDetails"];
 
 type InternalClient = ReturnType<typeof createClient<gen.paths>>;
 
@@ -318,16 +320,13 @@ export class SegmentClient {
         if (typeof mutatorId !== "undefined") {
             q.push(["mutator_id", mutatorId]);
         }
-        const res = await this.client.get(
-            "/v2/mutations/{workspace_version_id}/segments/{rule_name}/{segment_name}",
-            {
-                params: { 
-                    path: this.segmentId,
-                    // @ts-ignore
-                    query: q,
-                },
-            }
-        );
+        const res = await this.client.get("/v2/mutations/{workspace_version_id}/segments/{rule_name}/{segment_name}", {
+            params: {
+                path: this.segmentId,
+                // @ts-ignore
+                query: q,
+            },
+        });
         return unwrapData(res);
     }
 }
