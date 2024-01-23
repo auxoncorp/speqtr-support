@@ -37,6 +37,7 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
     workspaceState?: SpecsTreeMemento;
     activeSegmentId?: api.WorkspaceSegmentId = undefined;
     view: vscode.TreeView<SpecsTreeItemData>;
+    data: SpecsTreeItemData[];
 
     constructor(private readonly apiClient: api.Client, private readonly cov: specCoverage.SpecCoverageProvider) {}
 
@@ -84,6 +85,9 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
             vscode.commands.registerCommand("auxon.specs.coverage.manyVersions", coverage),
             vscode.commands.registerCommand("auxon.specs.coverage.result", coverage),
             vscode.commands.registerCommand("auxon.specs.coverage.manyResults", coverage),
+            vscode.commands.registerCommand("auxon.specs.setSelectedSpec", (specName) => {
+                this.setSelectedSpec(specName);
+            }),
 
             // Refresh this list any time a spec eval is completed, since it may have saved some results
             vscode.tasks.onDidEndTask((e) => {
@@ -122,6 +126,13 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         this.refresh();
     }
 
+    setSelectedSpec(specName: string) {
+        const item = this.data.find((i) => i.contextValue == "spec" && i.name == specName);
+        if (item) {
+            this.view.reveal(item, { focus: true, select: true, expand: 10 });
+        }
+    }
+
     showVersions(show: boolean) {
         this.workspaceState.setShowVersions(show);
         this.refresh();
@@ -138,6 +149,7 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
 
     async getChildren(element?: SpecsTreeItemData): Promise<SpecsTreeItemData[]> {
         if (!element) {
+            this.data = [];
             const specs = await this.apiClient.specs().list();
             let evalSummaries: api.SpecSegmentEvalOutcomeSummary[] = [];
             const showResultsOrVersions = this.workspaceState.getShowResults() || this.workspaceState.getShowVersions();
@@ -153,10 +165,16 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
             );
 
             const { compare } = Intl.Collator("en-US");
-            return items.sort((a, b) => compare(a.name, b.name));
+            this.data = items.sort((a, b) => compare(a.name, b.name));
+            return this.data;
         } else {
             return await element.children(this.apiClient, this.workspaceState);
         }
+    }
+
+    getParent(_element: SpecsTreeItemData): vscode.ProviderResult<SpecsTreeItemData> {
+        // We only ever expose the root elements for selection in setSelectedSpec
+        return undefined;
     }
 
     evalLatest(spec: NamedSpecTreeItemData) {

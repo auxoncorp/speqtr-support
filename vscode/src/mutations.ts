@@ -205,8 +205,28 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
         }
     }
 
-    setSelectedMutation(_mutationId: api.MutationId) {
-        // TODO - add this when experiments are added
+    setSelectedMutation(mutationId: api.MutationId) {
+        if (this.workspaceState.getGroupByMutatorName()) {
+            for (const group of this.data) {
+                if (!(group instanceof MutationsGroupByNameTreeItemData)) {
+                    throw new Error("Internal error: mutations tree node not of expected type");
+                }
+                const item = group.childItems.find((i) => i.mutationId == mutationId);
+                if (item) {
+                    // Treeview doesn't appear to handle selecting nested items well.
+                    // Instead we need to reveal the parent first then the item
+                    this.view.reveal(group, { focus: true, select: true, expand: 1 }).then(() => {
+                        this.view.reveal(item, { focus: true, select: true, expand: 10 });
+                    });
+                    return;
+                }
+            }
+        } else {
+            const item = this.data.find((i) => i.mutationId == mutationId);
+            if (item) {
+                this.view.reveal(item, { focus: true, select: true, expand: 10 });
+            }
+        }
     }
 
     disableMutationGrouping() {
@@ -291,7 +311,7 @@ abstract class MutationsTreeItemData {
         item.tooltip = this.tooltip;
         item.iconPath = this.iconPath;
 
-        // Mutator selection populates mutations view
+        // Mutation selection sets the selected mutator
         if (this.contextValue == "mutation" && !workspaceData.getFilterBySelectedMutator()) {
             const command = {
                 title: "Sets the selected mutator in the mutators tree view",

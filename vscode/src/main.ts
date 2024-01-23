@@ -14,12 +14,14 @@ import * as lsp from "./lsp";
 import * as modalityLog from "./modalityLog";
 import * as terminalLinkProvider from "./terminalLinkProvider";
 import * as specFileCommands from "./specFileCommands";
+import * as experimentFileCommands from "./experimentFileCommands";
 import * as transitionGraph from "./transitionGraph";
 import * as config from "./config";
 import * as speqtrLinkProvider from "./speqtrLinkProvider";
 import * as mutators from "./mutators";
 import * as mutations from "./mutations";
 import * as deviantCommands from "./deviantCommands";
+import * as experiments from "./experiments";
 
 export let log: vscode.OutputChannel;
 let lspClient: LanguageClient;
@@ -54,6 +56,7 @@ export async function activate(context: vscode.ExtensionContext) {
     specFileCommands.register(context);
     speqtrLinkProvider.register(context);
     deviantCommands.register(context);
+    experimentFileCommands.register(context);
 
     const specCoverageProvider = new specCoverage.SpecCoverageProvider(apiClient);
     await specCoverageProvider.initialize(context);
@@ -65,6 +68,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider);
     const mutatorsTreeDataProvider = new mutators.MutatorsTreeDataProvider(apiClient);
     const mutationsTreeDataProvider = new mutations.MutationsTreeDataProvider(apiClient);
+    const experimentsTreeDataProvider = new experiments.ExperimentsTreeDataProvider(apiClient);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);
@@ -79,6 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         mutatorsTreeDataProvider.refresh();
         mutationsTreeDataProvider.refresh();
+        experimentsTreeDataProvider.refresh();
     });
 
     segmentsTreeDataProvider.onDidChangeUsedSegments((ev) => {
@@ -93,6 +98,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         mutatorsTreeDataProvider.refresh();
         mutationsTreeDataProvider.setActiveSegmentIds(ev.activeSegmentIds);
+        experimentsTreeDataProvider.setActiveSegmentIds(ev.activeSegmentIds);
     });
 
     workspacesTreeDataProvider.register(context);
@@ -102,6 +108,7 @@ export async function activate(context: vscode.ExtensionContext) {
     specsTreeDataProvider.register(context);
     mutatorsTreeDataProvider.register(context);
     mutationsTreeDataProvider.register(context);
+    experimentsTreeDataProvider.register(context);
 }
 
 export function deactivate(): Thenable<void> | undefined {

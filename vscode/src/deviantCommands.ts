@@ -15,6 +15,24 @@ export function register(context: vscode.ExtensionContext) {
     );
 }
 
+export type ExperimentCreateCommandArgs = {
+    experimentName: string;
+    file: vscode.Uri;
+};
+
+export async function runDeviantExperimentCreateCommand(args: ExperimentCreateCommandArgs) {
+    const deviantPath = config.toolPath("deviant");
+
+    const commandArgs = ["experiment", "create", "--file", args.file.fsPath, args.experimentName];
+
+    try {
+        const res = await execFile(deviantPath, commandArgs, { encoding: "utf8" });
+        const _dont_wait = vscode.window.showInformationMessage(res.stdout);
+    } catch (e) {
+        vscode.window.showErrorMessage(e.stderr.trim());
+    }
+}
+
 export type MutationClearCommandArgs = {
     mutationId?: string;
 };

@@ -17,6 +17,27 @@ export interface paths {
      */
     get: operations["get_events_summary_for_timeline"];
   };
+  "/v2/experiments": {
+    /**
+     * List experiments 
+     * @description List experiments
+     */
+    get: operations["list_experiments"];
+  };
+  "/v2/experiments/{experiment_name}": {
+    /**
+     * Get an experiment 
+     * @description Get an experiment
+     */
+    get: operations["get_experiment"];
+  };
+  "/v2/experiments/{experiment_name}/results/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
+    /**
+     * Get the results of an experiment scoped to the given segment 
+     * @description Get the results of an experiment scoped to the given segment
+     */
+    get: operations["get_experiment_results"];
+  };
   "/v2/mutations": {
     /**
      * List all mutations 
@@ -298,6 +319,67 @@ export interface components {
     EventsSummary: {
       events: (components["schemas"]["EventSummary"])[];
     };
+    Experiment: {
+      definition: components["schemas"]["ExperimentDefinition"];
+      name: components["schemas"]["ExperimentName"];
+    };
+    /** @enum {string} */
+    ExperimentApproach: "Random" | "StructuredBreadth" | "LearnedPerturbation";
+    ExperimentDefinition: {
+      approach: components["schemas"]["ExperimentApproach"];
+      expected_mutators: (components["schemas"]["UnstructuredMutatorFilter"])[];
+      mutator_constraints: {
+        [key: string]: components["schemas"]["MutatorUseConstraint"] | undefined;
+      };
+      mutator_filter?: components["schemas"]["UnstructuredMutatorFilter"] | null;
+      specs: (components["schemas"]["ExperimentLinkedSpec"])[];
+    };
+    ExperimentLinkedSpec: {
+      name: string;
+      version: components["schemas"]["SpecVersionId"];
+    };
+    ExperimentMutationChecklist: {
+      /** @description Maps to the "modality.mutation.command_communicated" event name, and the `modality.mutation.success` attribute on such an event */
+      command_communicated_and_success?: ((components["schemas"]["EventCoordinate"] & (boolean | null))[]) | null;
+      /** @description Maps to the "modality.mutation.injected" event name, and the `modality.mutation.success` attribute on such an event */
+      inject_attempted_and_success?: ((components["schemas"]["EventCoordinate"] & (boolean | null))[]) | null;
+      /**
+       * @description If false, this was an interloper! A mutation introduced to the same system data that is in-scope
+       * right now for use in the experiment characterization.
+       */
+      proposed_for_the_selected_experiment: boolean;
+    };
+    ExperimentName: string;
+    ExperimentResults: {
+      /**
+       * @description N.B. Do not populate the `mutator_attributes` field of these `Mutation`s
+       * because we expect to fill in that content in the `mutators` collection.
+       */
+      mutations: ((components["schemas"]["Mutation"] & components["schemas"]["ExperimentMutationChecklist"])[])[];
+      mutators: (components["schemas"]["Mutator"])[];
+      /**
+       * @description Estimate of how many mutations have been suggested so far for this experiment,
+       * regardless of how many have been commanded/injected/etc.
+       */
+      n_proposed_mutations: number;
+      regions: ((components["schemas"]["RegionKind"] & (((components["schemas"]["MutationId"] & components["schemas"]["ExperimentMutationChecklist"])[])[]))[])[];
+    };
+    /** @description Experiments operation errors */
+    ExperimentsError: OneOf<[{
+      /** @description Experiment not found */
+      ExperimentNotFound: string;
+    }, {
+      /** @description Invalid mutator filter expression */
+      InvalidMutatorFilter: string;
+    }, {
+      SpecVersionNotFound: components["schemas"]["SpecVersionId"];
+    }, {
+      /** @description Workspace not found */
+      WorkspaceNotFound: string;
+    }, "SegmentNotFound", {
+      /** @description Internal Server Error */
+      Internal: string;
+    }]>;
     /** @description A graph created by grouping together events by their attribute values. */
     GroupedGraph: {
       /** @description The grouping keys used to compute this graph */
@@ -396,6 +478,12 @@ export interface components {
     MutatorId: string;
     /** @enum {string} */
     MutatorState: "Available" | "Retired" | "TimedOut" | "Disconnected";
+    MutatorUseConstraint: {
+      mutator_selector: components["schemas"]["UnstructuredMutatorFilter"];
+      param_constraints: {
+        [key: string]: components["schemas"]["ParamConstraint"] | undefined;
+      };
+    };
     /** @description Mutator operation errors */
     MutatorsError: OneOf<[{
       /** @description Invalid mutator filter expression */
@@ -405,6 +493,11 @@ export interface components {
       Internal: string;
     }]>;
     Nanoseconds: number;
+    ParamConstraint: {
+      exact_value_set?: (components["schemas"]["AttrVal"])[] | null;
+      inclusive_value_max?: components["schemas"]["AttrVal"] | null;
+      inclusive_value_min?: components["schemas"]["AttrVal"] | null;
+    };
     RegionKind: OneOf<[{
       WholeWorkspace: components["schemas"]["WholeWorkspaceRegionKind"];
     }, {
@@ -521,6 +614,11 @@ export interface components {
       Internal: string;
     }]>;
     /**
+     * @description Stringy representation of an unparsed, unstructured DSL for expressing how to filter mutators,
+     * likely through attribute evaluation.
+     */
+    UnstructuredMutatorFilter: string;
+    /**
      * @description Stringy representation of an unparsed, unstructured DSL for expressing how to filter timelines,
      * likely through attribute evaluation.
      */
@@ -599,6 +697,108 @@ export interface operations {
       404: {
         content: {
           "application/json": components["schemas"]["EventsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List experiments 
+   * @description List experiments
+   */
+  list_experiments: {
+    responses: {
+      /** @description List experiments successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["ExperimentName"])[];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get an experiment 
+   * @description Get an experiment
+   */
+  get_experiment: {
+    parameters: {
+      path: {
+        /** @description Experiment Name */
+        experiment_name: string;
+      };
+    };
+    responses: {
+      /** @description Get experiment successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Experiment"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Experiment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get the results of an experiment scoped to the given segment 
+   * @description Get the results of an experiment scoped to the given segment
+   */
+  get_experiment_results: {
+    parameters: {
+      path: {
+        /** @description Experiment Name */
+        experiment_name: components["schemas"]["ExperimentName"];
+        /** @description Workspace Version Id */
+        workspace_version_id: components["schemas"]["WorkspaceVersionId"];
+        /** @description Segmentation Rule Name */
+        rule_name: components["schemas"]["SegmentationRuleName"];
+        /** @description Segment Name */
+        segment_name: components["schemas"]["WorkspaceSegmentName"];
+      };
+    };
+    responses: {
+      /** @description Get experiment results successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExperimentResults"];
+        };
+      };
+      /** @description Invalid workspace_version_id */
+      400: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Experiment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
         };
       };
     };

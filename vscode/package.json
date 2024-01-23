@@ -130,6 +130,10 @@
                 {
                     "id": "auxon.mutations",
                     "name": "Mutations"
+                },
+                {
+                    "id": "auxon.experiments",
+                    "name": "Experiments"
                 }
             ]
         },
@@ -158,6 +162,11 @@
                 {
                     "command": "auxon.specFile.create",
                     "when": "resourceLangId == speqtr",
+                    "group": "1_auxon@3"
+                },
+                {
+                    "command": "auxon.experimentFile.create",
+                    "when": "resourceLangId == toml",
                     "group": "1_auxon@3"
                 }
             ],
@@ -487,6 +496,21 @@
                     "command": "auxon.mutations.hideCleared",
                     "when": "view == auxon.mutations && auxon.mutations.cleared == 'SHOW'",
                     "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.experiments.refresh",
+                    "when": "view == auxon.experiments",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.experiments.showResults",
+                    "when": "view == auxon.experiments && auxon.experiments.results == 'HIDE'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.experiments.hideResults",
+                    "when": "view == auxon.experiments && auxon.experiments.results == 'SHOW'",
+                    "group": "7_modification@1"
                 }
             ]
         },
@@ -702,6 +726,10 @@
                 "title": "Delete Selected Spec Results..."
             },
             {
+                "command": "auxon.specs.setSelectedSpec",
+                "title": "Sets the selected spec in the specs tree view"
+            },
+            {
                 "command": "auxon.specDir.eval.dryRun",
                 "title": "Check All Specs in Folder (dry run)"
             },
@@ -818,6 +846,23 @@
                 "command": "auxon.mutations.viewLogFromMutation",
                 "title": "View Log from this Coordinate",
                 "icon": "$(open-preview)"
+            },
+            {
+                "command": "auxon.experimentFile.create",
+                "title": "Upload Experiment File"
+            },
+            {
+                "command": "auxon.experiments.refresh",
+                "title": "Refresh Experiment List",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "auxon.experiments.showResults",
+                "title": "Show Results"
+            },
+            {
+                "command": "auxon.experiments.hideResults",
+                "title": "✓ Show Results"
             }
         ],
         "configuration": {

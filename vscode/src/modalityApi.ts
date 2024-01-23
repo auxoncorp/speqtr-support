@@ -12,6 +12,7 @@ if (!globalThis.fetch) {
 }
 
 export type AttrVal = gen.components["schemas"]["AttrVal"];
+export type ExperimentLinkedSpec = gen.components["schemas"]["ExperimentLinkedSpec"];
 export type AttributeMap = gen.components["schemas"]["AttributeMap"];
 export type BehaviorCaseType = gen.components["schemas"]["BehaviorCaseType"];
 export type GroupedGraph = gen.components["schemas"]["GroupedGraph"];
@@ -51,7 +52,15 @@ export type MutatorState = gen.components["schemas"]["MutatorState"];
 export type Mutator = gen.components["schemas"]["Mutator"];
 export type MutationId = gen.components["schemas"]["MutatorId"];
 export type Mutation = gen.components["schemas"]["Mutation"];
+export type MutatorUseConstraint = gen.components["schemas"]["MutatorUseConstraint"];
+export type ParamConstraint = gen.components["schemas"]["ParamConstraint"];
+export type UnstructuredMutatorFilter = gen.components["schemas"]["UnstructuredMutatorFilter"];
 export type MutationRegionDetails = gen.components["schemas"]["MutationRegionDetails"];
+export type ExperimentName = gen.components["schemas"]["ExperimentName"];
+export type ExperimentDefinition = gen.components["schemas"]["ExperimentDefinition"];
+export type ExperimentResults = gen.components["schemas"]["ExperimentResults"];
+export type ExperimentMutationChecklist = gen.components["schemas"]["ExperimentMutationChecklist"];
+export type Experiment = gen.components["schemas"]["Experiment"];
 
 type InternalClient = ReturnType<typeof createClient<gen.paths>>;
 
@@ -130,6 +139,14 @@ export class Client {
 
     mutations(): MutationsClient {
         return new MutationsClient(this.client);
+    }
+
+    experiments(): ExperimentsClient {
+        return new ExperimentsClient(this.client);
+    }
+
+    experiment(experimentName: string): ExperimentClient {
+        return new ExperimentClient(this.client, experimentName);
     }
 }
 
@@ -329,6 +346,23 @@ export class SegmentClient {
         });
         return unwrapData(res);
     }
+
+    async experimentResults(experimentName: string): Promise<ExperimentResults> {
+        const res = await this.client.get(
+            "/v2/experiments/{experiment_name}/results/{workspace_version_id}/segments/{rule_name}/{segment_name}",
+            {
+                params: {
+                    path: {
+                        experiment_name: experimentName,
+                        workspace_version_id: this.segmentId.workspace_version_id,
+                        rule_name: this.segmentId.rule_name,
+                        segment_name: this.segmentId.segment_name,
+                    },
+                },
+            }
+        );
+        return unwrapData(res);
+    }
 }
 
 export class TimelinesClient {
@@ -494,6 +528,30 @@ export class MutationsClient {
             params: {
                 // @ts-ignore
                 query: [],
+            },
+        });
+        return unwrapData(res);
+    }
+}
+
+export class ExperimentsClient {
+    constructor(private readonly client: InternalClient) {}
+
+    async list(): Promise<ExperimentName[]> {
+        const res = await this.client.get("/v2/experiments", {});
+        return unwrapData(res);
+    }
+}
+
+export class ExperimentClient {
+    constructor(private readonly client: InternalClient, private readonly experimentName: string) {}
+
+    async get(): Promise<Experiment> {
+        const res = await this.client.get("/v2/experiments/{experiment_name}", {
+            params: {
+                path: {
+                    experiment_name: this.experimentName,
+                },
             },
         });
         return unwrapData(res);
