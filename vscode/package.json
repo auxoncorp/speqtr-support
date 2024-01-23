@@ -67,17 +67,17 @@
                 {
                     "id": "modality-explorer",
                     "title": "Auxon Modality",
-                    "icon": "images/Modality_symbol-whitesquare.svg"
+                    "icon": "images/Modality_symbol.svg"
                 },
                 {
                     "id": "conform-explorer",
                     "title": "Auxon Conform",
-                    "icon": "images/Conform_symbol-whitesquare.svg"
+                    "icon": "images/Conform_symbol.svg"
                 },
                 {
                     "id": "deviant-explorer",
                     "title": "Auxon Deviant",
-                    "icon": "images/Deviant_symbol-whitesquare.svg"
+                    "icon": "images/Deviant_symbol.svg"
                 }
             ]
         },
