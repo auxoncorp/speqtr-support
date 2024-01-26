@@ -59,6 +59,13 @@ export interface paths {
      */
     get: operations["list_mutators"];
   };
+  "/v2/mutators/grouped": {
+    /**
+     * List mutators, grouped by the given attr keys 
+     * @description List mutators, grouped by the given attr keys
+     */
+    get: operations["list_grouped_mutators"];
+  };
   "/v2/specs": {
     /**
      * List all specs 
@@ -132,6 +139,13 @@ export interface paths {
      */
     get: operations["list_workspaces"];
   };
+  "/v2/workspaces/{workspace_version_id}/definition": {
+    /**
+     * Get a workspace 
+     * @description Get a workspace
+     */
+    get: operations["get_workspace"];
+  };
   "/v2/workspaces/{workspace_version_id}/grouped_graph": {
     /**
      * Get the contents of the workspace as a graph, grouped by event attrbutes. 
@@ -144,8 +158,8 @@ export interface paths {
   };
   "/v2/workspaces/{workspace_version_id}/grouped_timelines": {
     /**
-     * List workspace timelines, grouped by the givven attr keys 
-     * @description List workspace timelines, grouped by the givven attr keys
+     * List workspace timelines, grouped by the given attr keys 
+     * @description List workspace timelines, grouped by the given attr keys
      */
     get: operations["list_grouped_workspace_timelines"];
   };
@@ -474,6 +488,12 @@ export interface components {
       mutator_id: components["schemas"]["MutatorId"];
       mutator_state: components["schemas"]["MutatorState"];
     };
+    MutatorGroup: {
+      group_attributes: {
+        [key: string]: components["schemas"]["MaybeAttrVal"] | undefined;
+      };
+      mutators: (components["schemas"]["Mutator"])[];
+    };
     /** Format: uuid */
     MutatorId: string;
     /** @enum {string} */
@@ -488,7 +508,7 @@ export interface components {
     MutatorsError: OneOf<[{
       /** @description Invalid mutator filter expression */
       InvalidMutatorFilter: string;
-    }, {
+    }, "NoGroupsSpecified", {
       /** @description Internal Server Error */
       Internal: string;
     }]>;
@@ -631,6 +651,13 @@ export interface components {
     Workspace: {
       name: string;
       version_id: components["schemas"]["WorkspaceVersionId"];
+    };
+    WorkspaceDefinition: {
+      /** Format: int64 */
+      created_at_utc_seconds: number;
+      created_by: string;
+      mutator_grouping_attrs: (string)[];
+      version_number: number;
     };
     WorkspaceName: string;
     /** @description A specific segment of a workspace. */
@@ -905,6 +932,40 @@ export interface operations {
       200: {
         content: {
           "application/json": (components["schemas"]["Mutator"])[];
+        };
+      };
+      /** @description Invalid mutator_filter */
+      400: {
+        content: {
+          "application/json": components["schemas"]["MutatorsError"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["MutatorsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List mutators, grouped by the given attr keys 
+   * @description List mutators, grouped by the given attr keys
+   */
+  list_grouped_mutators: {
+    parameters: {
+      query: {
+        /** @description Mutator filter expression */
+        mutator_filter?: string | null;
+      };
+    };
+    responses: {
+      /** @description List grouped mutators successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["MutatorGroup"])[];
         };
       };
       /** @description Invalid mutator_filter */
@@ -1245,6 +1306,40 @@ export interface operations {
     };
   };
   /**
+   * Get a workspace 
+   * @description Get a workspace
+   */
+  get_workspace: {
+    parameters: {
+      path: {
+        /** @description Workspace version id */
+        workspace_version_id: string;
+      };
+    };
+    responses: {
+      /** @description Get workspace successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["WorkspaceDefinition"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Workspace not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["WorkspacesError"];
+        };
+      };
+    };
+  };
+  /**
    * Get the contents of the workspace as a graph, grouped by event attrbutes. 
    * @description Get the contents of the workspace as a graph, grouped by event attrbutes.
    * 
@@ -1292,8 +1387,8 @@ export interface operations {
     };
   };
   /**
-   * List workspace timelines, grouped by the givven attr keys 
-   * @description List workspace timelines, grouped by the givven attr keys
+   * List workspace timelines, grouped by the given attr keys 
+   * @description List workspace timelines, grouped by the given attr keys
    */
   list_grouped_workspace_timelines: {
     parameters: {
