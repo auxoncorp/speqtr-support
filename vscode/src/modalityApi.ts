@@ -43,6 +43,7 @@ export type TimelineGroup = gen.components["schemas"]["TimelineGroup"];
 export type EventsSummary = gen.components["schemas"]["EventsSummary"];
 export type EventSummary = gen.components["schemas"]["EventSummary"];
 export type Workspace = gen.components["schemas"]["Workspace"];
+export type WorkspaceDefinition = gen.components["schemas"]["WorkspaceDefinition"];
 export type WorkspaceSegmentId = gen.components["schemas"]["WorkspaceSegmentId"];
 export type WorkspaceSegmentMetadata = gen.components["schemas"]["WorkspaceSegmentMetadata"];
 export type WorkspaceSegmentName = gen.components["schemas"]["WorkspaceSegmentName"];
@@ -50,6 +51,7 @@ export type WorkspaceVersionId = gen.components["schemas"]["WorkspaceVersionId"]
 export type MutatorId = gen.components["schemas"]["MutatorId"];
 export type MutatorState = gen.components["schemas"]["MutatorState"];
 export type Mutator = gen.components["schemas"]["Mutator"];
+export type MutatorGroup = gen.components["schemas"]["MutatorGroup"];
 export type MutationId = gen.components["schemas"]["MutatorId"];
 export type Mutation = gen.components["schemas"]["Mutation"];
 export type MutatorUseConstraint = gen.components["schemas"]["MutatorUseConstraint"];
@@ -161,6 +163,15 @@ export class WorkspacesClient {
 
 export class WorkspaceClient {
     constructor(private readonly client: InternalClient, private readonly workspaceVersionId: WorkspaceVersionId) {}
+
+    async definition(): Promise<WorkspaceDefinition> {
+        const res = await this.client.get("/v2/workspaces/{workspace_version_id}/definition", {
+            params: {
+                path: { workspace_version_id: this.workspaceVersionId },
+            },
+        });
+        return unwrapData(res);
+    }
 
     async segments(): Promise<WorkspaceSegmentMetadata[]> {
         const res = await this.client.get("/v2/workspaces/{workspace_version_id}/segments", {
@@ -498,6 +509,20 @@ export class MutatorsClient {
             params: {
                 // @ts-ignore
                 query: [],
+            },
+        });
+        return unwrapData(res);
+    }
+
+    async groupedMutators(groupBy: string[]): Promise<MutatorGroup[]> {
+        const res = await this.client.get("/v2/mutators/grouped", {
+            params: {
+                // @ts-ignore
+                // The library's stated type for 'query' is inaccurate.
+                // The actual type is "Something you can pass to the UrlSearchParams constructor".
+                // Here, we use the 'array of tuples' form to get the group_by query parameter
+                // to appear multiple times.
+                query: groupBy.map((gb) => ["group_by", gb]),
             },
         });
         return unwrapData(res);

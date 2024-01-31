@@ -19,6 +19,14 @@ class MutatorsTreeMemento {
     async setGroupByMutatorName(val: boolean): Promise<void> {
         return this.memento.update("mutatorsTree_groupByMutatorName", val);
     }
+
+    getGroupByWorkspaceAttrs(): boolean {
+        return this.memento.get("mutatorsTree_groupByWorkspaceAttrs", true);
+    }
+
+    async setGroupByWorkspaceAttrs(val: boolean): Promise<void> {
+        return this.memento.update("mutatorsTree_groupByWorkspaceAttrs", val);
+    }
 }
 
 export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<MutatorsTreeItemData> {
@@ -30,10 +38,13 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
     workspaceState?: MutatorsTreeMemento;
     data: MutatorsTreeItemData[];
     view: vscode.TreeView<MutatorsTreeItemData>;
+    workspaceMutatorGroupingAttrs: string[];
 
     constructor(private readonly apiClient: api.Client) {}
 
     register(context: vscode.ExtensionContext) {
+        this.data = [];
+        this.workspaceMutatorGroupingAttrs = [];
         this.workspaceState = new MutatorsTreeMemento(context.workspaceState);
         this.view = vscode.window.createTreeView("auxon.mutators", {
             treeDataProvider: this,
@@ -48,11 +59,17 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
             vscode.commands.registerCommand("auxon.mutators.setSelectedMutator", (mutatorId) => {
                 this.setSelectedMutator(mutatorId);
             }),
-            vscode.commands.registerCommand("auxon.mutators.disableMutatorGrouping", () => {
+            vscode.commands.registerCommand("auxon.mutators.disableByNameGrouping", () => {
                 this.disableMutatorGrouping();
             }),
-            vscode.commands.registerCommand("auxon.mutators.groupMutatorsByName", () => {
+            vscode.commands.registerCommand("auxon.mutators.groupByName", () => {
                 this.groupMutatorsByName();
+            }),
+            vscode.commands.registerCommand("auxon.mutators.disableByWorkspaceAttrsGrouping", () => {
+                this.disableMutatorGrouping();
+            }),
+            vscode.commands.registerCommand("auxon.mutators.groupByWorkspaceAttrs", () => {
+                this.groupByWorkspaceAttrs();
             }),
             vscode.commands.registerCommand("auxon.mutators.createMutation", (itemData) => {
                 this.createMutation(itemData);
@@ -68,11 +85,15 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
             "auxon.mutators.unavailable",
             this.workspaceState.getShowUnavailable() ? "SHOW" : "HIDE"
         );
-        vscode.commands.executeCommand(
-            "setContext",
-            "auxon.mutators.groupBy",
-            this.workspaceState.getGroupByMutatorName() ? "MUTATOR_NAME" : "NONE"
-        );
+
+        let groupingMode = "NONE";
+        if (this.workspaceState.getGroupByMutatorName()) {
+            groupingMode = "MUTATOR_NAME";
+        } else if (this.workspaceState.getGroupByWorkspaceAttrs() && this.workspaceMutatorGroupingAttrs.length != 0) {
+            groupingMode = "WORKSPACE_ATTRS";
+        }
+
+        vscode.commands.executeCommand("setContext", "auxon.mutators.groupBy", groupingMode);
 
         this._onDidChangeTreeData.fire(undefined);
     }
@@ -88,36 +109,54 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
 
     async getChildren(element?: MutatorsTreeItemData): Promise<MutatorsTreeItemData[]> {
         if (!element) {
-            let mutators = await this.apiClient.mutators().list();
-            if (!this.workspaceState.getShowUnavailable()) {
-                mutators = mutators.filter((m) => m.mutator_state === "Available");
-            }
-            let items = [];
-            if (this.workspaceState.getGroupByMutatorName()) {
-                const root = new MutatorsGroupByNameTreeItemData("", []);
-                for (const m of mutators) {
-                    root.insertNode(new Mutator(m));
+            if (this.workspaceState.getGroupByWorkspaceAttrs()) {
+                if (this.workspaceMutatorGroupingAttrs.length == 0) {
+                    // No attrs yet
+                    return [];
                 }
-                root.updateDescriptions();
-                items = root.children();
+
+                let groups = await this.apiClient.mutators().groupedMutators(this.workspaceMutatorGroupingAttrs);
+                if (!this.workspaceState.getShowUnavailable()) {
+                    for (const group of groups) {
+                        group.mutators = group.mutators.filter((m) => m.mutator_state === "Available");
+                    }
+                    groups = groups.filter((g) => g.mutators.length != 0);
+                }
+                this.data = groups.map((mut_group) => new MutatorsGroupTreeItemData(mut_group));
+                return this.data;
             } else {
-                items = mutators.map((m) => new NamedMutatorTreeItemData(new Mutator(m)));
+                let mutators = await this.apiClient.mutators().list();
+                if (!this.workspaceState.getShowUnavailable()) {
+                    mutators = mutators.filter((m) => m.mutator_state === "Available");
+                }
+
+                let items = [];
+                if (this.workspaceState.getGroupByMutatorName()) {
+                    const root = new MutatorsGroupByNameTreeItemData("", []);
+                    for (const m of mutators) {
+                        root.insertNode(new Mutator(m));
+                    }
+                    root.updateDescriptions();
+                    items = root.children();
+                } else {
+                    items = mutators.map((m) => new NamedMutatorTreeItemData(new Mutator(m)));
+                }
+                const { compare } = Intl.Collator("en-US");
+                this.data = items.sort((a, b) => compare(a.name, b.name));
+                return this.data;
             }
-            const { compare } = Intl.Collator("en-US");
-            this.data = items.sort((a, b) => compare(a.name, b.name));
-            return this.data;
         } else {
             return element.children();
         }
     }
 
     getParent(element: MutatorsTreeItemData): vscode.ProviderResult<MutatorsTreeItemData> {
-        if (this.workspaceState.getGroupByMutatorName()) {
+        if (this.workspaceState.getGroupByMutatorName() || this.workspaceState.getGroupByWorkspaceAttrs()) {
             for (const group of this.data) {
-                if (!(group instanceof MutatorsGroupByNameTreeItemData)) {
+                if (!(group instanceof MutatorsGroupByNameTreeItemData || group instanceof MutatorsGroupTreeItemData)) {
                     throw new Error("Internal error: mutators tree node not of expected type");
                 }
-                if (group.childItems.includes(element)) {
+                if (group.children().includes(element)) {
                     return group;
                 }
             }
@@ -126,12 +165,12 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
     }
 
     setSelectedMutator(mutatorId: api.MutatorId) {
-        if (this.workspaceState.getGroupByMutatorName()) {
+        if (this.workspaceState.getGroupByMutatorName() || this.workspaceState.getGroupByWorkspaceAttrs()) {
             for (const group of this.data) {
-                if (!(group instanceof MutatorsGroupByNameTreeItemData)) {
+                if (!(group instanceof MutatorsGroupByNameTreeItemData || group instanceof MutatorsGroupTreeItemData)) {
                     throw new Error("Internal error: mutators tree node not of expected type");
                 }
-                const item = group.childItems.find((i) => i.mutatorId == mutatorId);
+                const item = group.children().find((i) => i.mutatorId == mutatorId);
                 if (item) {
                     // Treeview doesn't appear to handle selecting nested items well.
                     // Instead we need to reveal the parent first then the item
@@ -149,14 +188,29 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
         }
     }
 
+    setWorkspaceMutatorGroupingAttrs(workspaceMutatorGroupingAttrs: string[]) {
+        this.workspaceMutatorGroupingAttrs = workspaceMutatorGroupingAttrs;
+        this.refresh();
+    }
+
     disableMutatorGrouping() {
         this.workspaceState.setGroupByMutatorName(false);
+        this.workspaceState.setGroupByWorkspaceAttrs(false);
         this.refresh();
     }
 
     groupMutatorsByName() {
         this.workspaceState.setGroupByMutatorName(true);
+        this.workspaceState.setGroupByWorkspaceAttrs(false);
         this.refresh();
+    }
+
+    groupByWorkspaceAttrs() {
+        if (this.workspaceMutatorGroupingAttrs.length != 0) {
+            this.workspaceState.setGroupByMutatorName(false);
+            this.workspaceState.setGroupByWorkspaceAttrs(true);
+            this.refresh();
+        }
     }
 
     createMutation(item: MutatorsTreeItemData) {
@@ -212,6 +266,52 @@ abstract class MutatorsTreeItemData {
 
     children(): MutatorsTreeItemData[] {
         return [];
+    }
+}
+
+export class MutatorsGroupTreeItemData extends MutatorsTreeItemData {
+    name = "";
+    contextValue = "mutatorsAttrGroup";
+    childItems: MutatorsTreeItemData[];
+
+    constructor(public group: api.MutatorGroup) {
+        super("");
+
+        let groupName = null;
+        for (const val of Object.values(this.group.group_attributes)) {
+            if (val != "None") {
+                if (groupName == null) {
+                    groupName = "";
+                } else {
+                    groupName += ", ";
+                }
+
+                groupName += val.Some.toString();
+            }
+        }
+
+        if (groupName == null) {
+            groupName = "<non-matching mutators>";
+        }
+        this.name = groupName;
+
+        this.description = `${group.mutators.length} mutator`;
+        if (group.mutators.length > 1) {
+            this.description += "s";
+        }
+
+        const unsorted_mutators = this.group.mutators.map((m) => new Mutator(m));
+        const { compare } = Intl.Collator("en-US");
+        const mutators = unsorted_mutators.sort((a, b) => compare(a.name, b.name));
+        this.childItems = mutators.map((m) => new NamedMutatorTreeItemData(m));
+    }
+
+    override canHaveChildren(): boolean {
+        return true;
+    }
+
+    override children(): MutatorsTreeItemData[] {
+        return this.childItems;
     }
 }
 

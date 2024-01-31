@@ -520,6 +520,70 @@
                 ]
             }
         },
+        "/v2/mutators/grouped": {
+            "get": {
+                "tags": ["mutators"],
+                "summary": "List mutators, grouped by the given attr keys",
+                "description": "List mutators, grouped by the given attr keys",
+                "operationId": "list_grouped_mutators",
+                "parameters": [
+                    {
+                        "name": "mutator_filter",
+                        "in": "query",
+                        "description": "Mutator filter expression",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List grouped mutators successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MutatorGroup"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid mutator_filter",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
         "/v2/specs": {
             "get": {
                 "tags": ["specs"],
@@ -1116,6 +1180,66 @@
                 ]
             }
         },
+        "/v2/workspaces/{workspace_version_id}/definition": {
+            "get": {
+                "tags": ["workspaces"],
+                "summary": "Get a workspace",
+                "description": "Get a workspace",
+                "operationId": "get_workspace",
+                "parameters": [
+                    {
+                        "name": "workspace_version_id",
+                        "in": "path",
+                        "description": "Workspace version id",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Get workspace successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspaceDefinition"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Workspace not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspacesError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspacesError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
         "/v2/workspaces/{workspace_version_id}/grouped_graph": {
             "get": {
                 "tags": ["workspaces"],
@@ -1203,8 +1327,8 @@
         "/v2/workspaces/{workspace_version_id}/grouped_timelines": {
             "get": {
                 "tags": ["workspaces"],
-                "summary": "List workspace timelines, grouped by the givven attr keys",
-                "description": "List workspace timelines, grouped by the givven attr keys",
+                "summary": "List workspace timelines, grouped by the given attr keys",
+                "description": "List workspace timelines, grouped by the given attr keys",
                 "operationId": "list_grouped_workspace_timelines",
                 "parameters": [
                     {
@@ -3068,6 +3192,24 @@
                     }
                 }
             },
+            "MutatorGroup": {
+                "type": "object",
+                "required": ["group_attributes", "mutators"],
+                "properties": {
+                    "group_attributes": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/MaybeAttrVal"
+                        }
+                    },
+                    "mutators": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Mutator"
+                        }
+                    }
+                }
+            },
             "MutatorId": {
                 "type": "string",
                 "format": "uuid"
@@ -3102,6 +3244,10 @@
                                 "description": "Invalid mutator filter expression"
                             }
                         }
+                    },
+                    {
+                        "type": "string",
+                        "enum": ["NoGroupsSpecified"]
                     },
                     {
                         "type": "object",
@@ -3567,6 +3713,29 @@
                     },
                     "version_id": {
                         "$ref": "#/components/schemas/WorkspaceVersionId"
+                    }
+                }
+            },
+            "WorkspaceDefinition": {
+                "type": "object",
+                "required": ["version_number", "created_at_utc_seconds", "created_by", "mutator_grouping_attrs"],
+                "properties": {
+                    "created_at_utc_seconds": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "created_by": {
+                        "type": "string"
+                    },
+                    "mutator_grouping_attrs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "version_number": {
+                        "type": "integer",
+                        "minimum": 0
                     }
                 }
             },

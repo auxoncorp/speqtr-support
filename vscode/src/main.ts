@@ -70,8 +70,10 @@ export async function activate(context: vscode.ExtensionContext) {
     const mutationsTreeDataProvider = new mutations.MutationsTreeDataProvider(apiClient);
     const experimentsTreeDataProvider = new experiments.ExperimentsTreeDataProvider(apiClient);
 
-    workspacesTreeDataProvider.onDidChangeActiveWorkspace((ws_ver) => {
+    workspacesTreeDataProvider.onDidChangeActiveWorkspace(async (ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);
+        const wsDef = await apiClient.workspace(ws_ver).definition();
+
         segmentsTreeDataProvider.activeWorkspaceVersionId = ws_ver;
         segmentsTreeDataProvider.refresh();
 
@@ -81,7 +83,9 @@ export async function activate(context: vscode.ExtensionContext) {
         eventsTreeDataProvider.activeWorkspaceVersionId = ws_ver;
         eventsTreeDataProvider.refresh();
 
+        mutatorsTreeDataProvider.setWorkspaceMutatorGroupingAttrs(wsDef.mutator_grouping_attrs);
         mutatorsTreeDataProvider.refresh();
+
         mutationsTreeDataProvider.refresh();
         experimentsTreeDataProvider.refresh();
     });

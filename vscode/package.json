@@ -453,13 +453,23 @@
                     "group": "7_modification@1"
                 },
                 {
-                    "command": "auxon.mutators.groupMutatorsByName",
+                    "command": "auxon.mutators.groupByName",
                     "when": "view == auxon.mutators && auxon.mutators.groupBy != 'MUTATOR_NAME'",
                     "group": "7_modification@3"
                 },
                 {
-                    "command": "auxon.mutators.disableMutatorGrouping",
+                    "command": "auxon.mutators.disableByNameGrouping",
                     "when": "view == auxon.mutators && auxon.mutators.groupBy == 'MUTATOR_NAME'",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.mutators.groupByWorkspaceAttrs",
+                    "when": "view == auxon.mutators && auxon.mutators.groupBy != 'WORKSPACE_ATTRS'",
+                    "group": "7_modification@3"
+                },
+                {
+                    "command": "auxon.mutators.disableByWorkspaceAttrsGrouping",
+                    "when": "view == auxon.mutators && auxon.mutators.groupBy == 'WORKSPACE_ATTRS'",
                     "group": "7_modification@3"
                 },
                 {
@@ -788,12 +798,20 @@
                 "title": "✓ Show Unavailable"
             },
             {
-                "command": "auxon.mutators.groupMutatorsByName",
+                "command": "auxon.mutators.groupByName",
                 "title": "Group By Mutator Name"
             },
             {
-                "command": "auxon.mutators.disableMutatorGrouping",
+                "command": "auxon.mutators.disableByNameGrouping",
                 "title": "✓ Group By Mutator Name"
+            },
+            {
+                "command": "auxon.mutators.groupByWorkspaceAttrs",
+                "title": "Group By Workspace Mutator Attributes"
+            },
+            {
+                "command": "auxon.mutators.disableByWorkspaceAttrsGrouping",
+                "title": "✓ Group By Workspace Mutator Attributes"
             },
             {
                 "command": "auxon.mutators.createMutation",
