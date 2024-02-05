@@ -327,12 +327,12 @@ class DirectedGraph {
 type PropertiesMap = Map<string, string | number | boolean>;
 
 class Node {
-    public id: string | undefined = undefined;
-    public description: string | undefined = undefined;
-    public filePath: vscode.Uri | undefined = undefined;
-    public parent: string | undefined = undefined;
+    public id?: string = undefined;
+    public description?: string = undefined;
+    public filePath?: vscode.Uri = undefined;
+    public parent?: string = undefined;
     public hasChildren = false;
-    public label: string | undefined = undefined;
+    public label?: string = undefined;
 
     public toCytoscapeObject(): object {
         const props: PropertiesMap = new Map();
@@ -340,7 +340,7 @@ class Node {
             props.set("id", this.id);
         }
         const label = this.label.replace("'", "\\'");
-        if (label !== "" && label !== undefined) {
+        if (label !== undefined && label !== "") {
             props.set("label", label);
         } else {
             props.set("label", this.id);
@@ -367,10 +367,10 @@ class Node {
 }
 
 class Edge {
-    public source: string | undefined = undefined;
-    public target: string | undefined = undefined;
-    public label: string | undefined = undefined;
-    public visibility: boolean | undefined = undefined;
+    public source?: string = undefined;
+    public target?: string = undefined;
+    public label?: string = undefined;
+    public visibility?: boolean = undefined;
 
     public toCytoscapeObject(): object {
         const props: PropertiesMap = new Map();
