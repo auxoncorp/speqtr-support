@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'none'; font-src {{cspSource}}; style-src {{cspSource}} https://* 'unsafe-inline'; img-src 'self' data:; script-src 'nonce-{{nonce}}';"
+        />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <link href="{{stylesUri}}" rel="stylesheet" />
+        <link href="{{codiconCssUri}}" rel="stylesheet" />
+
+        <script nonce="{{nonce}}" type="text/javascript" src="{{jqueryJsUri}}"></script>
+        <script nonce="{{nonce}}" type="text/javascript" src="{{jqueryColorJsUri}}"></script>
+
+        <script nonce="{{nonce}}" type="text/javascript" src="{{cytoscapeJsUri}}"></script>
+
+        <script nonce="{{nonce}}" type="text/javascript" src="{{layoutBaseJsUri}}"></script>
+        <script nonce="{{nonce}}" type="text/javascript" src="{{coseBaseJsUri}}"></script>
+        <script nonce="{{nonce}}" type="text/javascript" src="{{coseBilkentJsUri}}"></script>
+
+        <script nonce="{{nonce}}" type="module" src="{{webviewUiToolkitJsUri}}"></script>
+
+        <title>{{title}}</title>
+    </head>
+    <body>
+        <div id="toolbarArea">
+            <div style="height: 25px; display: flex; align-items: center; margin-right: 3px">
+                <vscode-button id="toolbarSave" appearance="icon" aria-label="Save Graph">
+                    <span class="codicon codicon-save"></span>
+                </vscode-button>
+                <vscode-button id="toolbarRefresh" appearance="icon" aria-label="Refresh">
+                    <span class="codicon codicon-refresh"></span>
+                </vscode-button>
+            </div>
+            <div style="display: flex">Layout:</div>
+            <vscode-dropdown id="layoutDropdown" style="margin-left: 5px; margin-bottom: 2px">
+                <vscode-option value="cose-bilkent">Cose Bilkent</vscode-option>
+                <vscode-option value="cose">Cose</vscode-option>
+                <vscode-option value="breadthfirst">Breadth first</vscode-option>
+                <vscode-option value="concentric">Concentric</vscode-option>
+                <vscode-option value="circle">Circle</vscode-option>
+                <vscode-option value="grid">Grid</vscode-option>
+                <vscode-option value="random">Random</vscode-option>
+            </vscode-dropdown>
+            <div style="display: flex; margin-left: 5px">Selection Mode:</div>
+            <vscode-dropdown id="modeDropdown" style="margin-left: 5px; margin-bottom: 2px">
+                <vscode-option value="causal-descendants">Causal Descendants</vscode-option>
+                <vscode-option value="causal-ancestors">Causal Ancestors</vscode-option>
+                <vscode-option value="manual">Manual</vscode-option>
+                <vscode-option value="bidirectional-neighbors">Neighbors</vscode-option>
+                <vscode-option value="downstream-neighbors">Downstream Neighbors</vscode-option>
+                <vscode-option value="upstream-neighbors">Upstream Neighbors</vscode-option>
+            </vscode-dropdown>
+        </div>
+
+        <div id="cy"></div>
+        <script nonce="{{nonce}}" type="text/javascript" src="{{transitionGraphJsUri}}"></script>
+    </body>
+</html>

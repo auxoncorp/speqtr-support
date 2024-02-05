@@ -1,13 +1,36 @@
 import * as vscode from "vscode";
+import * as handlebars from "handlebars";
 import * as api from "./modalityApi";
+import * as fs from "fs";
+import { Base64 } from "js-base64";
 
 export function register(context: vscode.ExtensionContext, apiClient: api.Client) {
-    context.subscriptions.push(
-        vscode.workspace.registerTextDocumentContentProvider(URI_SCHEME, new TransitionGraphContentProvider(apiClient))
-    );
+    const tGraphDisposable = vscode.commands.registerCommand("auxon.transition.graph", async (params) => {
+        let docTitle = "Transition graph for ";
+        if (params.type == "timelines") {
+            if (params.timelines.length > 1) {
+                docTitle += "selected timelines";
+            } else {
+                docTitle += params.timelines[0];
+            }
+        } else if (params.type == "segment") {
+            docTitle += "segment " + params.segmentId.segment_name;
+        }
+
+        const webViewPanel = vscode.window.createWebviewPanel(
+            "auxon.transitionGraphView",
+            docTitle,
+            vscode.ViewColumn.One,
+            {
+                enableScripts: true,
+            }
+        );
+        const tg = new TransitionGraph(context, apiClient);
+        await tg.load(webViewPanel.webview, params);
+    });
+    context.subscriptions.push(tGraphDisposable);
 }
 
-// These will be put into the 'path' component of the uri, as base64 encoded json. Yep.
 export interface TimelineParams {
     type: "timelines";
     timelines: string[];
@@ -102,137 +125,130 @@ export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy?:
 }
 
 function showGraph(params: TransitionGraphParams) {
-    let docTitle = "Transition graph for ";
-
-    if (params.type == "timelines") {
-        if (params.timelines.length > 1) {
-            docTitle += "selected timelines";
-        } else {
-            docTitle += params.timelines[0];
-        }
-    } else if (params.type == "segment") {
-        docTitle += "segment " + params.segmentId.segment_name;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const callback = (webpanel: any) => interactivePreviewWebpanelCallback(webpanel);
-
-    vscode.workspace.openTextDocument(encodeUri(params)).then((doc) => {
-        const options = {
-            document: doc,
-            title: docTitle,
-            callback,
-        };
-
-        vscode.languages.setTextDocumentLanguage(doc, "dot");
-        vscode.commands.executeCommand("graphviz-interactive-preview.preview.beside", options);
-    });
+    vscode.commands.executeCommand("auxon.transition.graph", params);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function interactivePreviewWebpanelCallback(webpanel: any) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handler = (message: any) => {
-        return interactivePreviewMessageHandler(message);
-    };
-    webpanel.handleMessage = handler;
-}
+export class TransitionGraph {
+    private extensionContext: vscode.ExtensionContext;
+    private graph: DirectedGraph;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-function interactivePreviewMessageHandler(message: any) {
-    // TODO: enable some basic interaction with the graph
-    /*
-    console.log(JSON.stringify(message));
-
-    switch (message.command) {
-        case "onClick":
-            console.log("onClick");
-            break;
-        case "onDblClick":
-            console.log("onDblClick");
-            break;
-        default:
-            console.warn("Unexpected command: " + message.command);
-    }
-    */
-}
-
-const URI_SCHEME = "auxon-transition-graph";
-
-// vscode seems to equate the path portion of the document uri with
-// identity pretty strongly, so we're encoding a lot of information
-// into it.
-export function encodeUri(val: TransitionGraphParams): vscode.Uri {
-    let components: string[];
-    if (val.type == "timelines") {
-        components = ["timelines", val.timelines.map(encodeURIComponent).join(",")];
-        if (val.groupBy && val.groupBy.length > 0) {
-            components.push(val.groupBy.map(encodeURIComponent).join(","));
-        }
-    } else if (val.type == "segment") {
-        components = [
-            "segment",
-            val.segmentId.workspace_version_id,
-            val.segmentId.rule_name,
-            val.segmentId.segment_name,
-        ];
-
-        if (val.groupBy && val.groupBy.length > 0) {
-            components.push(val.groupBy.map(encodeURIComponent).join(","));
-        }
+    constructor(context: vscode.ExtensionContext, private readonly apiClient: api.Client) {
+        this.extensionContext = context;
     }
 
-    return vscode.Uri.from({
-        scheme: URI_SCHEME,
-        path: components.join("/"),
-    });
-}
-
-export function decodeUri(uri: vscode.Uri): TransitionGraphParams {
-    if (uri.scheme != URI_SCHEME) {
-        throw new Error("Unsupported URI Scheme: " + uri.scheme);
-    }
-
-    const components = uri.path.split("/");
-    if (components[0] == "timelines") {
-        const tlParams: TimelineParams = {
-            type: "timelines",
-            timelines: components[1].split(",").map(decodeURIComponent),
-        };
-        if (components[2]) {
-            tlParams.groupBy = components[2].split(",").map(decodeURIComponent);
-        }
-        return tlParams;
-    } else if (components[0] == "segment") {
-        const segParams: SegmentParams = {
-            type: "segment",
-            segmentId: {
-                workspace_version_id: components[1],
-                rule_name: components[2],
-                segment_name: components[3],
+    async load(webview: vscode.Webview, params: TransitionGraphParams) {
+        webview.onDidReceiveMessage(
+            async (message) => {
+                switch (message.command) {
+                    case "requestNodesAndEdges":
+                        this.postNodesAndEdges(webview);
+                        break;
+                    case "saveAsPng":
+                        await this.saveAsPng(message.data);
+                        break;
+                    default:
+                }
             },
-        };
-        if (components[4]) {
-            segParams.groupBy = components[4].split(",").map(decodeURIComponent);
+            undefined,
+            this.extensionContext.subscriptions
+        );
+
+        const html = this.generateHtmlContent(webview);
+        webview.html = html;
+
+        this.graph = await this.generateGraph(params);
+    }
+
+    private postNodesAndEdges(webview: vscode.Webview) {
+        const nodes = this.graph.nodes.map((node) => node.toCytoscapeObject());
+        const edges = this.graph.edges
+            .map((edge) => edge.toCytoscapeObject())
+            .filter((edge) => Object.keys(edge).length !== 0);
+
+        webview.postMessage({
+            command: "nodesAndEdges",
+            nodes,
+            edges,
+        });
+    }
+
+    private async saveAsPng(data: string) {
+        const dataUrl = data.split(",");
+        const content = Base64.toUint8Array(dataUrl[1]);
+        const filter = { Images: ["png"] };
+        const fileUri = await vscode.window.showSaveDialog({
+            saveLabel: "export",
+            filters: filter,
+        });
+        if (fileUri) {
+            try {
+                await vscode.workspace.fs.writeFile(fileUri, content);
+            } catch (err) {
+                vscode.window.showErrorMessage(`Error on writing file: ${err}`);
+            }
         }
-        return segParams;
-    } else {
-        throw new Error("Unsupported 'type' in transition graph uri: " + components[0]);
-    }
-}
-
-class TransitionGraphContentProvider implements vscode.TextDocumentContentProvider {
-    private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
-
-    constructor(private readonly apiClient: api.Client) {}
-
-    get onDidChange() {
-        return this._onDidChange.event;
     }
 
-    async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-        const params = decodeUri(uri);
+    private generateHtmlContent(webview: vscode.Webview): string {
+        const stylesUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "transitionGraph.css")
+        );
+        const jqueryJsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "jquery.min.js")
+        );
+        const jqueryColorJsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "jquery.color.min.js")
+        );
+        const codiconCssUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "codicon.css")
+        );
+        const cytoscapeJsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cytoscape.min.js")
+        );
+        const layoutBaseJsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "layout-base.js")
+        );
+        const coseBaseJsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cose-base.js")
+        );
+        const coseBilkentJsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cytoscape-cose-bilkent.js")
+        );
+        const webviewUiToolkitJsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "webviewuitoolkit.min.js")
+        );
+        const transitionGraphJsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "transitionGraph.js")
+        );
 
+        const templateUri = vscode.Uri.joinPath(
+            this.extensionContext.extensionUri,
+            "templates",
+            "transitionGraph.html"
+        );
+        const templateText = fs.readFileSync(templateUri.fsPath, "utf8");
+        const template = handlebars.compile(templateText);
+
+        const html = template({
+            title: "Transition Graph",
+            cspSource: webview.cspSource,
+            nonce: this.getNonce(),
+            stylesUri,
+            jqueryJsUri,
+            jqueryColorJsUri,
+            codiconCssUri,
+            cytoscapeJsUri,
+            layoutBaseJsUri,
+            coseBaseJsUri,
+            coseBilkentJsUri,
+            webviewUiToolkitJsUri,
+            transitionGraphJsUri,
+        });
+
+        return html;
+    }
+
+    private async generateGraph(params: TransitionGraphParams): Promise<DirectedGraph> {
         let res: api.GroupedGraph;
 
         if (params.type == "timelines") {
@@ -241,15 +257,14 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
             res = await this.apiClient.segment(params.segmentId).groupedGraph(params.groupBy);
         }
 
+        const hideSelfEdges = params.groupBy.length == 1 && params.groupBy[0] == "timeline.name";
+        const directedGraph = new DirectedGraph();
+
         if (res.nodes.length == 0) {
             // No content
-            return "digraph TransitionGraph{}\n";
+            return directedGraph;
         }
 
-        const hideSelfEdges = params.groupBy.length == 1 && params.groupBy[0] == "timeline.name";
-
-        let dot = "";
-        dot += "digraph TransitionGraph{\n";
         for (let i = 0; i < res.nodes.length; i++) {
             const node = res.nodes[i];
             let title: string;
@@ -261,7 +276,11 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
                 title = node.attr_vals.join(", ");
             }
 
-            dot += `  node${i} [label="${title} (${node.count})"];\n`;
+            const newNode = new Node();
+            newNode.label = title;
+            newNode.id = `${i}`;
+
+            directedGraph.nodes.push(newNode);
         }
 
         for (const edge of res.edges) {
@@ -269,16 +288,110 @@ class TransitionGraphContentProvider implements vscode.TextDocumentContentProvid
                 continue;
             }
 
+            const newEdge = new Edge();
+
             const sourceOccurCount = res.nodes[edge.source].count;
             const percent = (edge.count / sourceOccurCount) * 100;
             const label = `${percent.toFixed(1)}% (${edge.count})`;
-            dot += `  node${edge.source} -> node${edge.destination} [label="${label}"];\n`;
+
+            newEdge.source = `${edge.source}`;
+            newEdge.target = `${edge.destination}`;
+            newEdge.label = label;
+
+            directedGraph.edges.push(newEdge);
         }
 
-        dot += "}\n";
+        return directedGraph;
+    }
 
-        const content = dot;
+    private getNonce() {
+        let text = "";
+        const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        for (let i = 0; i < 32; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
+    }
+}
 
-        return content;
+class DirectedGraph {
+    nodes: Node[];
+    edges: Edge[];
+
+    constructor() {
+        this.nodes = [];
+        this.edges = [];
+    }
+}
+
+type PropertiesMap = Map<string, string | number | boolean>;
+
+class Node {
+    public id: string | undefined = undefined;
+    public description: string | undefined = undefined;
+    public filePath: vscode.Uri | undefined = undefined;
+    public parent: string | undefined = undefined;
+    public hasChildren = false;
+    public label: string | undefined = undefined;
+
+    public toCytoscapeObject(): object {
+        const props: PropertiesMap = new Map();
+        if (this.id !== undefined) {
+            props.set("id", this.id);
+        }
+        const label = this.label.replace("'", "\\'");
+        if (label !== "" && label !== undefined) {
+            props.set("label", label);
+        } else {
+            props.set("label", this.id);
+        }
+        if (this.filePath !== undefined) {
+            props.set("filepath", this.filePath.fsPath);
+        }
+        if (this.parent !== undefined) {
+            props.set("parent", this.parent);
+        }
+        if (this.hasChildren) {
+            props.set("labelvalign", "top");
+        } else {
+            props.set("labelvalign", "center");
+        }
+
+        const obj = { data: {} };
+        for (const [k, v] of props) {
+            obj.data[k] = v;
+        }
+
+        return obj;
+    }
+}
+
+class Edge {
+    public source: string | undefined = undefined;
+    public target: string | undefined = undefined;
+    public label: string | undefined = undefined;
+    public visibility: boolean | undefined = undefined;
+
+    public toCytoscapeObject(): object {
+        const props: PropertiesMap = new Map();
+        if (this.label !== undefined) {
+            props.set("label", this.label.replace("'", "\\'"));
+        }
+        if (this.source !== undefined) {
+            props.set("source", this.source);
+        }
+        if (this.target !== undefined) {
+            props.set("target", this.target);
+        }
+        if (this.visibility !== undefined) {
+            props.set("hidden", this.visibility);
+        }
+
+        const obj = { data: {} };
+        for (const [k, v] of props) {
+            obj.data[k] = v;
+        }
+
+        return obj;
     }
 }
