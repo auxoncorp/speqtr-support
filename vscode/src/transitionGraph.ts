@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as modalityLog from "./modalityLog";
 import * as handlebars from "handlebars";
 import * as api from "./modalityApi";
 import * as fs from "fs";
@@ -146,6 +147,20 @@ export class TransitionGraph {
                     case "saveAsPng":
                         await this.saveAsPng(message.data);
                         break;
+                    case "logSelectedNodes": {
+                        const selectedNodeIds = message.data;
+                        const nodes = this.graph.nodes.filter((n) => n.timelineName !== undefined);
+                        const timelineNames = selectedNodeIds.map(
+                            (nId) => nodes.find((n) => n.id === nId).timelineName
+                        );
+                        vscode.commands.executeCommand(
+                            "auxon.modality.log",
+                            new modalityLog.ModalityLogCommandArgs({
+                                thingToLog: timelineNames,
+                            })
+                        );
+                        break;
+                    }
                     default:
                 }
             },
@@ -214,6 +229,9 @@ export class TransitionGraph {
         const coseBilkentJsUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cytoscape-cose-bilkent.js")
         );
+        const contextMenuJsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cytoscape-context-menus.js")
+        );
         const webviewUiToolkitJsUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "webviewuitoolkit.min.js")
         );
@@ -241,6 +259,7 @@ export class TransitionGraph {
             layoutBaseJsUri,
             coseBaseJsUri,
             coseBilkentJsUri,
+            contextMenuJsUri,
             webviewUiToolkitJsUri,
             transitionGraphJsUri,
         });
@@ -266,17 +285,22 @@ export class TransitionGraph {
         }
 
         for (let i = 0; i < res.nodes.length; i++) {
+            const newNode = new Node();
             const node = res.nodes[i];
             let title: string;
             if (res.attr_keys[0] == "timeline.name" && res.attr_keys[1] == "event.name") {
                 title = `${node.attr_vals[1]}@${node.attr_vals[0]}`;
+                newNode.timelineName = node.attr_vals[0] as string;
             } else if (res.attr_keys[1] == "timeline.name" && res.attr_keys[0] == "event.name") {
                 title = `${node.attr_vals[0]}@${node.attr_vals[1]}`;
+                newNode.timelineName = node.attr_vals[1] as string;
+            } else if (res.attr_keys.length == 1 && res.attr_keys[0] == "timeline.name") {
+                title = node.attr_vals[0] as string;
+                newNode.timelineName = node.attr_vals[0] as string;
             } else {
                 title = node.attr_vals.join(", ");
             }
 
-            const newNode = new Node();
             newNode.label = title;
             newNode.id = `${i}`;
 
@@ -333,6 +357,7 @@ class Node {
     public parent?: string = undefined;
     public hasChildren = false;
     public label?: string = undefined;
+    public timelineName?: string = undefined;
 
     public toCytoscapeObject(): object {
         const props: PropertiesMap = new Map();
@@ -355,6 +380,9 @@ class Node {
             props.set("labelvalign", "top");
         } else {
             props.set("labelvalign", "center");
+        }
+        if (this.timelineName !== undefined) {
+            props.set("timeline", this.timelineName);
         }
 
         const obj = { data: {} };

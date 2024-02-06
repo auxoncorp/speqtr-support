@@ -60,3 +60,12 @@ fs.copyFile("node_modules/layout-base/layout-base.js", "resources/dist/layout-ba
     if (err) throw err;
     console.log("layout-base.js was copied to resources/dist");
 });
+
+fs.copyFile(
+    "node_modules/cytoscape-context-menus/cytoscape-context-menus.js",
+    "resources/dist/cytoscape-context-menus.js",
+    (err) => {
+        if (err) throw err;
+        console.log("cytoscape-context-menus.js was copied to resources/dist");
+    }
+);
