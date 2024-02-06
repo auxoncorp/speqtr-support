@@ -322,6 +322,8 @@ function constructGraph() {
 }
 
 // Copied from https://github.com/CoderAllan/vscode-dgmlviewer
+// Copyright (c) 2021 Allan Simonsen
+// See the license file third_party_licenses/LICENSE_vscode-dgmlviewr
 function calculateLabelHeightsAndWidths() {
     nodeElements.forEach((node) => {
         if (node.data.label && node.data.label.length > 0) {
