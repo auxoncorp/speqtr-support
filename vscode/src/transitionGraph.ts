@@ -4,6 +4,8 @@ import * as handlebars from "handlebars";
 import * as api from "./modalityApi";
 import * as fs from "fs";
 import { Base64 } from "js-base64";
+import { getNonce } from "./webviewUtil";
+import { TimelineDetails, EventDetails } from "./detailsPanel";
 
 export function register(context: vscode.ExtensionContext, apiClient: api.Client) {
     const tGraphDisposable = vscode.commands.registerCommand("auxon.transition.graph", async (params) => {
@@ -62,9 +64,9 @@ export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
         quickPick.items = [
             {
                 label: "Group by event and timeline",
-                groupBy: ["event.name", "timeline.name"],
+                groupBy: ["event.name", "timeline.name", "timeline.id"],
             },
-            { label: "Group by timeline", groupBy: ["timeline.name"] },
+            { label: "Group by timeline", groupBy: ["timeline.name", "timeline.id"] },
             { label: "", kind: vscode.QuickPickItemKind.Separator },
             { label: "Custom Grouping...", custom: true },
         ];
@@ -149,18 +151,20 @@ export class TransitionGraph {
                         break;
                     case "logSelectedNodes": {
                         const selectedNodeIds = message.data;
-                        const nodes = this.graph.nodes.filter((n) => n.timelineName !== undefined);
-                        const timelineNames = selectedNodeIds.map(
-                            (nId) => nodes.find((n) => n.id === nId).timelineName
-                        );
+                        const timelineIds = selectedNodeIds
+                            .map((nId) => this.graph.nodes[nId].timelineId)
+                            .filter((tlName) => typeof tlName !== undefined);
                         vscode.commands.executeCommand(
                             "auxon.modality.log",
                             new modalityLog.ModalityLogCommandArgs({
-                                thingToLog: timelineNames,
+                                thingToLog: timelineIds,
                             })
                         );
                         break;
                     }
+                    case "showDetailsForSelection":
+                        this.showDetailsForSelection(message.data.nodes, message.data.edges);
+                        break;
                     default:
                 }
             },
@@ -202,6 +206,42 @@ export class TransitionGraph {
                 vscode.window.showErrorMessage(`Error on writing file: ${err}`);
             }
         }
+    }
+
+    private showDetailsForSelection(selectedNodeIds: number[], selectedEdgeIds: number[]) {
+        const nodes = selectedNodeIds.map((nId) => this.graph.nodes[nId]);
+        const edges = selectedEdgeIds.map((eId) => this.graph.edges[eId]);
+
+        const events = [];
+        const timelines = [];
+        const interactions = [];
+        for (const node of nodes) {
+            const timelineDetails = node.timelineDetails();
+            if (timelineDetails) {
+                timelines.push(timelineDetails);
+            }
+            const eventDetails = node.eventDetails();
+            if (eventDetails) {
+                events.push(eventDetails);
+            }
+        }
+        for (const edge of edges) {
+            const srcNode = this.graph.nodes[edge.source];
+            const srcTimelineDetails = srcNode.timelineDetails();
+            const dstNode = this.graph.nodes[edge.target];
+            const dstTimelineDetails = dstNode.timelineDetails();
+            if (srcTimelineDetails && dstTimelineDetails) {
+                interactions.push({
+                    sourceEvent: srcNode.eventName,
+                    sourceTimeline: srcTimelineDetails,
+                    destinationEvent: dstNode.eventName,
+                    destinationTimeline: dstTimelineDetails,
+                    count: edge.count,
+                });
+            }
+        }
+
+        vscode.commands.executeCommand("auxon.details.show", { events, timelines, interactions });
     }
 
     private generateHtmlContent(webview: vscode.Webview): string {
@@ -250,7 +290,7 @@ export class TransitionGraph {
         const html = template({
             title: "Transition Graph",
             cspSource: webview.cspSource,
-            nonce: this.getNonce(),
+            nonce: getNonce(),
             stylesUri,
             jqueryJsUri,
             jqueryColorJsUri,
@@ -276,7 +316,9 @@ export class TransitionGraph {
             res = await this.apiClient.segment(params.segmentId).groupedGraph(params.groupBy);
         }
 
-        const hideSelfEdges = params.groupBy.length == 1 && params.groupBy[0] == "timeline.name";
+        const hideSelfEdges =
+            (params.groupBy.length == 1 && params.groupBy[0] == "timeline.name") ||
+            (params.groupBy.length == 2 && params.groupBy[0] == "timeline.name" && params.groupBy[1] == "timeline.id");
         const directedGraph = new DirectedGraph();
 
         if (res.nodes.length == 0) {
@@ -285,56 +327,62 @@ export class TransitionGraph {
         }
 
         for (let i = 0; i < res.nodes.length; i++) {
-            const newNode = new Node();
             const node = res.nodes[i];
             let title: string;
             if (res.attr_keys[0] == "timeline.name" && res.attr_keys[1] == "event.name") {
                 title = `${node.attr_vals[1]}@${node.attr_vals[0]}`;
-                newNode.timelineName = node.attr_vals[0] as string;
             } else if (res.attr_keys[1] == "timeline.name" && res.attr_keys[0] == "event.name") {
                 title = `${node.attr_vals[0]}@${node.attr_vals[1]}`;
-                newNode.timelineName = node.attr_vals[1] as string;
             } else if (res.attr_keys.length == 1 && res.attr_keys[0] == "timeline.name") {
                 title = node.attr_vals[0] as string;
-                newNode.timelineName = node.attr_vals[0] as string;
+            } else if (
+                res.attr_keys.length == 2 &&
+                res.attr_keys[0] == "timeline.name" &&
+                res.attr_keys[1] == "timeline.id"
+            ) {
+                title = node.attr_vals[0] as string;
             } else {
                 title = node.attr_vals.join(", ");
             }
 
-            newNode.label = title;
-            newNode.id = `${i}`;
+            const graphNode = new Node(i);
+            graphNode.count = node.count;
+            graphNode.label = title;
+            const timelineIdIdx = res.attr_keys.indexOf("timeline.id");
+            if (timelineIdIdx !== undefined) {
+                graphNode.timelineId = node.attr_vals[timelineIdIdx]["TimelineId"];
+            }
+            const timelineNameIdx = res.attr_keys.indexOf("timeline.name");
+            if (timelineNameIdx !== undefined) {
+                graphNode.timelineName = node.attr_vals[timelineNameIdx] as string;
+            }
+            const eventNameIdx = res.attr_keys.indexOf("event.name");
+            if (eventNameIdx !== undefined) {
+                graphNode.eventName = node.attr_vals[eventNameIdx] as string;
+            }
 
-            directedGraph.nodes.push(newNode);
+            directedGraph.nodes.push(graphNode);
         }
 
+        let edgeIdx = 0;
         for (const edge of res.edges) {
             if (edge.source == edge.destination && hideSelfEdges) {
                 continue;
             }
 
-            const newEdge = new Edge();
-
             const sourceOccurCount = res.nodes[edge.source].count;
             const percent = (edge.count / sourceOccurCount) * 100;
             const label = `${percent.toFixed(1)}% (${edge.count})`;
 
-            newEdge.source = `${edge.source}`;
-            newEdge.target = `${edge.destination}`;
-            newEdge.label = label;
+            const graphEdge = new Edge(edgeIdx, edge.source, edge.destination);
+            graphEdge.label = label;
+            graphEdge.count = edge.count;
 
-            directedGraph.edges.push(newEdge);
+            directedGraph.edges.push(graphEdge);
+            edgeIdx++;
         }
 
         return directedGraph;
-    }
-
-    private getNonce() {
-        let text = "";
-        const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        for (let i = 0; i < 32; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length));
-        }
-        return text;
     }
 }
 
@@ -351,19 +399,22 @@ class DirectedGraph {
 type PropertiesMap = Map<string, string | number | boolean>;
 
 class Node {
-    public id?: string = undefined;
-    public description?: string = undefined;
-    public filePath?: vscode.Uri = undefined;
-    public parent?: string = undefined;
-    public hasChildren = false;
-    public label?: string = undefined;
-    public timelineName?: string = undefined;
+    description?: string = undefined;
+    filePath?: vscode.Uri = undefined;
+    parent?: string = undefined;
+    hasChildren = false;
+    label?: string = undefined;
+    timelineName?: string = undefined;
+    timelineId?: string = undefined;
+    eventName?: string = undefined;
+    count?: number = undefined;
 
-    public toCytoscapeObject(): object {
+    constructor(public id: number) {}
+
+    toCytoscapeObject(): object {
         const props: PropertiesMap = new Map();
-        if (this.id !== undefined) {
-            props.set("id", this.id);
-        }
+        props.set("id", this.id);
+
         const label = this.label.replace("'", "\\'");
         if (label !== undefined && label !== "") {
             props.set("label", label);
@@ -381,8 +432,9 @@ class Node {
         } else {
             props.set("labelvalign", "center");
         }
-        if (this.timelineName !== undefined) {
-            props.set("timeline", this.timelineName);
+        // We use this to indicate nodes that can be logged from the graph context menu
+        if (this.timelineId !== undefined) {
+            props.set("timeline", this.timelineId);
         }
 
         const obj = { data: {} };
@@ -392,24 +444,46 @@ class Node {
 
         return obj;
     }
+
+    timelineDetails(): TimelineDetails | undefined {
+        if (this.timelineId !== undefined) {
+            return { id: this.timelineId, name: this.timelineName };
+        } else {
+            return undefined;
+        }
+    }
+
+    eventDetails(): EventDetails | undefined {
+        if (this.eventName !== undefined && this.timelineId !== undefined) {
+            return {
+                name: this.eventName,
+                timeline: { id: this.timelineId, name: this.timelineName },
+                count: this.count,
+            };
+        } else {
+            return undefined;
+        }
+    }
 }
 
 class Edge {
-    public source?: string = undefined;
-    public target?: string = undefined;
-    public label?: string = undefined;
-    public visibility?: boolean = undefined;
+    label?: string = undefined;
+    visibility?: boolean = undefined;
+    count?: number = undefined;
 
-    public toCytoscapeObject(): object {
+    // Source/target map to the id/index of a Node
+    constructor(public id: number, public source: number, public target: number) {}
+
+    toCytoscapeObject(): object {
         const props: PropertiesMap = new Map();
+
+        // cytoscape reserves the "id" attribute on edges, so we use idx instead
+        props.set("idx", this.id);
+        props.set("source", this.source);
+        props.set("target", this.target);
+
         if (this.label !== undefined) {
             props.set("label", this.label.replace("'", "\\'"));
-        }
-        if (this.source !== undefined) {
-            props.set("source", this.source);
-        }
-        if (this.target !== undefined) {
-            props.set("target", this.target);
         }
         if (this.visibility !== undefined) {
             props.set("hidden", this.visibility);

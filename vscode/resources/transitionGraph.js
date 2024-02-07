@@ -140,6 +140,21 @@
         }
     }
 
+    function postShowSelectionDetails() {
+        const selectedNodes = cy
+            .nodes()
+            .filter((n) => n.hasClass("selected"))
+            .map((n) => n.id());
+        const selectedEdges = cy
+            .edges()
+            .filter((e) => e.hasClass("selected"))
+            .map((e) => e.data("idx"));
+        vscode.postMessage({
+            command: "showDetailsForSelection",
+            data: { nodes: selectedNodes, edges: selectedEdges },
+        });
+    }
+
     function constructGraph() {
         if (nodeElements.length == 0 && edgeElements.length == 0) {
             // Do nothing until we've gotten data from the vscode
@@ -306,6 +321,7 @@
                     item.addClass("selected").predecessors().addClass("selected");
                     break;
             }
+            postShowSelectionDetails();
         });
         cy.on("unselect", function (evt) {
             let item = evt.target;
@@ -319,6 +335,7 @@
                     cy.elements().removeClass("selected");
                     break;
             }
+            postShowSelectionDetails();
         });
         cy.on("cxttap", function (evt) {
             const numSelectedNodes = cy
