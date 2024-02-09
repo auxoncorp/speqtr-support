@@ -320,6 +320,34 @@
                     break;
             }
         });
+        cy.on("cxttap", function (evt) {
+            const numSelectedNodes = cy
+                .nodes()
+                .filter((n) => n.hasClass("selected") && n.data("timeline") !== undefined).length;
+            if (numSelectedNodes > 0) {
+                contextMenu.showMenuItem("log-selected-nodes");
+            } else {
+                contextMenu.hideMenuItem("log-selected-nodes");
+            }
+        });
+        var contextMenu = cy.contextMenus({
+            menuItems: [
+                {
+                    id: "log-selected-nodes",
+                    content: "Log Selected Nodes",
+                    selector: "node, edge",
+                    coreAsWell: false,
+                    show: false,
+                    onClickFunction: function (_evt) {
+                        const selectedNodes = cy
+                            .nodes()
+                            .filter((n) => n.hasClass("selected") && n.data("timeline") !== undefined)
+                            .map((n) => n.id());
+                        vscode.postMessage({ command: "logSelectedNodes", data: selectedNodes });
+                    },
+                },
+            ],
+        });
     }
 
     // Copied from https://github.com/CoderAllan/vscode-dgmlviewer
