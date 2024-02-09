@@ -942,7 +942,8 @@
     },
     "main": "out/main.js",
     "scripts": {
-        "vscode:prepublish": "npm run build-base -- --minify",
+        "copyResources": "node scripts/copyResources.js",
+        "vscode:prepublish": "npm run copyResources && npm run build-base -- --minify",
         "package": "vsce package -o speqtr.vsix",
         "build-base": "esbuild ./src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node16",
         "build": "npm run build-base -- --sourcemap",
@@ -954,19 +955,26 @@
         "codegen": "openapi-typescript src/modality-api.json --output generated/"
     },
     "extensionDependencies": [
-        "ms-toolsai.jupyter",
-        "tintinweb.graphviz-interactive-preview"
+        "ms-toolsai.jupyter"
     ],
     "dependencies": {
         "@types/lodash": "^4.14.200",
         "@viz-js/viz": "^3.0.1",
+        "@vscode/codicons": "^0.0.32",
+        "@vscode/webview-ui-toolkit": "^1.4.0",
+        "cose-base": "^2.2.0",
+        "cytoscape": "^3.28.1",
+        "cytoscape-cose-bilkent": "^4.1.0",
         "handlebars": "^4.7.8",
+        "jquery": "^3.6.0",
+        "jquery-color": "^2.2.0",
+        "js-base64": "^3.7.6",
+        "layout-base": "^2.0.1",
         "lodash": "^4.17.21",
         "node-fetch": "https://github.com/mullr/node-fetch",
         "openapi-fetch": "^0.0.8",
         "vscode-languageclient": "^7.0.0"
     },
-    "postinstall": "cd ./node_modules/node-fetch && npm install && npm run build",
     "devDependencies": {
         "@types/mocha": "^9.1.0",
         "@types/node": "^16.11.7",

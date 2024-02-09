@@ -1,0 +1,38 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+#toolbarArea {
+    display: flex;
+    margin-left: 3px;
+    margin-top: 3px;
+    position: absolute;
+    z-index: 100;
+    border-style: solid;
+    font-size: 0.9em;
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    padding: 5px;
+    border-width: 1px;
+    background-color: var(--vscode-sideBar-background);
+    border-color: var(--vscode-sideBar-border);
+    line-height: 25px;
+    text-align: center;
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+}
+
+#cy {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    display: flex;
+    background: var(--vscode-input-background);
+    overflow-y: hidden;
+}

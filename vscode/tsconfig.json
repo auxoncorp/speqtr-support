@@ -15,6 +15,6 @@
         ]
     },
     "include": ["src", "templates"],
-    "exclude": ["node_modules", "src/generated-sources"],
+    "exclude": ["node_modules", "src/generated-sources", "resources/dist", "resources/toolbar"],
     "references": []
 }

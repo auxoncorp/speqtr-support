@@ -4,3 +4,4 @@ out
 *.vsix
 *.zip
 .vscode-test
+resources/dist
