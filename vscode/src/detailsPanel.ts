@@ -32,9 +32,14 @@ export interface EventDetails {
 
 export class DetailsPanelProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = "auxon.details.panelView";
+    private template: HandlebarsTemplateDelegate<TemplateContext>;
     private view?: vscode.WebviewView = undefined;
 
-    constructor(private readonly apiClient: api.Client, private readonly extensionUri: vscode.Uri) {}
+    constructor(private readonly apiClient: api.Client, private readonly extensionUri: vscode.Uri) {
+        const templateUri = vscode.Uri.joinPath(extensionUri, "templates", "detailsPanel.html");
+        const templateText = fs.readFileSync(templateUri.fsPath, "utf8");
+        this.template = handlebars.compile(templateText);
+    }
 
     public register(context: vscode.ExtensionContext) {
         context.subscriptions.push(
@@ -65,11 +70,7 @@ export class DetailsPanelProvider implements vscode.WebviewViewProvider {
             vscode.Uri.joinPath(this.extensionUri, "resources", "detailsPanel.js")
         );
 
-        const templateUri = vscode.Uri.joinPath(this.extensionUri, "templates", "detailsPanel.html");
-        const templateText = fs.readFileSync(templateUri.fsPath, "utf8");
-        const template = handlebars.compile(templateText);
-
-        const html = template({
+        const html = this.template({
             cspSource: webview.cspSource,
             nonce: getNonce(),
             webviewUiToolkitJsUri,
@@ -82,4 +83,11 @@ export class DetailsPanelProvider implements vscode.WebviewViewProvider {
     private showDetails(params: ShowDetailsParams) {
         this.view.webview.postMessage(params);
     }
+}
+
+interface TemplateContext {
+    cspSource: string;
+    nonce: string;
+    webviewUiToolkitJsUri: vscode.Uri;
+    detailsPanelJsUri: vscode.Uri;
 }
