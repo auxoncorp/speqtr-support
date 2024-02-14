@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
 import * as api from "./modalityApi";
 import * as cliConfig from "./cliConfig";
+import * as config from "./config";
+import * as tmp from "tmp-promise";
+import {promises as fs} from "fs";
+import { getNonce } from "./webviewUtil";
+import { AssignNodeProps } from "./transitionGraph";
 
 class ExperimentsTreeMemento {
     constructor(private readonly memento: vscode.Memento) {}
@@ -25,7 +30,7 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
     // Data scope related
     dataScope: ExperimentDataScope;
 
-    constructor(private readonly apiClient: api.Client) {
+    constructor(private readonly apiClient: api.Client, private readonly extensionContext: vscode.ExtensionContext) {
         this.dataScope = new ExperimentDataScope(undefined, undefined, []);
     }
 
@@ -46,6 +51,11 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
                     vscode.commands.executeCommand("auxon.specs.revealSpec", itemData.name);
                 }
             })
+            vscode.commands.registerCommand("auxon.experiments.impact", (itemData) => this.impact(itemData)),
+            vscode.commands.registerCommand("auxon.experiments.visualizeImpactScenario", (args) =>
+                this.visualizeImpactScenario(args)
+            ),
+            vscode.tasks.onDidEndTaskProcess((ev) => this.onDidEndTaskProcess(ev))
         );
 
         this.refresh();
@@ -85,6 +95,126 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
         return element.treeItem(this.workspaceState);
     }
 
+    async impact(itemData: ExperimentsTreeItemData) {
+        if (itemData instanceof NamedExperimentTreeItemData) {
+            const deviantPath = config.toolPath("deviant");
+            const tempFile = await tmp.file({ mode: 0o600, prefix: "deviant-experiment-impact-", postfix: ".html" });
+            const commandArgs = [
+                "experiment",
+                "impact",
+                itemData.experiment.name,
+                "-f",
+                "html",
+                ...config.extraCliArgs("deviant experiment impact"),
+                "-o",
+                tempFile.path,
+            ];
+
+            const taskDef: vscode.TaskDefinition = {
+                type: "auxon.deviant.experiment.impact",
+                command: deviantPath,
+                args: commandArgs,
+            };
+            const problemMatchers = [];
+            const exec = new vscode.ProcessExecution(taskDef.command, taskDef.args);
+            const task = new vscode.Task(
+                taskDef,
+                vscode.TaskScope.Workspace,
+                "deviant experiment impact",
+                "deviant",
+                exec,
+                problemMatchers
+            );
+
+            task.group = vscode.TaskGroup.Build;
+            task.presentationOptions = {
+                echo: true,
+                reveal: vscode.TaskRevealKind.Always,
+                panel: vscode.TaskPanelKind.Dedicated,
+                clear: true,
+            };
+
+            return await vscode.tasks.executeTask(task);
+        }
+    }
+
+    async onDidEndTaskProcess(ev: vscode.TaskProcessEndEvent) {
+        if (ev.execution.task.definition.type == "auxon.deviant.experiment.impact") {
+            const execution = ev.execution.task.execution as vscode.ProcessExecution;
+            const experimentName = execution.args[2];
+            const outFile = execution.args.at(-1);
+
+            const webViewPanel = vscode.window.createWebviewPanel(
+                "auxon.experimentImpactReport",
+                `Experiment Impact: "${experimentName}"`,
+                vscode.ViewColumn.One,
+                {
+                    enableFindWidget: true,
+                    retainContextWhenHidden: true,
+                    enableScripts: true,
+                    enableCommandUris: true,
+                }
+            );
+
+            const scriptUri = webViewPanel.webview.asWebviewUri(
+                vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "experimentImpact.js")
+            );
+
+            const nonce = getNonce();
+            const cspSource = webViewPanel.webview.cspSource;
+            const csp =
+                "default-src 'none'; " +
+                `font-src ${cspSource}; ` +
+                `style-src ${cspSource} 'unsafe-inline'; ` +
+                `img-src 'self' data:; script-src 'nonce-${nonce}';`;
+
+            let htmlContent = await fs.readFile(outFile, "utf8");
+            htmlContent = htmlContent.replace(
+                "<!-- VSCODE HEADER INJECTION POINT -->",
+                `<meta http-equiv="Content-Security-Policy" content="${csp}"/>`
+            );
+
+            htmlContent = htmlContent.replace(
+                "<!-- VSCODE SCRIPT INJECTION POINT -->",
+                `<script nonce="${nonce}" type="text/javascript" src="${scriptUri}"></script>`
+            );
+
+            webViewPanel.webview.html = htmlContent;
+            webViewPanel.webview.onDidReceiveMessage((msg) => {
+                switch (msg.command) {
+                    case "visualizeImpactScenario":
+                        this.visualizeImpactScenario(msg.args);
+                        break;
+                    default:
+                        throw `Received sunsupported command from webview: ${msg.command}`;
+                }
+            });
+        }
+    }
+
+    visualizeImpactScenario(scenario: ImpactScenario) {
+        const segmentIds = scenario.mutations.map((m) => m.segmentId);
+
+        const assignNodeProps = new AssignNodeProps();
+        for (const mutation of scenario.mutations) {
+            assignNodeProps.addClass(mutation.timelineName, "mutation");
+        }
+
+        for (const impact of scenario.impactedTimelines) {
+            assignNodeProps.addClass(impact.timelineName, "impact");
+            assignNodeProps.addDataProp(impact.timelineName, "severity", impact.severity);
+        }
+
+        vscode.commands.executeCommand("auxon.transition.graph", {
+            type: "segment",
+            segmentIds,
+            title: `Experiment Impact for scenario '${scenario.scenarioName}'`,
+            //title: `Experiment Impact for '${scenario.experimentName}' scenario '${scenario.scenarioName}'`,
+            groupBy: ["timeline.name"],
+            assignNodeProps,
+        });
+    }
+
     async getChildren(element?: ExperimentsTreeItemData): Promise<ExperimentsTreeItemData[]> {
         if (!element) {
             const experimentNames = await this.apiClient.experiments().list();
@@ -100,6 +230,21 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
             return await element.children(this.apiClient, this.workspaceState);
         }
     }
+}
+
+interface ImpactScenario {
+    scenarioName: string;
+    mutations: [{
+        mutationId: string;
+        timelineId: string;
+        timelineName: string;
+        segmentId: api.WorkspaceSegmentId;
+    }];
+    impactedTimelines: [{
+        timelineName: string;
+        events: [string];
+        severity: number,
+    }];
 }
 
 abstract class ExperimentsTreeItemData {

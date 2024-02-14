@@ -81,7 +81,9 @@ export class DetailsPanelProvider implements vscode.WebviewViewProvider {
     }
 
     private showDetails(params: ShowDetailsParams) {
-        this.view.webview.postMessage(params);
+        if (this.view) {
+            this.view.webview.postMessage(params);
+        }
     }
 }
 

@@ -81,8 +81,13 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
     async setActiveWorkspaceCommand(itemData: WorkspaceTreeItemData) {
         const modality = config.toolPath("modality");
         // TODO use workspace version id for this
-        await execFile(modality, ["workspace", "use", itemData.workspace.name]);
-        await execFile(modality, ["segment", "use", "--latest"]);
+        await execFile(modality, [
+            "workspace",
+            "use",
+            itemData.workspace.name,
+            ...config.extraCliArgs("modality workspace use"),
+        ]);
+        await execFile(modality, ["segment", "use", "--latest", ...config.extraCliArgs("modality segment use")]);
         this.refresh();
     }
 }

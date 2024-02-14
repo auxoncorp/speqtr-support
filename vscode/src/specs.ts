@@ -201,7 +201,11 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         );
         if (answer == "Delete") {
             const conform = config.toolPath("conform");
-            await execFile(conform, ["spec", "delete", spec.specMetadata.name, "--force"], { encoding: "utf8" });
+            await execFile(
+                conform,
+                ["spec", "delete", spec.specMetadata.name, "--force", ...config.extraCliArgs("conform spec delete")],
+                { encoding: "utf8" }
+            );
             this.refresh();
         }
     }
@@ -215,7 +219,17 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         if (answer == "Delete") {
             const conform = config.toolPath("conform");
             for (const spec of specs) {
-                await execFile(conform, ["spec", "delete", spec.specMetadata.name, "--force"], { encoding: "utf8" });
+                await execFile(
+                    conform,
+                    [
+                        "spec",
+                        "delete",
+                        spec.specMetadata.name,
+                        "--force",
+                        ...config.extraCliArgs("conform spec delete"),
+                    ],
+                    { encoding: "utf8" }
+                );
             }
             this.refresh();
         }

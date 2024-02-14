@@ -368,6 +368,11 @@
                     "command": "auxon.experiments.viewSpec",
                     "when": "view == auxon.experiments && viewItem == experimentSpec",
                     "group": "inline"
+                },
+                {
+                    "command": "auxon.experiments.impact",
+                    "when": "view == auxon.experiments && viewItem == experiment",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -925,12 +930,20 @@
                 "icon": "$(file)"
             },
             {
+                "command": "auxon.experiments.impact",
+                "title": "Show Experiment Impact Report",
+                "icon": "$(pulse)"
+            },
+            {
+                "command": "auxon.experiments.visualizeImpactScenario",
+                "title": "Visual Experiment Impact Scenario"
+            },
+            {
                 "command": "auxon.details.show",
                 "title": "Show details in the details panel"
             }
         ],
         "configuration": {
-            "type": "object",
             "title": "Auxon",
             "properties": {
                 "auxon.tooldir": {
@@ -982,6 +995,18 @@
                     },
                     "default": null,
                     "markdownDescription": "Extra environment variables that will be passed tool executables, including the SpeQTr LSP server."
+                },
+                "auxon.extraCliArgs": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "scope": "machine-overridable",
+                    "default": {},
+                    "markdownDescription": "Extra command line arguments for cli commands invoked by vscode. The map key is the full command name, like 'modality log'. The value is an array of arguments to append to the command invocation. "
                 }
             }
         }
@@ -989,6 +1014,7 @@
     "main": "out/main.js",
     "scripts": {
         "copyResources": "node scripts/copyResources.js",
+        "postinstall": "npm run copyResources",
         "vscode:prepublish": "npm run copyResources && npm run build-base -- --minify",
         "package": "vsce package -o speqtr.vsix",
         "build-base": "esbuild ./src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node16",
@@ -1020,6 +1046,7 @@
         "lodash": "^4.17.21",
         "node-fetch": "https://github.com/mullr/node-fetch",
         "openapi-fetch": "^0.0.8",
+        "tmp-promise": "^3.0.3",
         "vscode-languageclient": "^7.0.0"
     },
     "devDependencies": {

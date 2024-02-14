@@ -69,7 +69,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider);
     const mutatorsTreeDataProvider = new mutators.MutatorsTreeDataProvider(apiClient);
     const mutationsTreeDataProvider = new mutations.MutationsTreeDataProvider(apiClient);
-    const experimentsTreeDataProvider = new experiments.ExperimentsTreeDataProvider(apiClient);
+    const experimentsTreeDataProvider = new experiments.ExperimentsTreeDataProvider(apiClient, context);
     const detailsPanelProvider = new detailsPanel.DetailsPanelProvider(apiClient, context.extensionUri);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace(async (ws_ver) => {

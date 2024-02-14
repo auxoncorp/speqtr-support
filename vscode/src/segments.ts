@@ -169,7 +169,14 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
 
     async setActiveCommand(item: SegmentTreeItemData) {
         const modality = config.toolPath("modality");
-        const args = ["segment", "use", "--segmentation-rule", item.segment.id.rule_name, item.segment.id.segment_name];
+        const args = [
+            "segment",
+            "use",
+            "--segmentation-rule",
+            item.segment.id.rule_name,
+            item.segment.id.segment_name,
+            ...config.extraCliArgs("modality segment use"),
+        ];
         await execFile(modality, args);
         this.refresh();
     }
@@ -189,22 +196,41 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
             args.push(item.segment.id.segment_name);
         }
 
+        for (const extra of config.extraCliArgs("modality segment use")) {
+            args.push(extra);
+        }
+
         await execFile(config.toolPath("modality"), args);
         this.refresh();
     }
 
     async setLatestActiveCommand() {
-        await execFile(config.toolPath("modality"), ["segment", "use", "--latest"]);
+        await execFile(config.toolPath("modality"), [
+            "segment",
+            "use",
+            "--latest",
+            ...config.extraCliArgs("modality segment use"),
+        ]);
         this.refresh();
     }
 
     async setAllActiveCommand() {
-        await execFile(config.toolPath("modality"), ["segment", "use", "--all-segments"]);
+        await execFile(config.toolPath("modality"), [
+            "segment",
+            "use",
+            "--all-segments",
+            ...config.extraCliArgs("modality segment use"),
+        ]);
         this.refresh();
     }
 
     async setWholeWorkspaceActiveCommand() {
-        await execFile(config.toolPath("modality"), ["segment", "use", "--whole-workspace"]);
+        await execFile(config.toolPath("modality"), [
+            "segment",
+            "use",
+            "--whole-workspace",
+            ...config.extraCliArgs("modality segment use"),
+        ]);
         this.refresh();
     }
 

@@ -10,14 +10,18 @@ import { TimelineDetails, EventDetails } from "./detailsPanel";
 export function register(context: vscode.ExtensionContext, apiClient: api.Client) {
     const tGraphDisposable = vscode.commands.registerCommand("auxon.transition.graph", async (params) => {
         let docTitle = "Transition graph for ";
-        if (params.type == "timelines") {
+        if (params.title) {
+            docTitle = params.title;
+        } else if (params.type == "timelines") {
             if (params.timelines.length > 1) {
                 docTitle += "selected timelines";
             } else {
                 docTitle += params.timelines[0];
             }
         } else if (params.type == "segment") {
-            docTitle += "segment " + params.segmentId.segment_name;
+            if (params.segmentIds.length == 1) {
+                docTitle += "segment " + params.segmentIds[0].segment_name;
+            }
         }
 
         const webViewPanel = vscode.window.createWebviewPanel(
@@ -36,17 +40,52 @@ export function register(context: vscode.ExtensionContext, apiClient: api.Client
 
 export interface TimelineParams {
     type: "timelines";
+    title?: string;
     timelines: string[];
     groupBy?: string[];
+    assignNodeProps?: AssignNodeProps;
 }
 
 export interface SegmentParams {
     type: "segment";
-    segmentId: api.WorkspaceSegmentId;
+    title?: string;
+    segmentIds: [api.WorkspaceSegmentId];
     groupBy?: string[];
+    assignNodeProps?: AssignNodeProps;
 }
 
 export type TransitionGraphParams = TimelineParams | SegmentParams;
+
+export class AssignNodeProps {
+    private nodeNameToClasses: { [key: string]: string[] } = {};
+    private nodeNameToDataProps: { [key: string]: {[key: string]: string | number | boolean} } = {};
+
+    addClass(nodeName: string, klass: string) {
+        if (!this.nodeNameToClasses[nodeName]) {
+            this.nodeNameToClasses[nodeName] = [];
+        }
+        const classes = this.nodeNameToClasses[nodeName];
+        if (!classes.find((k) => k == klass)) {
+            classes.push(klass);
+        }
+    }
+
+    addDataProp(nodeName: string, key: string, val: string | number | boolean) {
+        if (!this.nodeNameToDataProps[nodeName]) {
+            this.nodeNameToDataProps[nodeName] = {};
+        }
+        const props= this.nodeNameToDataProps[nodeName];
+        props[key] = val;
+    }
+
+    getClasses(nodeName: string): string[] | undefined {
+        return this.nodeNameToClasses[nodeName];
+    }
+
+    getDataProps(nodeName: string): {[key: string]: string | number | boolean} | undefined {
+        return this.nodeNameToDataProps[nodeName];
+    }
+}
 
 interface GraphGroupingItem {
     label: string;
@@ -124,7 +163,7 @@ export function showGraphForTimelines(timelineIds: string[], groupBy?: string[])
 }
 
 export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy?: string[]) {
-    showGraph({ type: "segment", segmentId, groupBy });
+    showGraph({ type: "segment", segmentIds: [segmentId], groupBy });
 }
 
 function showGraph(params: TransitionGraphParams) {
@@ -172,10 +211,9 @@ export class TransitionGraph {
             this.extensionContext.subscriptions
         );
 
+        this.graph = await this.generateGraph(params);
         const html = this.generateHtmlContent(webview);
         webview.html = html;
-
-        this.graph = await this.generateGraph(params);
     }
 
     private postNodesAndEdges(webview: vscode.Webview) {
@@ -313,7 +351,18 @@ export class TransitionGraph {
         if (params.type == "timelines") {
             res = await this.apiClient.timelines().groupedGraph(params.timelines, params.groupBy);
         } else if (params.type == "segment") {
-            res = await this.apiClient.segment(params.segmentId).groupedGraph(params.groupBy);
+            if (params.segmentIds.length == 1) {
+                res = await this.apiClient.segment(params.segmentIds[0]).groupedGraph(params.groupBy);
+            } else {
+                const timelineIds: api.TimelineId[] = [];
+                // TODO Not ideal...
+                for (const segmentId of params.segmentIds) {
+                    for (const tl of await this.apiClient.segment(segmentId).timelines()) {
+                        timelineIds.push(tl.id);
+                    }
+                }
+                res = await this.apiClient.timelines().groupedGraph(timelineIds, params.groupBy);
+            }
         }
 
         const hideSelfEdges =
@@ -348,16 +397,33 @@ export class TransitionGraph {
             const graphNode = new Node(i);
             graphNode.count = node.count;
             graphNode.label = title;
+
+            if (params.assignNodeProps) {
+                const classes = params.assignNodeProps.getClasses(title);
+                if (classes) {
+                    for (const c of classes) {
+                        graphNode.addClass(c);
+                    }
+                }
+
+                const dataProps = params.assignNodeProps.getDataProps(title);
+                if (dataProps) {
+                    for (const [key, value] of Object.entries(dataProps)) {
+                        graphNode.extraDataProps[key] = value;
+                    }
+                }
+            }
+
             const timelineIdIdx = res.attr_keys.indexOf("timeline.id");
-            if (timelineIdIdx !== undefined) {
+            if (timelineIdIdx != -1) {
                 graphNode.timelineId = node.attr_vals[timelineIdIdx]["TimelineId"];
             }
             const timelineNameIdx = res.attr_keys.indexOf("timeline.name");
-            if (timelineNameIdx !== undefined) {
+            if (timelineNameIdx != -1) {
                 graphNode.timelineName = node.attr_vals[timelineNameIdx] as string;
             }
             const eventNameIdx = res.attr_keys.indexOf("event.name");
-            if (eventNameIdx !== undefined) {
+            if (eventNameIdx != -1) {
                 graphNode.eventName = node.attr_vals[eventNameIdx] as string;
             }
 
@@ -396,7 +462,23 @@ class DirectedGraph {
     }
 }
 
-type PropertiesMap = Map<string, string | number | boolean>;
+
+interface CytoscapeNode {
+    data: CytoscapeNodeData;
+    position?: { x: number; y: number };
+    selected?: boolean;
+    selectable?: boolean;
+    locted?: boolean;
+    grabbable?: boolean;
+    pannable?: boolean;
+    classes: string[];
+}
+
+interface CytoscapeNodeData {
+    id: number;
+    parent?: string;
+    [key: string]: string | number | boolean;
+}
 
 class Node {
     description?: string = undefined;
@@ -408,41 +490,53 @@ class Node {
     timelineId?: string = undefined;
     eventName?: string = undefined;
     count?: number = undefined;
+    classes: string[] = [];
+    extraDataProps: {[key: string]: string | number | boolean} = {};
 
     constructor(public id: number) {}
 
-    toCytoscapeObject(): object {
-        const props: PropertiesMap = new Map();
-        props.set("id", this.id);
+    addClass(cl: string) {
+        this.classes.push(cl);
+    }
+
+    setExtraDataProps(props: {[key: string]: string | number | boolean}) {
+        this.extraDataProps = props;
+    }
+
+    toCytoscapeObject(): CytoscapeNode {
+        const data: CytoscapeNodeData = { id: this.id, ...this.extraDataProps };
 
         const label = this.label.replace("'", "\\'");
         if (label !== undefined && label !== "") {
-            props.set("label", label);
+            data.label = label;
         } else {
-            props.set("label", this.id);
+            data.label = this.id;
         }
+
         if (this.filePath !== undefined) {
-            props.set("filepath", this.filePath.fsPath);
+            data.filepath = this.filePath.fsPath;
         }
+
         if (this.parent !== undefined) {
-            props.set("parent", this.parent);
+            data.parent = this.parent;
         }
+
         if (this.hasChildren) {
-            props.set("labelvalign", "top");
+            data.labelvalign = "top";
         } else {
-            props.set("labelvalign", "center");
+            data.labelvalign = "center";
         }
+
         // We use this to indicate nodes that can be logged from the graph context menu
         if (this.timelineId !== undefined) {
-            props.set("timeline", this.timelineId);
+            data.timeline = this.timelineId;
         }
 
-        const obj = { data: {} };
-        for (const [k, v] of props) {
-            obj.data[k] = v;
+        if (this.timelineName !== undefined) {
+            data.timelineName = this.timelineName;
         }
 
-        return obj;
+        return { data: data, classes: this.classes };
     }
 
     timelineDetails(): TimelineDetails | undefined {
@@ -465,6 +559,8 @@ class Node {
         }
     }
 }
+
+type PropertiesMap = Map<string, string | number | boolean>;
 
 class Edge {
     label?: string = undefined;

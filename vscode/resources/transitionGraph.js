@@ -276,6 +276,32 @@
                         "source-arrow-color": style.getPropertyValue("--vscode-editorGutter-deletedBackground"),
                     },
                 },
+                {
+                    selector: "node.mutation",
+                    style: {
+                        "border-color": "blue",
+                        "border-style": "double",
+                        "border-width": 5,
+                        //"background-color": "blue",
+                    },
+                },
+                {
+                    selector: "node.impact",
+                    style: {
+                        "background-color": function (ele) {
+                            var severity = ele.data().severity;
+                            if (!severity ) {
+                                return "grey";
+                            }
+
+                            var severeRgb = [212, 6, 6];
+                            var notSevereRgb = [209, 232, 44];
+
+                            return rgbToCssColor(interpolateGradient(notSevereRgb, severeRgb, severity));
+                        },
+                        color: "black",
+                    },
+                },
             ],
             elements: {
                 nodes: nodeElements,
@@ -395,4 +421,28 @@
             }
         });
     }
+
+    function interpolateGradient(startRgb, stopRgb, position) {
+        return [
+            lerp(startRgb[0], stopRgb[0], position),
+            lerp(startRgb[1], stopRgb[1], position),
+            lerp(startRgb[2], stopRgb[2], position),
+        ];
+    }
+
+    function lerp(a, b, position) {
+        return a * position + b * (1 - position);
+    }
+
+    function rgbToCssColor(rgb) {
+        return '#' + componentToHex(Math.floor(rgb[0]))
+            + componentToHex(Math.floor(rgb[1]))
+            + componentToHex(Math.floor(rgb[2]));
+    }
+
+    function componentToHex(c) {
+        var hex = c.toString(16);
+        return hex.length == 1 ? "0" + hex : hex;
+    }
+
 })();
