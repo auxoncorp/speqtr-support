@@ -750,8 +750,8 @@
                 "title": "Delete Selected Spec Results..."
             },
             {
-                "command": "auxon.specs.setSelectedSpec",
-                "title": "Sets the selected spec in the specs tree view"
+                "command": "auxon.specs.revealSpec",
+                "title": "Reveal a spec in the specs tree view"
             },
             {
                 "command": "auxon.specDir.eval.dryRun",
@@ -800,8 +800,8 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "auxon.mutators.setSelectedMutator",
-                "title": "Sets the selected mutator in the mutators tree view"
+                "command": "auxon.mutators.revealMutator",
+                "title": "Reveal a mutator in the mutators tree view"
             },
             {
                 "command": "auxon.mutators.showUnavailable",
@@ -842,8 +842,8 @@
                 "title": "Set the selected mutator in the mutations tree view"
             },
             {
-                "command": "auxon.mutations.setSelectedMutation",
-                "title": "Sets the selected mutation in the mutations tree view"
+                "command": "auxon.mutations.revealMutation",
+                "title": "Reveal a mutation in the mutations tree view"
             },
             {
                 "command": "auxon.mutations.groupMutationsByName",

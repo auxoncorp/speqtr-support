@@ -57,8 +57,8 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
             vscode.commands.registerCommand("auxon.mutations.setSelectedMutator", (mutatorId) => {
                 this.setSelectedMutator(mutatorId);
             }),
-            vscode.commands.registerCommand("auxon.mutations.setSelectedMutation", (mutationId) => {
-                this.setSelectedMutation(mutationId);
+            vscode.commands.registerCommand("auxon.mutations.revealMutation", (mutationId) => {
+                this.revealMutation(mutationId);
             }),
             vscode.commands.registerCommand("auxon.mutations.disableMutationGrouping", () => {
                 this.disableMutationGrouping();
@@ -205,7 +205,7 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
         }
     }
 
-    setSelectedMutation(mutationId: api.MutationId) {
+    revealMutation(mutationId: api.MutationId) {
         if (this.workspaceState.getGroupByMutatorName()) {
             for (const group of this.data) {
                 if (!(group instanceof MutationsGroupByNameTreeItemData)) {
@@ -314,8 +314,8 @@ abstract class MutationsTreeItemData {
         // Mutation selection sets the selected mutator
         if (this.contextValue == "mutation" && !workspaceData.getFilterBySelectedMutator()) {
             const command = {
-                title: "Sets the selected mutator in the mutators tree view",
-                command: "auxon.mutators.setSelectedMutator",
+                title: "Reveal a mutator in the mutators tree view",
+                command: "auxon.mutators.revealMutator",
                 arguments: [this.mutatorId],
             };
             item.command = command;

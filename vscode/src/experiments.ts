@@ -112,15 +112,15 @@ abstract class ExperimentsTreeItemData {
         // Mutation selection sets the selected mutation
         if (this.contextValue == "experimentMutation" && workspaceData.getShowResults()) {
             const command = {
-                title: "Sets the selected mutation in the mutations tree view",
-                command: "auxon.mutations.setSelectedMutation",
+                title: "Reveal a mutation in the mutations tree view",
+                command: "auxon.mutations.revealMutation",
                 arguments: [this.mutationId],
             };
             item.command = command;
         } else if (this.contextValue == "experimentSpec") {
             const command = {
                 title: "Sets the selected spec in the specs tree view",
-                command: "auxon.specs.setSelectedSpec",
+                command: "auxon.specs.revealSpec",
                 arguments: [this.name],
             };
             item.command = command;

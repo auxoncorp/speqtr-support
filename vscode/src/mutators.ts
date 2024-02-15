@@ -56,8 +56,8 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
             vscode.commands.registerCommand("auxon.mutators.refresh", () => this.refresh()),
             vscode.commands.registerCommand("auxon.mutators.showUnavailable", () => this.showUnavailable(true)),
             vscode.commands.registerCommand("auxon.mutators.hideUnavailable", () => this.showUnavailable(false)),
-            vscode.commands.registerCommand("auxon.mutators.setSelectedMutator", (mutatorId) => {
-                this.setSelectedMutator(mutatorId);
+            vscode.commands.registerCommand("auxon.mutators.revealMutator", (mutatorId) => {
+                this.revealMutator(mutatorId);
             }),
             vscode.commands.registerCommand("auxon.mutators.disableByNameGrouping", () => {
                 this.disableMutatorGrouping();
@@ -164,7 +164,7 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
         return undefined;
     }
 
-    setSelectedMutator(mutatorId: api.MutatorId) {
+    revealMutator(mutatorId: api.MutatorId) {
         if (this.workspaceState.getGroupByMutatorName() || this.workspaceState.getGroupByWorkspaceAttrs()) {
             for (const group of this.data) {
                 if (!(group instanceof MutatorsGroupByNameTreeItemData || group instanceof MutatorsGroupTreeItemData)) {
