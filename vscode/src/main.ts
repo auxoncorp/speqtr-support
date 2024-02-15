@@ -116,6 +116,12 @@ export async function activate(context: vscode.ExtensionContext) {
     mutationsTreeDataProvider.register(context);
     experimentsTreeDataProvider.register(context);
     detailsPanelProvider.register(context);
+
+    // Explicitly load views that are referenceable across views
+    await workspacesTreeDataProvider.getChildren();
+    await mutatorsTreeDataProvider.getChildren();
+    await mutationsTreeDataProvider.getChildren();
+    await specsTreeDataProvider.getChildren();
 }
 
 export function deactivate(): Thenable<void> | undefined {
