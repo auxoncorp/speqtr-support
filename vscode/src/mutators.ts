@@ -35,10 +35,10 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
     readonly onDidChangeTreeData: vscode.Event<MutatorsTreeItemData | MutatorsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
 
-    workspaceState?: MutatorsTreeMemento;
-    data: MutatorsTreeItemData[];
+    workspaceState?: MutatorsTreeMemento = undefined;
+    data: MutatorsTreeItemData[] = [];
     view: vscode.TreeView<MutatorsTreeItemData>;
-    workspaceMutatorGroupingAttrs: string[];
+    workspaceMutatorGroupingAttrs: string[] = [];
 
     constructor(private readonly apiClient: api.Client) {}
 

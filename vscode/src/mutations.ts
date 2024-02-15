@@ -36,8 +36,8 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     readonly onDidChangeTreeData: vscode.Event<MutationsTreeItemData | MutationsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
 
-    workspaceState?: MutationsTreeMemento;
-    data: MutationsTreeItemData[];
+    workspaceState?: MutationsTreeMemento = undefined;
+    data: MutationsTreeItemData[] = [];
     view: vscode.TreeView<MutationsTreeItemData>;
     selectedMutatorId?: api.MutatorId = undefined;
     activeSegmentId?: api.WorkspaceSegmentId = undefined;

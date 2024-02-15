@@ -18,7 +18,7 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
         new vscode.EventEmitter();
     readonly onDidChangeTreeData: vscode.Event<ExperimentsTreeItemData | ExperimentsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
-    workspaceState?: ExperimentsTreeMemento;
+    workspaceState?: ExperimentsTreeMemento = undefined;
     view: vscode.TreeView<ExperimentsTreeItemData>;
     activeSegmentId?: api.WorkspaceSegmentId = undefined;
 

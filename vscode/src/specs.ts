@@ -34,10 +34,10 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         new vscode.EventEmitter();
     readonly onDidChangeTreeData: vscode.Event<SpecsTreeItemData | SpecsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
-    workspaceState?: SpecsTreeMemento;
+    workspaceState?: SpecsTreeMemento = undefined;
     activeSegmentId?: api.WorkspaceSegmentId = undefined;
     view: vscode.TreeView<SpecsTreeItemData>;
-    data: SpecsTreeItemData[];
+    data: SpecsTreeItemData[] = [];
 
     constructor(private readonly apiClient: api.Client, private readonly cov: specCoverage.SpecCoverageProvider) {}
 
