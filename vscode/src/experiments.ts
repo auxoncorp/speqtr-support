@@ -35,7 +35,12 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
             this.view,
             vscode.commands.registerCommand("auxon.experiments.refresh", () => this.refresh()),
             vscode.commands.registerCommand("auxon.experiments.showResults", () => this.showResults(true)),
-            vscode.commands.registerCommand("auxon.experiments.hideResults", () => this.showResults(false))
+            vscode.commands.registerCommand("auxon.experiments.hideResults", () => this.showResults(false)),
+            vscode.commands.registerCommand("auxon.experiments.viewSpec", (itemData) => {
+                if (itemData instanceof ExperimentSpecTreeItemData) {
+                    vscode.commands.executeCommand("auxon.specs.revealSpec", itemData.name);
+                }
+            })
         );
 
         this.refresh();
@@ -115,13 +120,6 @@ abstract class ExperimentsTreeItemData {
                 title: "Reveal a mutation in the mutations tree view",
                 command: "auxon.mutations.revealMutation",
                 arguments: [this.mutationId],
-            };
-            item.command = command;
-        } else if (this.contextValue == "experimentSpec") {
-            const command = {
-                title: "Sets the selected spec in the specs tree view",
-                command: "auxon.specs.revealSpec",
-                arguments: [this.name],
             };
             item.command = command;
         }

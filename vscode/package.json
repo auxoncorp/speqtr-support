@@ -363,6 +363,11 @@
                     "command": "auxon.mutations.viewLogFromMutation",
                     "when": "view == auxon.mutations && viewItem == mutationCoordinate",
                     "group": "inline"
+                },
+                {
+                    "command": "auxon.experiments.viewSpec",
+                    "when": "view == auxon.experiments && viewItem == experimentSpec",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -895,6 +900,11 @@
             {
                 "command": "auxon.experiments.hideResults",
                 "title": "✓ Show Results"
+            },
+            {
+                "command": "auxon.experiments.viewSpec",
+                "title": "View Spec",
+                "icon": "$(file)"
             },
             {
                 "command": "auxon.details.show",
