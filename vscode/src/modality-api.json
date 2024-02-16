@@ -344,6 +344,101 @@
                 ]
             }
         },
+        "/v2/mutations/{workspace_version_id}": {
+            "get": {
+                "tags": ["mutations"],
+                "summary": "List all mutations for the given workspace",
+                "description": "List all mutations for the given workspace",
+                "operationId": "list_workspace_mutations",
+                "parameters": [
+                    {
+                        "name": "workspace_version_id",
+                        "in": "path",
+                        "description": "Workspace Version Id",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "mutator_id",
+                        "in": "query",
+                        "description": "Mutator ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "experiment",
+                        "in": "query",
+                        "description": "Experiment name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List mutations successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Mutation"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid workspace_version_id",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutationsError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Workspace or segment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutationsError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutationsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
         "/v2/mutations/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
             "get": {
                 "tags": ["mutations"],

@@ -214,6 +214,21 @@ export class WorkspaceClient {
         });
         return unwrapData(res);
     }
+
+    async mutations(mutatorId?: MutatorId): Promise<Mutation[]> {
+        const q = [];
+        if (typeof mutatorId !== "undefined") {
+            q.push(["mutator_id", mutatorId]);
+        }
+        const res = await this.client.get("/v2/mutations/{workspace_version_id}", {
+            params: {
+                path: { workspace_version_id: this.workspaceVersionId },
+                // @ts-ignore
+                query: q,
+            },
+        });
+        return unwrapData(res);
+    }
 }
 
 export class SegmentClient {
@@ -548,11 +563,15 @@ export class MutatorClient {
 export class MutationsClient {
     constructor(private readonly client: InternalClient) {}
 
-    async list(): Promise<Mutation[]> {
+    async list(mutatorId?: MutatorId): Promise<Mutation[]> {
+        const q = [];
+        if (typeof mutatorId !== "undefined") {
+            q.push(["mutator_id", mutatorId]);
+        }
         const res = await this.client.get("/v2/mutations", {
             params: {
                 // @ts-ignore
-                query: [],
+                query: q,
             },
         });
         return unwrapData(res);

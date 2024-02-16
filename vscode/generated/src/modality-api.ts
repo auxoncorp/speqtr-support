@@ -45,6 +45,13 @@ export interface paths {
      */
     get: operations["list_mutations"];
   };
+  "/v2/mutations/{workspace_version_id}": {
+    /**
+     * List all mutations for the given workspace 
+     * @description List all mutations for the given workspace
+     */
+    get: operations["list_workspace_mutations"];
+  };
   "/v2/mutations/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
     /**
      * List all mutations for the given segment 
@@ -858,6 +865,52 @@ export interface operations {
       };
       /** @description Operation not authorized */
       403: never;
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["MutationsError"];
+        };
+      };
+    };
+  };
+  /**
+   * List all mutations for the given workspace 
+   * @description List all mutations for the given workspace
+   */
+  list_workspace_mutations: {
+    parameters: {
+      query: {
+        /** @description Mutator ID */
+        mutator_id?: string | null;
+        /** @description Experiment name */
+        experiment?: string | null;
+      };
+      path: {
+        /** @description Workspace Version Id */
+        workspace_version_id: string;
+      };
+    };
+    responses: {
+      /** @description List mutations successfully */
+      200: {
+        content: {
+          "application/json": (components["schemas"]["Mutation"])[];
+        };
+      };
+      /** @description Invalid workspace_version_id */
+      400: {
+        content: {
+          "application/json": components["schemas"]["MutationsError"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Workspace or segment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["MutationsError"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
