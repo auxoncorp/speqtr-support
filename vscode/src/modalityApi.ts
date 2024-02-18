@@ -229,6 +229,18 @@ export class WorkspaceClient {
         });
         return unwrapData(res);
     }
+
+    async experimentResults(experimentName: string): Promise<ExperimentResults> {
+        const res = await this.client.get("/v2/experiments/{experiment_name}/results/{workspace_version_id}", {
+            params: {
+                path: {
+                    experiment_name: experimentName,
+                    workspace_version_id: this.workspaceVersionId,
+                },
+            },
+        });
+        return unwrapData(res);
+    }
 }
 
 export class SegmentClient {

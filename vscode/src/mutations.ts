@@ -280,6 +280,7 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     setActiveWorkspace(workspaceVersionId: string) {
         this.activeWorkspaceVersionId = workspaceVersionId;
         this.clearSelectedMutator();
+        this.refresh();
     }
 
     setUsedSegments(usedSegmentConfig?: cliConfig.ContextSegment, segmentIds?: api.WorkspaceSegmentId[]) {
@@ -290,6 +291,7 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
             this.activeSegments = segmentIds;
         }
         this.clearSelectedMutator();
+        this.refresh();
     }
 
     clearMutation(item: MutationsTreeItemData) {

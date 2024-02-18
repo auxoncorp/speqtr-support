@@ -31,6 +31,13 @@ export interface paths {
      */
     get: operations["get_experiment"];
   };
+  "/v2/experiments/{experiment_name}/results/{workspace_version_id}": {
+    /**
+     * Get the results of an experiment scoped to the given workspace 
+     * @description Get the results of an experiment scoped to the given workspace
+     */
+    get: operations["get_experiment_workspace_results"];
+  };
   "/v2/experiments/{experiment_name}/results/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
     /**
      * Get the results of an experiment scoped to the given segment 
@@ -773,6 +780,48 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["Experiment"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: never;
+      /** @description Experiment not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get the results of an experiment scoped to the given workspace 
+   * @description Get the results of an experiment scoped to the given workspace
+   */
+  get_experiment_workspace_results: {
+    parameters: {
+      path: {
+        /** @description Experiment Name */
+        experiment_name: components["schemas"]["ExperimentName"];
+        /** @description Workspace Version Id */
+        workspace_version_id: components["schemas"]["WorkspaceVersionId"];
+      };
+    };
+    responses: {
+      /** @description Get experiment results successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExperimentResults"];
+        };
+      };
+      /** @description Invalid workspace_version_id */
+      400: {
+        content: {
+          "application/json": components["schemas"]["ExperimentsError"];
         };
       };
       /** @description Operation not authorized */

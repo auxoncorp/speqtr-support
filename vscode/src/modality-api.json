@@ -173,6 +173,84 @@
                 ]
             }
         },
+        "/v2/experiments/{experiment_name}/results/{workspace_version_id}": {
+            "get": {
+                "tags": ["experiments"],
+                "summary": "Get the results of an experiment scoped to the given workspace",
+                "description": "Get the results of an experiment scoped to the given workspace",
+                "operationId": "get_experiment_workspace_results",
+                "parameters": [
+                    {
+                        "name": "experiment_name",
+                        "in": "path",
+                        "description": "Experiment Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ExperimentName"
+                        }
+                    },
+                    {
+                        "name": "workspace_version_id",
+                        "in": "path",
+                        "description": "Workspace Version Id",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceVersionId"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Get experiment results successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExperimentResults"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid workspace_version_id",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExperimentsError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Experiment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExperimentsError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExperimentsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
         "/v2/experiments/{experiment_name}/results/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
             "get": {
                 "tags": ["experiments"],

@@ -89,9 +89,8 @@ export async function activate(context: vscode.ExtensionContext) {
         mutatorsTreeDataProvider.refresh();
 
         mutationsTreeDataProvider.setActiveWorkspace(ws_ver);
-        mutationsTreeDataProvider.refresh();
 
-        experimentsTreeDataProvider.refresh();
+        experimentsTreeDataProvider.setActiveWorkspace(ws_ver);
     });
 
     segmentsTreeDataProvider.onDidChangeUsedSegments((ev) => {
@@ -107,9 +106,8 @@ export async function activate(context: vscode.ExtensionContext) {
         mutatorsTreeDataProvider.refresh();
 
         mutationsTreeDataProvider.setUsedSegments(ev.usedSegmentConfig, ev.activeSegmentIds);
-        mutationsTreeDataProvider.refresh();
 
-        experimentsTreeDataProvider.setActiveSegmentIds(ev.activeSegmentIds);
+        experimentsTreeDataProvider.setUsedSegments(ev.usedSegmentConfig, ev.activeSegmentIds);
     });
 
     workspacesTreeDataProvider.register(context);
