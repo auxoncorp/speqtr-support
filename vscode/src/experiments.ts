@@ -71,7 +71,7 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
         this.refresh();
     }
 
-    setUsedSegments(usedSegmentConfig?: cliConfig.ContextSegment, segmentIds?: api.WorkspaceSegmentId[]) {
+    setActiveSegmentIds(usedSegmentConfig?: cliConfig.ContextSegment, segmentIds?: api.WorkspaceSegmentId[]) {
         if (usedSegmentConfig) {
             this.dataScope.usedSegmentConfig = usedSegmentConfig;
         }

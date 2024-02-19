@@ -462,6 +462,16 @@
                     "group": "navigation@1"
                 },
                 {
+                    "command": "auxon.mutators.filterByDataScope",
+                    "when": "view == auxon.mutators && auxon.mutators.filterByDataScope == 'UNSET'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.mutators.unfilterByDataScope",
+                    "when": "view == auxon.mutators && auxon.mutators.filterByDataScope == 'SET'",
+                    "group": "7_modification@1"
+                },
+                {
                     "command": "auxon.mutators.showUnavailable",
                     "when": "view == auxon.mutators && auxon.mutators.unavailable == 'HIDE'",
                     "group": "7_modification@1"
@@ -807,6 +817,14 @@
             {
                 "command": "auxon.mutators.revealMutator",
                 "title": "Reveal a mutator in the mutators tree view"
+            },
+            {
+                "command": "auxon.mutators.filterByDataScope",
+                "title": "Filter By Active Data Scope"
+            },
+            {
+                "command": "auxon.mutators.unfilterByDataScope",
+                "title": "✓ Filter By Active Data Scope"
             },
             {
                 "command": "auxon.mutators.showUnavailable",

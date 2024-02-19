@@ -283,7 +283,7 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
         this.refresh();
     }
 
-    setUsedSegments(usedSegmentConfig?: cliConfig.ContextSegment, segmentIds?: api.WorkspaceSegmentId[]) {
+    setActiveSegmentIds(usedSegmentConfig?: cliConfig.ContextSegment, segmentIds?: api.WorkspaceSegmentId[]) {
         if (usedSegmentConfig) {
             this.usedSegmentConfig = usedSegmentConfig;
         }

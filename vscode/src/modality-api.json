@@ -632,8 +632,8 @@
         "/v2/mutators": {
             "get": {
                 "tags": ["mutators"],
-                "summary": "List mutators",
-                "description": "List mutators",
+                "summary": "List all mutators",
+                "description": "List all mutators",
                 "operationId": "list_mutators",
                 "parameters": [
                     {
@@ -696,8 +696,8 @@
         "/v2/mutators/grouped": {
             "get": {
                 "tags": ["mutators"],
-                "summary": "List mutators, grouped by the given attr keys",
-                "description": "List mutators, grouped by the given attr keys",
+                "summary": "List all mutators, grouped by the given attr keys",
+                "description": "List all mutators, grouped by the given attr keys",
                 "operationId": "list_grouped_mutators",
                 "parameters": [
                     {
@@ -738,6 +738,376 @@
                     },
                     "403": {
                         "description": "Operation not authorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
+        "/v2/mutators/{workspace_version_id}": {
+            "get": {
+                "tags": ["mutators"],
+                "summary": "List all mutators for the given workspace",
+                "description": "List all mutators for the given workspace",
+                "operationId": "list_workspace_mutators",
+                "parameters": [
+                    {
+                        "name": "workspace_version_id",
+                        "in": "path",
+                        "description": "Workspace Version Id",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "mutator_filter",
+                        "in": "query",
+                        "description": "Mutator filter expression",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List mutators successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Mutator"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid workspace_version_id",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Workspace or segment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
+        "/v2/mutators/{workspace_version_id}/grouped": {
+            "get": {
+                "tags": ["mutators"],
+                "summary": "List all mutators for the given workspace, grouped by the given attr keys",
+                "description": "List all mutators for the given workspace, grouped by the given attr keys",
+                "operationId": "list_workspace_grouped_mutators",
+                "parameters": [
+                    {
+                        "name": "workspace_version_id",
+                        "in": "path",
+                        "description": "Workspace Version Id",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "mutator_filter",
+                        "in": "query",
+                        "description": "Mutator filter expression",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List grouped mutators successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MutatorGroup"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid workspace_version_id",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Workspace or segment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
+        "/v2/mutators/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
+            "get": {
+                "tags": ["mutators"],
+                "summary": "List all mutators for the given segment",
+                "description": "List all mutators for the given segment",
+                "operationId": "list_segment_mutators",
+                "parameters": [
+                    {
+                        "name": "workspace_version_id",
+                        "in": "path",
+                        "description": "Workspace Version Id",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceVersionId"
+                        }
+                    },
+                    {
+                        "name": "rule_name",
+                        "in": "path",
+                        "description": "Segmentation Rule Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/SegmentationRuleName"
+                        }
+                    },
+                    {
+                        "name": "segment_name",
+                        "in": "path",
+                        "description": "Segment Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceSegmentName"
+                        }
+                    },
+                    {
+                        "name": "mutator_filter",
+                        "in": "query",
+                        "description": "Mutator filter expression",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List mutators successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Mutator"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid workspace_version_id",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Workspace or segment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
+            }
+        },
+        "/v2/mutators/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped": {
+            "get": {
+                "tags": ["mutators"],
+                "summary": "List all mutators for the given segment, grouped by the given attr keys",
+                "description": "List all mutators for the given segment, grouped by the given attr keys",
+                "operationId": "list_segment_grouped_mutators",
+                "parameters": [
+                    {
+                        "name": "workspace_version_id",
+                        "in": "path",
+                        "description": "Workspace Version Id",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceVersionId"
+                        }
+                    },
+                    {
+                        "name": "rule_name",
+                        "in": "path",
+                        "description": "Segmentation Rule Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/SegmentationRuleName"
+                        }
+                    },
+                    {
+                        "name": "segment_name",
+                        "in": "path",
+                        "description": "Segment Name",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WorkspaceSegmentName"
+                        }
+                    },
+                    {
+                        "name": "mutator_filter",
+                        "in": "query",
+                        "description": "Mutator filter expression",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List grouped mutators successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MutatorGroup"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid workspace_version_id",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Workspace or segment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MutatorsError"
+                                }
+                            }
+                        }
                     },
                     "500": {
                         "description": "Internal Server Error",
@@ -3421,6 +3791,20 @@
                     {
                         "type": "string",
                         "enum": ["NoGroupsSpecified"]
+                    },
+                    {
+                        "type": "object",
+                        "required": ["WorkspaceNotFound"],
+                        "properties": {
+                            "WorkspaceNotFound": {
+                                "type": "string",
+                                "description": "Workspace not found"
+                            }
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "enum": ["SegmentNotFound"]
                     },
                     {
                         "type": "object",

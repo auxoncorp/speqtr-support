@@ -215,6 +215,28 @@ export class WorkspaceClient {
         return unwrapData(res);
     }
 
+    async mutators(): Promise<Mutator[]> {
+        const res = await this.client.get("/v2/mutators/{workspace_version_id}", {
+            params: {
+                path: { workspace_version_id: this.workspaceVersionId },
+                // @ts-ignore
+                query: [],
+            },
+        });
+        return unwrapData(res);
+    }
+
+    async groupedMutators(groupBy: string[]): Promise<MutatorGroup[]> {
+        const res = await this.client.get("/v2/mutators/{workspace_version_id}/grouped", {
+            params: {
+                path: { workspace_version_id: this.workspaceVersionId },
+                // @ts-ignore
+                query: groupBy.map((gb) => ["group_by", gb]),
+            },
+        });
+        return unwrapData(res);
+    }
+
     async mutations(mutatorId?: MutatorId): Promise<Mutation[]> {
         const q = [];
         if (typeof mutatorId !== "undefined") {
@@ -367,6 +389,31 @@ export class SegmentClient {
             }
         );
 
+        return unwrapData(res);
+    }
+
+    async mutators(): Promise<Mutator[]> {
+        const res = await this.client.get("/v2/mutators/{workspace_version_id}/segments/{rule_name}/{segment_name}", {
+            params: {
+                path: this.segmentId,
+                // @ts-ignore
+                query: [],
+            },
+        });
+        return unwrapData(res);
+    }
+
+    async groupedMutators(groupBy: string[]): Promise<MutatorGroup[]> {
+        const res = await this.client.get(
+            "/v2/mutators/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped",
+            {
+                params: {
+                    path: this.segmentId,
+                    // @ts-ignore
+                    query: groupBy.map((gb) => ["group_by", gb]),
+                },
+            }
+        );
         return unwrapData(res);
     }
 

@@ -86,7 +86,7 @@ export async function activate(context: vscode.ExtensionContext) {
         eventsTreeDataProvider.refresh();
 
         mutatorsTreeDataProvider.setWorkspaceMutatorGroupingAttrs(wsDef.mutator_grouping_attrs);
-        mutatorsTreeDataProvider.refresh();
+        mutatorsTreeDataProvider.setActiveWorkspace(ws_ver);
 
         mutationsTreeDataProvider.setActiveWorkspace(ws_ver);
 
@@ -103,11 +103,11 @@ export async function activate(context: vscode.ExtensionContext) {
         eventsTreeDataProvider.activeSegments = ev.activeSegmentIds;
         eventsTreeDataProvider.refresh();
 
-        mutatorsTreeDataProvider.refresh();
+        mutatorsTreeDataProvider.setActiveSegmentIds(ev.usedSegmentConfig, ev.activeSegmentIds);
 
-        mutationsTreeDataProvider.setUsedSegments(ev.usedSegmentConfig, ev.activeSegmentIds);
+        mutationsTreeDataProvider.setActiveSegmentIds(ev.usedSegmentConfig, ev.activeSegmentIds);
 
-        experimentsTreeDataProvider.setUsedSegments(ev.usedSegmentConfig, ev.activeSegmentIds);
+        experimentsTreeDataProvider.setActiveSegmentIds(ev.usedSegmentConfig, ev.activeSegmentIds);
     });
 
     workspacesTreeDataProvider.register(context);

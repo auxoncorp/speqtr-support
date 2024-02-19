@@ -1,8 +1,17 @@
 import * as vscode from "vscode";
+import * as cliConfig from "./cliConfig";
 import * as api from "./modalityApi";
 
 class MutatorsTreeMemento {
     constructor(private readonly memento: vscode.Memento) {}
+
+    getFilterByDataScope(): boolean {
+        return this.memento.get("mutatorsTree_filterByDataScope", true);
+    }
+
+    async setFilterByDataScope(val: boolean): Promise<void> {
+        return this.memento.update("mutatorsTree_filterByDataScope", val);
+    }
 
     getShowUnavailable(): boolean {
         return this.memento.get("mutatorsTree_showUnavailable", false);
@@ -40,6 +49,11 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
     view: vscode.TreeView<MutatorsTreeItemData>;
     workspaceMutatorGroupingAttrs: string[] = [];
 
+    // Data scope related
+    usedSegmentConfig?: cliConfig.ContextSegment = undefined;
+    activeWorkspaceVersionId?: string = undefined;
+    activeSegments: api.WorkspaceSegmentId[] = [];
+
     constructor(private readonly apiClient: api.Client) {}
 
     register(context: vscode.ExtensionContext) {
@@ -54,6 +68,8 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
         context.subscriptions.push(
             this.view,
             vscode.commands.registerCommand("auxon.mutators.refresh", () => this.refresh()),
+            vscode.commands.registerCommand("auxon.mutators.filterByDataScope", () => this.filterByDataScope(true)),
+            vscode.commands.registerCommand("auxon.mutators.unfilterByDataScope", () => this.filterByDataScope(false)),
             vscode.commands.registerCommand("auxon.mutators.showUnavailable", () => this.showUnavailable(true)),
             vscode.commands.registerCommand("auxon.mutators.hideUnavailable", () => this.showUnavailable(false)),
             vscode.commands.registerCommand("auxon.mutators.revealMutator", async (mutatorId) => {
@@ -95,11 +111,27 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
 
         vscode.commands.executeCommand("setContext", "auxon.mutators.groupBy", groupingMode);
 
+        vscode.commands.executeCommand(
+            "setContext",
+            "auxon.mutators.filterByDataScope",
+            this.workspaceState.getFilterByDataScope() ? "SET" : "UNSET"
+        );
+
         this._onDidChangeTreeData.fire(undefined);
     }
 
-    showUnavailable(show: boolean) {
-        this.workspaceState.setShowUnavailable(show);
+    setActiveWorkspace(workspaceVersionId: string) {
+        this.activeWorkspaceVersionId = workspaceVersionId;
+        this.refresh();
+    }
+
+    setActiveSegmentIds(usedSegmentConfig?: cliConfig.ContextSegment, segmentIds?: api.WorkspaceSegmentId[]) {
+        if (usedSegmentConfig) {
+            this.usedSegmentConfig = usedSegmentConfig;
+        }
+        if (segmentIds) {
+            this.activeSegments = segmentIds;
+        }
         this.refresh();
     }
 
@@ -107,7 +139,74 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
         return element.treeItem();
     }
 
+    private async getGroupedMutators(): Promise<api.MutatorGroup[]> {
+        let groups = [];
+        if (this.workspaceState.getFilterByDataScope()) {
+            switch (this.usedSegmentConfig.type) {
+                case "All":
+                case "WholeWorkspace":
+                    if (!this.activeWorkspaceVersionId) {
+                        return [];
+                    }
+                    groups = await this.apiClient
+                        .workspace(this.activeWorkspaceVersionId)
+                        .groupedMutators(this.workspaceMutatorGroupingAttrs);
+                    break;
+                case "Latest":
+                case "Set":
+                    if (this.activeSegments.length === 0) {
+                        return [];
+                    }
+                    for (const segmentId of this.activeSegments) {
+                        const segGroups = await this.apiClient
+                            .segment(segmentId)
+                            .groupedMutators(this.workspaceMutatorGroupingAttrs);
+                        groups.push(...segGroups);
+                    }
+                    break;
+            }
+        } else {
+            groups = await this.apiClient.mutators().groupedMutators(this.workspaceMutatorGroupingAttrs);
+        }
+        return groups;
+    }
+
+    private async getMutators(): Promise<api.Mutator[]> {
+        let mutators = [];
+        if (this.workspaceState.getFilterByDataScope()) {
+            switch (this.usedSegmentConfig.type) {
+                case "All":
+                    mutators = await this.apiClient.mutators().list();
+                    break;
+                case "WholeWorkspace":
+                    if (!this.activeWorkspaceVersionId) {
+                        return [];
+                    }
+                    mutators = await this.apiClient.workspace(this.activeWorkspaceVersionId).mutators();
+                    break;
+                case "Latest":
+                case "Set":
+                    if (this.activeSegments.length === 0) {
+                        return [];
+                    }
+                    for (const segmentId of this.activeSegments) {
+                        const segMutators = await this.apiClient.segment(segmentId).mutators();
+                        mutators.push(...segMutators);
+                    }
+                    break;
+            }
+        } else {
+            mutators = await this.apiClient.mutators().list();
+        }
+        return mutators;
+    }
+
     async getChildren(element?: MutatorsTreeItemData): Promise<MutatorsTreeItemData[]> {
+        // This is an 'uninitialized' condition
+        if (!this.usedSegmentConfig && this.workspaceState.getFilterByDataScope()) {
+            return [];
+        }
+
         if (!element) {
             this.data = [];
 
@@ -117,7 +216,7 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
                     return [];
                 }
 
-                const groups = await this.apiClient.mutators().groupedMutators(this.workspaceMutatorGroupingAttrs);
+                const groups = await this.getGroupedMutators();
                 let available_groups = [];
                 let unavailable_groups = [];
 
@@ -156,7 +255,7 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
 
                 return this.data;
             } else {
-                const mutators = await this.apiClient.mutators().list();
+                const mutators = await this.getMutators();
                 const available_mutators = mutators.filter((m) => m.mutator_state === "Available");
                 const unavailable_mutators = mutators.filter((m) => m.mutator_state !== "Available");
 
@@ -218,6 +317,16 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
 
     setWorkspaceMutatorGroupingAttrs(workspaceMutatorGroupingAttrs: string[]) {
         this.workspaceMutatorGroupingAttrs = workspaceMutatorGroupingAttrs;
+        this.refresh();
+    }
+
+    filterByDataScope(isSet: boolean) {
+        this.workspaceState.setFilterByDataScope(isSet);
+        this.refresh();
+    }
+
+    showUnavailable(show: boolean) {
+        this.workspaceState.setShowUnavailable(show);
         this.refresh();
     }
 
