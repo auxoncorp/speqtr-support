@@ -9,6 +9,7 @@ export interface ShowDetailsParams {
     events?: EventDetails[];
     timelines?: TimelineDetails[];
     interactions?: InteractionDetails[];
+    extraHtml?: string[];
 }
 
 export interface InteractionDetails {
@@ -81,6 +82,7 @@ export class DetailsPanelProvider implements vscode.WebviewViewProvider {
     }
 
     private showDetails(params: ShowDetailsParams) {
+        vscode.commands.executeCommand(DetailsPanelProvider.viewType + ".focus");
         if (this.view) {
             this.view.webview.postMessage(params);
         }

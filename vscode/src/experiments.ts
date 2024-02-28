@@ -203,6 +203,7 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
         for (const impact of scenario.impactedTimelines) {
             assignNodeProps.addClass(impact.timelineName, "impact");
             assignNodeProps.addDataProp(impact.timelineName, "severity", impact.severity);
+            assignNodeProps.addDataProp(impact.timelineName, "impactDetailsHtml", impact.detailsHtml);
         }
 
         vscode.commands.executeCommand("auxon.transition.graph", {
@@ -234,17 +235,22 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
 
 interface ImpactScenario {
     scenarioName: string;
-    mutations: [{
-        mutationId: string;
-        timelineId: string;
-        timelineName: string;
-        segmentId: api.WorkspaceSegmentId;
-    }];
-    impactedTimelines: [{
-        timelineName: string;
-        events: [string];
-        severity: number,
-    }];
+    mutations: [
+        {
+            mutationId: string;
+            timelineId: string;
+            timelineName: string;
+            segmentId: api.WorkspaceSegmentId;
+        }
+    ];
+    impactedTimelines: [
+        {
+            timelineName: string;
+            events: [string];
+            severity: number;
+            detailsHtml: string;
+        }
+    ];
 }
 
 abstract class ExperimentsTreeItemData {

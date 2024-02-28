@@ -26,6 +26,7 @@
 
         <title>{{title}}</title>
     </head>
+
     <body>
         <div id="toolbarArea" data-vscode-context='{"preventDefaultContextMenuItems": true}'>
             <div style="height: 25px; display: flex; align-items: center; margin-right: 3px">
@@ -48,13 +49,18 @@
             </vscode-dropdown>
             <div style="display: flex; margin-left: 5px">Selection Mode:</div>
             <vscode-dropdown id="modeDropdown" style="margin-left: 5px; margin-bottom: 2px">
+                <vscode-option value="manual">Standard</vscode-option>
                 <vscode-option value="causal-descendants">Causal Descendants</vscode-option>
                 <vscode-option value="causal-ancestors">Causal Ancestors</vscode-option>
-                <vscode-option value="manual">Manual</vscode-option>
                 <vscode-option value="bidirectional-neighbors">Neighbors</vscode-option>
                 <vscode-option value="downstream-neighbors">Downstream Neighbors</vscode-option>
                 <vscode-option value="upstream-neighbors">Upstream Neighbors</vscode-option>
             </vscode-dropdown>
+        </div>
+
+        <div id="loading">
+            <vscode-progress-ring></vscode-progress-ring>
+            <h1>Loading...</h1>
         </div>
 
         <div id="cy"></div>

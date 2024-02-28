@@ -7,28 +7,35 @@
     const timelineDetails = document.getElementById("timelineDetails");
     const interactionsHeader = document.getElementById("interactionsHeader");
     const interactionDetails = document.getElementById("interactionDetails");
+    const extraHtml = document.getElementById("extraHtml");
 
     window.addEventListener("message", (event) => {
         const message = event.data;
-        clearAll();
+
         if (message.events !== undefined && message.events.length > 0) {
             constructEvents(message.events);
+        } else {
+            clearEvents();
         }
+
         if (message.timelines !== undefined && message.timelines.length > 0) {
             constructTimelines(message.timelines);
+        } else {
+            clearTimelines();
         }
+
         if (message.interactions !== undefined && message.interactions.length > 0) {
             constructInteractions(message.interactions);
+        } else {
+            clearInteractions();
+        }
+
+        if (message.extraHtml !== undefined && message.extraHtml.length > 0) {
+            constructExtraHtml(message.extraHtml);
+        } else {
+            clearExtraHtml();
         }
     });
-
-    clearAll();
-
-    function clearAll() {
-        clearEvents();
-        clearTimelines();
-        clearInteractions();
-    }
 
     function clearEvents() {
         eventsHeader.hidden = true;
@@ -127,5 +134,25 @@
             }
         });
         interactionDetails.hidden = false;
+    }
+
+    function clearExtraHtml() {
+        extraHtml.innerHTML = "";
+    }
+
+    function constructExtraHtml(extraHtmlStrs) {
+        var innerHtml = "";
+
+        for (const extra of extraHtmlStrs) {
+            innerHtml += extra;
+        }
+
+        extraHtml.innerHTML = innerHtml;
+
+        // If there's a single top-level details node, make sure it's open
+        const topLevelDetails = extraHtml.querySelectorAll(":scope > details");
+        if (topLevelDetails.length == 1) {
+            topLevelDetails[0].setAttribute("open", "");
+        }
     }
 })();

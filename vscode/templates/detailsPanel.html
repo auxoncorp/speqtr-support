@@ -8,6 +8,11 @@
         />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+        <style>
+            ul {
+                margin-block-start: 0;
+            }
+        </style>
         <script nonce="{{nonce}}" type="module" src="{{webviewUiToolkitJsUri}}"></script>
     </head>
     <body>
@@ -17,6 +22,7 @@
         <vscode-data-grid id="timelineDetails" aria-label="Auxon Details Panel: Timelines"></vscode-data-grid>
         <div id="interactionsHeader" style="display: flex; justify-content: left; font-weight: bold"></div>
         <vscode-data-grid id="interactionDetails" aria-label="Auxon Details Panel: Interactions"></vscode-data-grid>
+        <div id="extraHtml"></div>
         <script nonce="{{nonce}}" type="text/javascript" src="{{detailsPanelJsUri}}"></script>
     </body>
 </html>

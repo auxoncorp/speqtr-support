@@ -4,6 +4,23 @@ body {
     padding: 0;
 }
 
+#loading {
+    overflow: hidden;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#loading * {
+    align-self: center;
+}
+#loading vscode-progress-ring {
+    margin-right: 15px;
+}
+
 #toolbarArea {
     display: flex;
     margin-left: 3px;

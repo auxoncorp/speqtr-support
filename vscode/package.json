@@ -21,6 +21,9 @@
         "conform",
         "speqtr"
     ],
+    "activationEvents": [
+        "onCommand:auxon.details.show"
+    ],
     "contributes": {
         "languages": [
             {

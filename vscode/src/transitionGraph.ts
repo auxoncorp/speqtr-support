@@ -32,9 +32,17 @@ export function register(context: vscode.ExtensionContext, apiClient: api.Client
                 enableScripts: true,
             }
         );
+
+        context.subscriptions.push(
+            vscode.window.onDidChangeActiveColorTheme((_) => {
+                webViewPanel.webview.postMessage({ command: "themeChanged" });
+            })
+        );
+
         const tg = new TransitionGraph(context, apiClient);
         await tg.load(webViewPanel.webview, params);
     });
+
     context.subscriptions.push(tGraphDisposable);
 }
 
@@ -58,7 +66,7 @@ export type TransitionGraphParams = TimelineParams | SegmentParams;
 
 export class AssignNodeProps {
     private nodeNameToClasses: { [key: string]: string[] } = {};
-    private nodeNameToDataProps: { [key: string]: {[key: string]: string | number | boolean} } = {};
+    private nodeNameToDataProps: { [key: string]: { [key: string]: string | number | boolean } } = {};
 
     addClass(nodeName: string, klass: string) {
         if (!this.nodeNameToClasses[nodeName]) {
@@ -74,7 +82,7 @@ export class AssignNodeProps {
         if (!this.nodeNameToDataProps[nodeName]) {
             this.nodeNameToDataProps[nodeName] = {};
         }
-        const props= this.nodeNameToDataProps[nodeName];
+        const props = this.nodeNameToDataProps[nodeName];
         props[key] = val;
     }
 
@@ -82,7 +90,7 @@ export class AssignNodeProps {
         return this.nodeNameToClasses[nodeName];
     }
 
-    getDataProps(nodeName: string): {[key: string]: string | number | boolean} | undefined {
+    getDataProps(nodeName: string): { [key: string]: string | number | boolean } | undefined {
         return this.nodeNameToDataProps[nodeName];
     }
 }
@@ -211,12 +219,18 @@ export class TransitionGraph {
             this.extensionContext.subscriptions
         );
 
+        // Shows the loading indicator, until the graph shows up
+        webview.html = this.generateHtmlContent(webview);
+
         this.graph = await this.generateGraph(params);
-        const html = this.generateHtmlContent(webview);
-        webview.html = html;
+        this.postNodesAndEdges(webview);
     }
 
     private postNodesAndEdges(webview: vscode.Webview) {
+        if (this.graph === undefined) {
+            return;
+        }
+
         const nodes = this.graph.nodes.map((node) => node.toCytoscapeObject());
         const edges = this.graph.edges
             .map((edge) => edge.toCytoscapeObject())
@@ -253,14 +267,22 @@ export class TransitionGraph {
         const events = [];
         const timelines = [];
         const interactions = [];
+        const extraHtml = [];
+
         for (const node of nodes) {
             const timelineDetails = node.timelineDetails();
             if (timelineDetails) {
                 timelines.push(timelineDetails);
             }
+
             const eventDetails = node.eventDetails();
             if (eventDetails) {
                 events.push(eventDetails);
+            }
+
+            const html = node.extraDataProps.impactDetailsHtml;
+            if (html) {
+                extraHtml.push(html);
             }
         }
         for (const edge of edges) {
@@ -279,7 +301,7 @@ export class TransitionGraph {
             }
         }
 
-        vscode.commands.executeCommand("auxon.details.show", { events, timelines, interactions });
+        vscode.commands.executeCommand("auxon.details.show", { events, timelines, interactions, extraHtml });
     }
 
     private generateHtmlContent(webview: vscode.Webview): string {
@@ -462,7 +484,6 @@ class DirectedGraph {
     }
 }
 
-
 interface CytoscapeNode {
     data: CytoscapeNodeData;
     position?: { x: number; y: number };
@@ -491,7 +512,7 @@ class Node {
     eventName?: string = undefined;
     count?: number = undefined;
     classes: string[] = [];
-    extraDataProps: {[key: string]: string | number | boolean} = {};
+    extraDataProps: { [key: string]: string | number | boolean } = {};
 
     constructor(public id: number) {}
 
@@ -499,7 +520,7 @@ class Node {
         this.classes.push(cl);
     }
 
-    setExtraDataProps(props: {[key: string]: string | number | boolean}) {
+    setExtraDataProps(props: { [key: string]: string | number | boolean }) {
         this.extraDataProps = props;
     }
 

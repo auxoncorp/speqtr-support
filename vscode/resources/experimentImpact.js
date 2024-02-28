@@ -35,7 +35,8 @@
                 const eventName = eventElement.attributes["data-event-name"].nodeValue;
                 events.push(eventName);
             }
-            impactedTimelines.push({ timelineName, severity, events });
+            const detailsHtml = impactElement.innerHTML;
+            impactedTimelines.push({ timelineName, severity, events, detailsHtml });
         }
 
         const scenarioTitleElement = scenarioElement.querySelector(".scenario-name");
