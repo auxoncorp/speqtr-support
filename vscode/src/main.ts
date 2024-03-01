@@ -22,7 +22,6 @@ import * as mutators from "./mutators";
 import * as mutations from "./mutations";
 import * as deviantCommands from "./deviantCommands";
 import * as experiments from "./experiments";
-import * as detailsPanel from "./detailsPanel";
 
 export let log: vscode.OutputChannel;
 let lspClient: LanguageClient;
@@ -70,7 +69,6 @@ export async function activate(context: vscode.ExtensionContext) {
     const mutatorsTreeDataProvider = new mutators.MutatorsTreeDataProvider(apiClient);
     const mutationsTreeDataProvider = new mutations.MutationsTreeDataProvider(apiClient);
     const experimentsTreeDataProvider = new experiments.ExperimentsTreeDataProvider(apiClient, context);
-    const detailsPanelProvider = new detailsPanel.DetailsPanelProvider(apiClient, context.extensionUri);
 
     workspacesTreeDataProvider.onDidChangeActiveWorkspace(async (ws_ver) => {
         log.appendLine(`Active workspace change! ${ws_ver}`);
@@ -118,7 +116,6 @@ export async function activate(context: vscode.ExtensionContext) {
     mutatorsTreeDataProvider.register(context);
     mutationsTreeDataProvider.register(context);
     experimentsTreeDataProvider.register(context);
-    detailsPanelProvider.register(context);
 
     // Explicitly load views that are referenceable across views
     await workspacesTreeDataProvider.getChildren();

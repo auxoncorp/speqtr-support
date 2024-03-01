@@ -2,6 +2,7 @@
     const vscode = acquireVsCodeApi();
 
     const defaultZoom = 1.25;
+
     const loadingDiv = document.getElementById("loading");
     const cyContainerDiv = document.getElementById("cy");
     const layoutDropdown = document.getElementById("layoutDropdown");
@@ -10,6 +11,9 @@
     const toolbarRefresh = document.getElementById("toolbarRefresh");
     const txtCanvas = document.createElement("canvas");
     const txtCtx = txtCanvas.getContext("2d");
+    const detailsGrid = document.getElementById("detailsGrid");
+    const impactDetailsContainer = document.getElementById("impactDetailsContainer");
+    const impactDetailsHtml = document.getElementById("impactHtml");
 
     // The cytoscape interface
     var cy = undefined;
@@ -155,19 +159,149 @@
         }
     }
 
-    function postShowSelectionDetails() {
+    function updateSelectionDetails() {
         const selectedNodes = cy
             .nodes()
             .filter((n) => n.hasClass("selected"))
-            .map((n) => n.id());
+            .map((n) => n.data());
         const selectedEdges = cy
             .edges()
             .filter((e) => e.hasClass("selected"))
-            .map((e) => e.data("idx"));
-        vscode.postMessage({
-            command: "showDetailsForSelection",
-            data: { nodes: selectedNodes, edges: selectedEdges },
-        });
+            .map((e) => e.data());
+
+        var newEls = [];
+
+        const nodesWithEventName = selectedNodes.filter((nodeData) => nodeData.eventName !== undefined);
+        if (nodesWithEventName?.length > 0) {
+            newEls = newEls.concat(eventDetailsRows(nodesWithEventName));
+        }
+
+        const nodesWithTimelineId = selectedNodes.filter((nodeData) => nodeData.timeline !== undefined);
+        if (nodesWithTimelineId?.length > 0) {
+            newEls = newEls.concat(timelineDetailsRows(nodesWithTimelineId));
+        }
+
+        if (selectedEdges?.length > 0) {
+            newEls = newEls.concat(interactionDetailsRows(selectedNodes, selectedEdges));
+        }
+
+        detailsGrid.innerText = "";
+        if (newEls.length > 0) {
+            for (const el of newEls) {
+                el.appendTo(detailsGrid);
+            }
+            $(detailsGrid).show();
+        } else {
+            $(detailsGrid).hide();
+        }
+
+        const nodesWithImpactHtml = selectedNodes.filter((nodeData) => nodeData.impactHtml !== undefined);
+        if (nodesWithImpactHtml.length > 0) {
+            impactDetailsContainer.innerText = "";
+
+            var innerHTML = "";
+            for (const n of nodesWithImpactHtml) {
+                innerHTML += n.impactHtml;
+            }
+
+            impactDetailsContainer.innerHTML = innerHTML;
+
+            // If there's a single top-level details node, make sure it's open
+            const topLevelDetails = impactDetailsContainer.querySelectorAll(":scope > details");
+            if (topLevelDetails.length == 1) {
+                topLevelDetails[0].setAttribute("open", "");
+            }
+
+            $(impactDetailsContainer).show();
+        } else {
+            $(impactDetailsContainer).hide();
+        }
+    }
+
+    function eventDetailsRows(nodesWithEventName) {
+        const newEls = [];
+
+        const header = $("<div/>", { class: "vsc-grid-row header", style: "grid-column: span 3" });
+        $("<div/>", { class: "vsc-grid-cell column-header", text: "Event Name" }).appendTo(header);
+        $("<div/>", { class: "vsc-grid-cell column-header", text: "Count" }).appendTo(header);
+        $("<div/>", { class: "vsc-grid-cell column-header", text: "" }).appendTo(header);
+        newEls.push(header);
+
+        for (const n of nodesWithEventName) {
+            const row = $("<div/>", { class: "vsc-grid-row", style: "grid-column: span 3" });
+            $("<div/>", { class: "vsc-grid-cell", text: cellTextForNode(n) }).appendTo(row);
+            $("<div/>", { class: "vsc-grid-cell", style: "grid-column: span 2", text: n.count?.toString() }).appendTo(
+                row
+            );
+            newEls.push(row);
+        }
+
+        return newEls;
+    }
+
+    function timelineDetailsRows(nodesWithTimelineId) {
+        const newEls = [];
+
+        const header = $("<div/>", { class: "vsc-grid-row header", style: "grid-column: span 3" });
+        $("<div/>", { class: "vsc-grid-cell column-header", text: "Timeline Name" }).appendTo(header);
+        $("<div/>", { class: "vsc-grid-cell column-header", text: "Timeline Id" }).appendTo(header);
+        newEls.push(header);
+
+        const unique = [];
+        for (n of nodesWithTimelineId) {
+            if (!unique.some((u) => u.timeline == n.timeline && u.timelineId == n.timelineId)) {
+                unique.push(n);
+            }
+        }
+
+        for (const n of unique) {
+            const row = $("<div/>", { class: "vsc-grid-row", style: "grid-column: span 3" });
+            $("<div/>", { class: "vsc-grid-cell", text: n.timelineName }).appendTo(row);
+            $("<div/>", { class: "vsc-grid-cell", style: "grid-column: span 2", text: n.timeline }).appendTo(row);
+            newEls.push(row);
+        }
+
+        return newEls;
+    }
+
+    function interactionDetailsRows(selectedNodes, selectedEdges) {
+        const newEls = [];
+
+        const header = $("<div/>", { class: "vsc-grid-row header", style: "grid-column: span 3" });
+        $("<div/>", { class: "vsc-grid-cell column-header", text: "Interaction Source" }).appendTo(header);
+        $("<div/>", { class: "vsc-grid-cell column-header", text: "Count" }).appendTo(header);
+        $("<div/>", { class: "vsc-grid-cell column-header", text: "Destination" }).appendTo(header);
+        newEls.push(header);
+
+        const containsEvents = selectedNodes.some((n) => n.event !== undefined);
+
+        for (const e of selectedEdges) {
+            const sourceNode = cy.getElementById(e.source)?.data();
+            const destNode = cy.getElementById(e.target)?.data();
+            if (!sourceNode || !destNode) {
+                continue;
+            }
+
+            const row = $("<div/>", { class: "vsc-grid-row", style: "grid-column: span 3" });
+            $("<div/>", { class: "vsc-grid-cell", text: cellTextForNode(sourceNode) }).appendTo(row);
+            $("<div/>", { class: "vsc-grid-cell", text: e.count?.toString() }).appendTo(row);
+            $("<div/>", { class: "vsc-grid-cell", text: cellTextForNode(destNode) }).appendTo(row);
+            newEls.push(row);
+        }
+
+        return newEls;
+    }
+
+    function cellTextForNode(node) {
+        if (node.eventName && node.timelineName) {
+            return `${node.eventName}@${node.timelineName}`;
+        } else if (node.timelineName && node.timeline) {
+            return `${node.timelineName} (${node.timelineId})`;
+        } else if (node.timelineName) {
+            return node.timelineName;
+        } else {
+            return "";
+        }
     }
 
     function cytoscapeStyle() {
@@ -382,7 +516,7 @@
                     item.addClass("selected").predecessors().addClass("selected");
                     break;
             }
-            postShowSelectionDetails();
+            updateSelectionDetails();
         });
 
         cy.on("unselect", function (evt) {
@@ -397,7 +531,7 @@
                     cy.elements().removeClass("selected");
                     break;
             }
-            postShowSelectionDetails();
+            updateSelectionDetails();
         });
 
         cy.on("cxttap", function (evt) {

@@ -5,7 +5,6 @@ import * as api from "./modalityApi";
 import * as fs from "fs";
 import { Base64 } from "js-base64";
 import { getNonce } from "./webviewUtil";
-import { TimelineDetails, EventDetails } from "./detailsPanel";
 
 export function register(context: vscode.ExtensionContext, apiClient: api.Client) {
     const tGraphDisposable = vscode.commands.registerCommand("auxon.transition.graph", async (params) => {
@@ -209,9 +208,6 @@ export class TransitionGraph {
                         );
                         break;
                     }
-                    case "showDetailsForSelection":
-                        this.showDetailsForSelection(message.data.nodes, message.data.edges);
-                        break;
                     default:
                 }
             },
@@ -258,50 +254,6 @@ export class TransitionGraph {
                 vscode.window.showErrorMessage(`Error on writing file: ${err}`);
             }
         }
-    }
-
-    private showDetailsForSelection(selectedNodeIds: number[], selectedEdgeIds: number[]) {
-        const nodes = selectedNodeIds.map((nId) => this.graph.nodes[nId]);
-        const edges = selectedEdgeIds.map((eId) => this.graph.edges[eId]);
-
-        const events = [];
-        const timelines = [];
-        const interactions = [];
-        const extraHtml = [];
-
-        for (const node of nodes) {
-            const timelineDetails = node.timelineDetails();
-            if (timelineDetails) {
-                timelines.push(timelineDetails);
-            }
-
-            const eventDetails = node.eventDetails();
-            if (eventDetails) {
-                events.push(eventDetails);
-            }
-
-            const html = node.extraDataProps.impactDetailsHtml;
-            if (html) {
-                extraHtml.push(html);
-            }
-        }
-        for (const edge of edges) {
-            const srcNode = this.graph.nodes[edge.source];
-            const srcTimelineDetails = srcNode.timelineDetails();
-            const dstNode = this.graph.nodes[edge.target];
-            const dstTimelineDetails = dstNode.timelineDetails();
-            if (srcTimelineDetails && dstTimelineDetails) {
-                interactions.push({
-                    sourceEvent: srcNode.eventName,
-                    sourceTimeline: srcTimelineDetails,
-                    destinationEvent: dstNode.eventName,
-                    destinationTimeline: dstTimelineDetails,
-                    count: edge.count,
-                });
-            }
-        }
-
-        vscode.commands.executeCommand("auxon.details.show", { events, timelines, interactions, extraHtml });
     }
 
     private generateHtmlContent(webview: vscode.Webview): string {
@@ -431,7 +383,7 @@ export class TransitionGraph {
                 const dataProps = params.assignNodeProps.getDataProps(title);
                 if (dataProps) {
                     for (const [key, value] of Object.entries(dataProps)) {
-                        graphNode.extraDataProps[key] = value;
+                        graphNode[key] = value;
                     }
                 }
             }
@@ -498,11 +450,21 @@ interface CytoscapeNode {
 interface CytoscapeNodeData {
     id: number;
     parent?: string;
-    [key: string]: string | number | boolean;
+
+    label?: string;
+    labelvalign?: "top" | "center";
+    filepath?: string;
+    timeline?: string;
+    timelineName?: string;
+    eventName?: string;
+    severity?: number;
+    impactHtml?: string;
+    count?: number;
 }
 
 class Node {
     description?: string = undefined;
+    // TODO unused? remove?
     filePath?: vscode.Uri = undefined;
     parent?: string = undefined;
     hasChildren = false;
@@ -512,7 +474,8 @@ class Node {
     eventName?: string = undefined;
     count?: number = undefined;
     classes: string[] = [];
-    extraDataProps: { [key: string]: string | number | boolean } = {};
+    impactHtml?: string = undefined;
+    severity?: number = undefined;
 
     constructor(public id: number) {}
 
@@ -520,18 +483,14 @@ class Node {
         this.classes.push(cl);
     }
 
-    setExtraDataProps(props: { [key: string]: string | number | boolean }) {
-        this.extraDataProps = props;
-    }
-
     toCytoscapeObject(): CytoscapeNode {
-        const data: CytoscapeNodeData = { id: this.id, ...this.extraDataProps };
+        const data: CytoscapeNodeData = { id: this.id };
 
         const label = this.label.replace("'", "\\'");
         if (label !== undefined && label !== "") {
             data.label = label;
         } else {
-            data.label = this.id;
+            data.label = this.id.toString();
         }
 
         if (this.filePath !== undefined) {
@@ -557,60 +516,87 @@ class Node {
             data.timelineName = this.timelineName;
         }
 
+        if (this.eventName !== undefined) {
+            data.eventName = this.eventName;
+        }
+
+        if (this.count !== undefined) {
+            data.count = this.count;
+        }
+
+        if (this.impactHtml !== undefined) {
+            data.impactHtml = this.impactHtml;
+        }
+
+        if (this.severity !== undefined) {
+            data.severity = this.severity;
+        }
+
         return { data: data, classes: this.classes };
     }
 
-    timelineDetails(): TimelineDetails | undefined {
-        if (this.timelineId !== undefined) {
-            return { id: this.timelineId, name: this.timelineName };
-        } else {
-            return undefined;
-        }
-    }
+    // timelineDetails(): TimelineDetails | undefined {
+    //     if (this.timelineId !== undefined) {
+    //         return { id: this.timelineId, name: this.timelineName };
+    //     } else {
+    //         return undefined;
+    //     }
+    // }
 
-    eventDetails(): EventDetails | undefined {
-        if (this.eventName !== undefined && this.timelineId !== undefined) {
-            return {
-                name: this.eventName,
-                timeline: { id: this.timelineId, name: this.timelineName },
-                count: this.count,
-            };
-        } else {
-            return undefined;
-        }
-    }
+    // eventDetails(): EventDetails | undefined {
+    //     if (this.eventName !== undefined && this.timelineId !== undefined) {
+    //         return {
+    //             name: this.eventName,
+    //             timeline: { id: this.timelineId, name: this.timelineName },
+    //             count: this.count,
+    //         };
+    //     } else {
+    //         return undefined;
+    //     }
+    // }
 }
 
-type PropertiesMap = Map<string, string | number | boolean>;
+interface CytoscapeEdge {
+    data: CytoscapeEdgeData;
+}
+
+interface CytoscapeEdgeData {
+    /// cytoscape reserves the "id" attribute on edges, so we use idx instead
+    idx: number;
+    source: number;
+    target: number;
+    label?: string;
+    hidden?: boolean;
+    count?: number;
+}
 
 class Edge {
     label?: string = undefined;
     visibility?: boolean = undefined;
     count?: number = undefined;
 
-    // Source/target map to the id/index of a Node
+    /// Source/target map to the id/index of a Node
     constructor(public id: number, public source: number, public target: number) {}
 
-    toCytoscapeObject(): object {
-        const props: PropertiesMap = new Map();
-
-        // cytoscape reserves the "id" attribute on edges, so we use idx instead
-        props.set("idx", this.id);
-        props.set("source", this.source);
-        props.set("target", this.target);
+    toCytoscapeObject(): CytoscapeEdge {
+        const data: CytoscapeEdgeData = {
+            idx: this.id,
+            source: this.source,
+            target: this.target,
+        };
 
         if (this.label !== undefined) {
-            props.set("label", this.label.replace("'", "\\'"));
+            data.label = this.label.replace("'", "\\'");
         }
+
         if (this.visibility !== undefined) {
-            props.set("hidden", this.visibility);
+            data.hidden = this.visibility;
         }
 
-        const obj = { data: {} };
-        for (const [k, v] of props) {
-            obj.data[k] = v;
+        if (this.count !== undefined) {
+            data.count = this.count;
         }
 
-        return obj;
+        return { data };
     }
 }

@@ -203,7 +203,7 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
         for (const impact of scenario.impactedTimelines) {
             assignNodeProps.addClass(impact.timelineName, "impact");
             assignNodeProps.addDataProp(impact.timelineName, "severity", impact.severity);
-            assignNodeProps.addDataProp(impact.timelineName, "impactDetailsHtml", impact.detailsHtml);
+            assignNodeProps.addDataProp(impact.timelineName, "impactHtml", impact.detailsHtml);
         }
 
         vscode.commands.executeCommand("auxon.transition.graph", {
