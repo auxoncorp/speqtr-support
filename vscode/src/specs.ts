@@ -34,10 +34,10 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         new vscode.EventEmitter();
     readonly onDidChangeTreeData: vscode.Event<SpecsTreeItemData | SpecsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
-    workspaceState?: SpecsTreeMemento;
+    workspaceState?: SpecsTreeMemento = undefined;
     activeSegmentId?: api.WorkspaceSegmentId = undefined;
     view: vscode.TreeView<SpecsTreeItemData>;
-    data: SpecsTreeItemData[];
+    data: SpecsTreeItemData[] = [];
 
     constructor(private readonly apiClient: api.Client, private readonly cov: specCoverage.SpecCoverageProvider) {}
 
@@ -85,8 +85,8 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
             vscode.commands.registerCommand("auxon.specs.coverage.manyVersions", coverage),
             vscode.commands.registerCommand("auxon.specs.coverage.result", coverage),
             vscode.commands.registerCommand("auxon.specs.coverage.manyResults", coverage),
-            vscode.commands.registerCommand("auxon.specs.setSelectedSpec", (specName) => {
-                this.setSelectedSpec(specName);
+            vscode.commands.registerCommand("auxon.specs.revealSpec", (specName) => {
+                this.revealSpec(specName);
             }),
 
             // Refresh this list any time a spec eval is completed, since it may have saved some results
@@ -126,7 +126,7 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         this.refresh();
     }
 
-    setSelectedSpec(specName: string) {
+    revealSpec(specName: string) {
         const item = this.data.find((i) => i.contextValue == "spec" && i.name == specName);
         if (item) {
             this.view.reveal(item, { focus: true, select: true, expand: 10 });
@@ -173,7 +173,7 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
     }
 
     getParent(_element: SpecsTreeItemData): vscode.ProviderResult<SpecsTreeItemData> {
-        // We only ever expose the root elements for selection in setSelectedSpec
+        // We only ever expose the root elements for selection in revealSpec
         return undefined;
     }
 

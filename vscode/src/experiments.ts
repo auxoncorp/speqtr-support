@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as api from "./modalityApi";
+import * as cliConfig from "./cliConfig";
 
 class ExperimentsTreeMemento {
     constructor(private readonly memento: vscode.Memento) {}
@@ -18,11 +19,15 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
         new vscode.EventEmitter();
     readonly onDidChangeTreeData: vscode.Event<ExperimentsTreeItemData | ExperimentsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
-    workspaceState?: ExperimentsTreeMemento;
+    workspaceState?: ExperimentsTreeMemento = undefined;
     view: vscode.TreeView<ExperimentsTreeItemData>;
-    activeSegmentId?: api.WorkspaceSegmentId = undefined;
 
-    constructor(private readonly apiClient: api.Client) {}
+    // Data scope related
+    dataScope: ExperimentDataScope;
+
+    constructor(private readonly apiClient: api.Client) {
+        this.dataScope = new ExperimentDataScope(undefined, undefined, []);
+    }
 
     register(context: vscode.ExtensionContext) {
         this.workspaceState = new ExperimentsTreeMemento(context.workspaceState);
@@ -35,7 +40,12 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
             this.view,
             vscode.commands.registerCommand("auxon.experiments.refresh", () => this.refresh()),
             vscode.commands.registerCommand("auxon.experiments.showResults", () => this.showResults(true)),
-            vscode.commands.registerCommand("auxon.experiments.hideResults", () => this.showResults(false))
+            vscode.commands.registerCommand("auxon.experiments.hideResults", () => this.showResults(false)),
+            vscode.commands.registerCommand("auxon.experiments.viewSpec", (itemData) => {
+                if (itemData instanceof ExperimentSpecTreeItemData) {
+                    vscode.commands.executeCommand("auxon.specs.revealSpec", itemData.name);
+                }
+            })
         );
 
         this.refresh();
@@ -56,11 +66,17 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
         this.refresh();
     }
 
-    setActiveSegmentIds(segmentIds?: api.WorkspaceSegmentId[]) {
-        if (segmentIds && segmentIds.length == 1) {
-            this.activeSegmentId = segmentIds[0];
-        } else {
-            this.activeSegmentId = undefined;
+    setActiveWorkspace(workspaceVersionId: string) {
+        this.dataScope.activeWorkspaceVersionId = workspaceVersionId;
+        this.refresh();
+    }
+
+    setActiveSegmentIds(usedSegmentConfig?: cliConfig.ContextSegment, segmentIds?: api.WorkspaceSegmentId[]) {
+        if (usedSegmentConfig) {
+            this.dataScope.usedSegmentConfig = usedSegmentConfig;
+        }
+        if (segmentIds) {
+            this.dataScope.activeSegments = segmentIds;
         }
         this.refresh();
     }
@@ -75,7 +91,7 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
             const items = await Promise.all(
                 experimentNames.map(async (name) => {
                     const experiment = await this.apiClient.experiment(name).get();
-                    return new NamedExperimentTreeItemData(experiment, this.activeSegmentId);
+                    return new NamedExperimentTreeItemData(experiment, this.dataScope);
                 })
             );
             const { compare } = Intl.Collator("en-US");
@@ -112,16 +128,9 @@ abstract class ExperimentsTreeItemData {
         // Mutation selection sets the selected mutation
         if (this.contextValue == "experimentMutation" && workspaceData.getShowResults()) {
             const command = {
-                title: "Sets the selected mutation in the mutations tree view",
-                command: "auxon.mutations.setSelectedMutation",
+                title: "Reveal a mutation in the mutations tree view",
+                command: "auxon.mutations.revealMutation",
                 arguments: [this.mutationId],
-            };
-            item.command = command;
-        } else if (this.contextValue == "experimentSpec") {
-            const command = {
-                title: "Sets the selected spec in the specs tree view",
-                command: "auxon.specs.setSelectedSpec",
-                arguments: [this.name],
             };
             item.command = command;
         }
@@ -143,7 +152,7 @@ abstract class ExperimentsTreeItemData {
 
 export class NamedExperimentTreeItemData extends ExperimentsTreeItemData {
     contextValue = "experiment";
-    constructor(public experiment: api.Experiment, private activeSegmentId?: api.WorkspaceSegmentId) {
+    constructor(public experiment: api.Experiment, private dataScope: ExperimentDataScope) {
         super(experiment.name);
         super.iconPath = new vscode.ThemeIcon("beaker");
     }
@@ -183,9 +192,40 @@ export class NamedExperimentTreeItemData extends ExperimentsTreeItemData {
         if (this.experiment.definition.specs.length != 0) {
             children.push(new ExperimentSpecsTreeItemData(this.experiment.definition.specs));
         }
-        if (workspaceState.getShowResults() && this.activeSegmentId) {
-            const results = await apiClient.segment(this.activeSegmentId).experimentResults(this.experiment.name);
-            children.push(new ExperimentResultsTreeItemData(new ExperimentResults(this.experiment.name, results)));
+        if (workspaceState.getShowResults()) {
+            let results = undefined;
+            switch (this.dataScope.usedSegmentConfig.type) {
+                case "All":
+                case "WholeWorkspace":
+                    if (this.dataScope.activeWorkspaceVersionId) {
+                        results = await apiClient
+                            .workspace(this.dataScope.activeWorkspaceVersionId)
+                            .experimentResults(this.experiment.name);
+                    }
+                    break;
+                case "Latest":
+                case "Set":
+                    if (this.dataScope.activeSegments.length != 0) {
+                        results = await apiClient
+                            .segment(this.dataScope.activeSegments[0])
+                            .experimentResults(this.experiment.name);
+
+                        // Merge results of remaining segments, ExperimentResults will sort them out
+                        for (let i = 1; i < this.dataScope.activeSegments.length; i++) {
+                            const segRes = await apiClient
+                                .segment(this.dataScope.activeSegments[i])
+                                .experimentResults(this.experiment.name);
+                            results.mutations.push(...segRes.mutations);
+                            results.mutators.push(...segRes.mutators);
+                            results.regions.push(...segRes.regions);
+                        }
+                    }
+                    break;
+            }
+
+            if (results) {
+                children.push(new ExperimentResultsTreeItemData(new ExperimentResults(this.experiment.name, results)));
+            }
         }
         return children;
     }
@@ -380,7 +420,14 @@ export class ExperimentResultsTreeItemData extends ExperimentsTreeItemData {
         _workspaceState: ExperimentsTreeMemento
     ): Promise<ExperimentsTreeItemData[]> {
         const children = [];
-        children.push(new ExperimentDetailLeafTreeItemData(`Proposed Mutations: ${this.results.numProposedMutations}`));
+        children.push(
+            new ExperimentDetailLeafTreeItemData(`Overall Proposed Mutations: ${this.results.numProposedMutations}`)
+        );
+        children.push(
+            new ExperimentDetailLeafTreeItemData(
+                `Proposed Mutations For Selected Data Scope: ${this.results.mutations.length}`
+            )
+        );
         if (this.results.mutations.length != 0) {
             children.push(new ExperimentMutationsTreeItemData(this.results.mutations));
         }
@@ -435,24 +482,46 @@ export class ExperimentDetailLeafTreeItemData extends ExperimentsTreeItemData {
 }
 
 class ExperimentResults {
+    // Total proposed mutations for the lifespan of this experiment
     numProposedMutations: number;
+    // Mutations relevant to the selected data scope
     mutations: ExperimentMutation[];
 
     constructor(public experimentName: string, private results: api.ExperimentResults) {
-        this.mutations = [];
-        this.numProposedMutations = results.n_proposed_mutations;
+        const mutationIdsToChecklist: Map<api.MutationId, api.ExperimentMutationChecklist> = new Map();
+        for (const regionAndmutationAndChecklist of results.regions) {
+            const mutationsAndChecklists = regionAndmutationAndChecklist[1];
+            for (const mutationAndChecklist of mutationsAndChecklists) {
+                const mutationId = mutationAndChecklist[0];
+                const checklist = mutationAndChecklist[1];
+                mutationIdsToChecklist.set(mutationId, checklist);
+            }
+        }
+
+        const mutations: Map<api.MutationId, api.Mutation> = new Map();
         for (const mutationAndChecklist of results.mutations) {
             const mutation = mutationAndChecklist[0];
-            const checklist = mutationAndChecklist[1];
-            if (mutation.linked_experiment == experimentName && checklist.proposed_for_the_selected_experiment) {
-                let mutatorName = "<unnamed>";
-                const mutatorDef = results.mutators.find((m) => m.mutator_id == mutation.mutator_id);
-                if (mutatorDef) {
-                    if (Object.prototype.hasOwnProperty.call(mutatorDef.mutator_attributes, "mutator.name")) {
-                        mutatorName = mutatorDef.mutator_attributes["mutator.name"] as string;
+            const _overall_checklist = mutationAndChecklist[1]; // using the per-region-checklist
+            mutations.set(mutation.mutation_id, mutation);
+        }
+
+        const mutators = [...new Set(results.mutators)];
+
+        this.mutations = [];
+        this.numProposedMutations = results.n_proposed_mutations;
+        for (const [_mutationId, mutation] of mutations) {
+            if (mutationIdsToChecklist.has(mutation.mutation_id)) {
+                const checklist = mutationIdsToChecklist.get(mutation.mutation_id);
+                if (mutation.linked_experiment == experimentName && checklist.proposed_for_the_selected_experiment) {
+                    let mutatorName = "<unnamed>";
+                    const mutatorDef = mutators.find((m) => m.mutator_id == mutation.mutator_id);
+                    if (mutatorDef) {
+                        if (Object.prototype.hasOwnProperty.call(mutatorDef.mutator_attributes, "mutator.name")) {
+                            mutatorName = mutatorDef.mutator_attributes["mutator.name"] as string;
+                        }
                     }
+                    this.mutations.push(new ExperimentMutation(mutation, mutatorName));
                 }
-                this.mutations.push(new ExperimentMutation(mutation, mutatorName));
             }
         }
     }
@@ -469,4 +538,12 @@ class ExperimentMutation {
         this.createdAt = new Date(0);
         this.createdAt.setUTCSeconds(mutation.created_at_utc_seconds);
     }
+}
+
+class ExperimentDataScope {
+    constructor(
+        public usedSegmentConfig?: cliConfig.ContextSegment,
+        public activeWorkspaceVersionId?: string,
+        public activeSegments?: api.WorkspaceSegmentId[]
+    ) {}
 }

@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as cliConfig from "./cliConfig";
 import * as api from "./modalityApi";
 import * as modalityLog from "./modalityLog";
 
@@ -36,11 +37,15 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     readonly onDidChangeTreeData: vscode.Event<MutationsTreeItemData | MutationsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
 
-    workspaceState?: MutationsTreeMemento;
-    data: MutationsTreeItemData[];
+    workspaceState?: MutationsTreeMemento = undefined;
+    data: MutationsTreeItemData[] = [];
     view: vscode.TreeView<MutationsTreeItemData>;
     selectedMutatorId?: api.MutatorId = undefined;
-    activeSegmentId?: api.WorkspaceSegmentId = undefined;
+
+    // Data scope related
+    usedSegmentConfig?: cliConfig.ContextSegment = undefined;
+    activeWorkspaceVersionId?: string = undefined;
+    activeSegments: api.WorkspaceSegmentId[] = [];
 
     constructor(private readonly apiClient: api.Client) {}
 
@@ -57,8 +62,8 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
             vscode.commands.registerCommand("auxon.mutations.setSelectedMutator", (mutatorId) => {
                 this.setSelectedMutator(mutatorId);
             }),
-            vscode.commands.registerCommand("auxon.mutations.setSelectedMutation", (mutationId) => {
-                this.setSelectedMutation(mutationId);
+            vscode.commands.registerCommand("auxon.mutations.revealMutation", (mutationId) => {
+                this.revealMutation(mutationId);
             }),
             vscode.commands.registerCommand("auxon.mutations.disableMutationGrouping", () => {
                 this.disableMutationGrouping();
@@ -110,7 +115,8 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     }
 
     async getChildren(element?: MutationsTreeItemData): Promise<MutationsTreeItemData[]> {
-        if (!this.activeSegmentId) {
+        // This is an 'uninitialized' condition
+        if (!this.usedSegmentConfig) {
             return [];
         }
 
@@ -119,11 +125,30 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
             return [];
         } else if (!element) {
             let mutations = [];
+            this.data = [];
 
-            if (this.workspaceState.getFilterBySelectedMutator()) {
-                mutations = await this.apiClient.segment(this.activeSegmentId).mutations(this.selectedMutatorId);
-            } else {
-                mutations = await this.apiClient.segment(this.activeSegmentId).mutations();
+            switch (this.usedSegmentConfig.type) {
+                case "All":
+                    mutations = await this.apiClient.mutations().list(this.selectedMutatorId);
+                    break;
+                case "WholeWorkspace":
+                    if (!this.activeWorkspaceVersionId) {
+                        return [];
+                    }
+                    mutations = await this.apiClient
+                        .workspace(this.activeWorkspaceVersionId)
+                        .mutations(this.selectedMutatorId);
+                    break;
+                case "Latest":
+                case "Set":
+                    if (this.activeSegments.length === 0) {
+                        return [];
+                    }
+                    for (const segmentId of this.activeSegments) {
+                        const segMutations = await this.apiClient.segment(segmentId).mutations(this.selectedMutatorId);
+                        mutations.push(...segMutations);
+                    }
+                    break;
             }
 
             mutations = mutations.map((m) => new Mutation(m));
@@ -131,7 +156,6 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
                 mutations = mutations.filter((m) => !m.wasCleared());
             }
 
-            this.data = [];
             if (this.workspaceState.getGroupByMutatorName()) {
                 const root = new MutationsGroupByNameTreeItemData("", []);
                 for (const m of mutations) {
@@ -172,15 +196,6 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
         return undefined;
     }
 
-    setActiveSegmentIds(segmentIds?: api.WorkspaceSegmentId[]) {
-        if (segmentIds && segmentIds.length == 1) {
-            this.activeSegmentId = segmentIds[0];
-        } else {
-            this.activeSegmentId = undefined;
-        }
-        this.refresh();
-    }
-
     // Set the selected mutator when grouping by mutator name or only showing a single mutator
     setSelectedMutator(mutatorId: api.MutatorId) {
         if (this.workspaceState.getFilterBySelectedMutator()) {
@@ -205,7 +220,7 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
         }
     }
 
-    setSelectedMutation(mutationId: api.MutationId) {
+    revealMutation(mutationId: api.MutationId) {
         if (this.workspaceState.getGroupByMutatorName()) {
             for (const group of this.data) {
                 if (!(group instanceof MutationsGroupByNameTreeItemData)) {
@@ -231,30 +246,51 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
 
     disableMutationGrouping() {
         this.workspaceState.setGroupByMutatorName(false);
-        this.selectedMutatorId = null;
+        this.clearSelectedMutator();
         this.refresh();
     }
 
     groupMutationsByName() {
         this.workspaceState.setGroupByMutatorName(true);
-        this.selectedMutatorId = null;
+        this.clearSelectedMutator();
         this.refresh();
     }
 
     disableMutationFiltering() {
         this.workspaceState.setFilterBySelectedMutator(false);
-        this.selectedMutatorId = null;
+        this.clearSelectedMutator();
         this.refresh();
     }
 
     filterBySelectedMutator() {
         this.workspaceState.setFilterBySelectedMutator(true);
-        this.selectedMutatorId = null;
+        this.clearSelectedMutator();
         this.refresh();
     }
 
     showClearedMutations(show: boolean) {
         this.workspaceState.setShowClearedMutations(show);
+        this.refresh();
+    }
+
+    clearSelectedMutator() {
+        this.selectedMutatorId = undefined;
+    }
+
+    setActiveWorkspace(workspaceVersionId: string) {
+        this.activeWorkspaceVersionId = workspaceVersionId;
+        this.clearSelectedMutator();
+        this.refresh();
+    }
+
+    setActiveSegmentIds(usedSegmentConfig?: cliConfig.ContextSegment, segmentIds?: api.WorkspaceSegmentId[]) {
+        if (usedSegmentConfig) {
+            this.usedSegmentConfig = usedSegmentConfig;
+        }
+        if (segmentIds) {
+            this.activeSegments = segmentIds;
+        }
+        this.clearSelectedMutator();
         this.refresh();
     }
 
@@ -314,8 +350,8 @@ abstract class MutationsTreeItemData {
         // Mutation selection sets the selected mutator
         if (this.contextValue == "mutation" && !workspaceData.getFilterBySelectedMutator()) {
             const command = {
-                title: "Sets the selected mutator in the mutators tree view",
-                command: "auxon.mutators.setSelectedMutator",
+                title: "Reveal a mutator in the mutators tree view",
+                command: "auxon.mutators.revealMutator",
                 arguments: [this.mutatorId],
             };
             item.command = command;

@@ -363,6 +363,11 @@
                     "command": "auxon.mutations.viewLogFromMutation",
                     "when": "view == auxon.mutations && viewItem == mutationCoordinate",
                     "group": "inline"
+                },
+                {
+                    "command": "auxon.experiments.viewSpec",
+                    "when": "view == auxon.experiments && viewItem == experimentSpec",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -455,6 +460,16 @@
                     "command": "auxon.mutators.refresh",
                     "when": "view == auxon.mutators",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.mutators.filterByDataScope",
+                    "when": "view == auxon.mutators && auxon.mutators.filterByDataScope == 'UNSET'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.mutators.unfilterByDataScope",
+                    "when": "view == auxon.mutators && auxon.mutators.filterByDataScope == 'SET'",
+                    "group": "7_modification@1"
                 },
                 {
                     "command": "auxon.mutators.showUnavailable",
@@ -750,8 +765,8 @@
                 "title": "Delete Selected Spec Results..."
             },
             {
-                "command": "auxon.specs.setSelectedSpec",
-                "title": "Sets the selected spec in the specs tree view"
+                "command": "auxon.specs.revealSpec",
+                "title": "Reveal a spec in the specs tree view"
             },
             {
                 "command": "auxon.specDir.eval.dryRun",
@@ -800,8 +815,16 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "auxon.mutators.setSelectedMutator",
-                "title": "Sets the selected mutator in the mutators tree view"
+                "command": "auxon.mutators.revealMutator",
+                "title": "Reveal a mutator in the mutators tree view"
+            },
+            {
+                "command": "auxon.mutators.filterByDataScope",
+                "title": "Filter By Active Data Scope"
+            },
+            {
+                "command": "auxon.mutators.unfilterByDataScope",
+                "title": "✓ Filter By Active Data Scope"
             },
             {
                 "command": "auxon.mutators.showUnavailable",
@@ -842,8 +865,8 @@
                 "title": "Set the selected mutator in the mutations tree view"
             },
             {
-                "command": "auxon.mutations.setSelectedMutation",
-                "title": "Sets the selected mutation in the mutations tree view"
+                "command": "auxon.mutations.revealMutation",
+                "title": "Reveal a mutation in the mutations tree view"
             },
             {
                 "command": "auxon.mutations.groupMutationsByName",
@@ -895,6 +918,11 @@
             {
                 "command": "auxon.experiments.hideResults",
                 "title": "✓ Show Results"
+            },
+            {
+                "command": "auxon.experiments.viewSpec",
+                "title": "View Spec",
+                "icon": "$(file)"
             },
             {
                 "command": "auxon.details.show",

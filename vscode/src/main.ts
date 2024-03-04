@@ -86,10 +86,11 @@ export async function activate(context: vscode.ExtensionContext) {
         eventsTreeDataProvider.refresh();
 
         mutatorsTreeDataProvider.setWorkspaceMutatorGroupingAttrs(wsDef.mutator_grouping_attrs);
-        mutatorsTreeDataProvider.refresh();
+        mutatorsTreeDataProvider.setActiveWorkspace(ws_ver);
 
-        mutationsTreeDataProvider.refresh();
-        experimentsTreeDataProvider.refresh();
+        mutationsTreeDataProvider.setActiveWorkspace(ws_ver);
+
+        experimentsTreeDataProvider.setActiveWorkspace(ws_ver);
     });
 
     segmentsTreeDataProvider.onDidChangeUsedSegments((ev) => {
@@ -102,9 +103,11 @@ export async function activate(context: vscode.ExtensionContext) {
         eventsTreeDataProvider.activeSegments = ev.activeSegmentIds;
         eventsTreeDataProvider.refresh();
 
-        mutatorsTreeDataProvider.refresh();
-        mutationsTreeDataProvider.setActiveSegmentIds(ev.activeSegmentIds);
-        experimentsTreeDataProvider.setActiveSegmentIds(ev.activeSegmentIds);
+        mutatorsTreeDataProvider.setActiveSegmentIds(ev.usedSegmentConfig, ev.activeSegmentIds);
+
+        mutationsTreeDataProvider.setActiveSegmentIds(ev.usedSegmentConfig, ev.activeSegmentIds);
+
+        experimentsTreeDataProvider.setActiveSegmentIds(ev.usedSegmentConfig, ev.activeSegmentIds);
     });
 
     workspacesTreeDataProvider.register(context);
@@ -116,6 +119,12 @@ export async function activate(context: vscode.ExtensionContext) {
     mutationsTreeDataProvider.register(context);
     experimentsTreeDataProvider.register(context);
     detailsPanelProvider.register(context);
+
+    // Explicitly load views that are referenceable across views
+    await workspacesTreeDataProvider.getChildren();
+    await mutatorsTreeDataProvider.getChildren();
+    await mutationsTreeDataProvider.getChildren();
+    await specsTreeDataProvider.getChildren();
 }
 
 export function deactivate(): Thenable<void> | undefined {
