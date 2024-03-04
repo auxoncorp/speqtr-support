@@ -490,7 +490,6 @@ class ExperimentResults {
     constructor(public experimentName: string, private results: api.ExperimentResults) {
         const mutationIdsToChecklist: Map<api.MutationId, api.ExperimentMutationChecklist> = new Map();
         for (const regionAndmutationAndChecklist of results.regions) {
-            const _region = regionAndmutationAndChecklist[0];
             const mutationsAndChecklists = regionAndmutationAndChecklist[1];
             for (const mutationAndChecklist of mutationsAndChecklists) {
                 const mutationId = mutationAndChecklist[0];
