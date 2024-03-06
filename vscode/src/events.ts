@@ -1,10 +1,10 @@
 import * as lodash from "lodash";
 import * as vscode from "vscode";
 import * as api from "./modalityApi";
-import * as commonNotebookCells from "../templates/common.json";
-import * as eventTimingNotebookCells from "../templates/eventTiming.json";
-import * as eventAttributeValuesNotebookCells from "../templates/eventAttributeValues.json";
-import * as eventMultiAttributeValuesNotebookCells from "../templates/eventMultiAttributeValues.json";
+import * as commonNotebookCells from "./notebooks/common.json";
+import * as eventTimingNotebookCells from "./notebooks/eventTiming.json";
+import * as eventAttributeValuesNotebookCells from "./notebooks/eventAttributeValues.json";
+import * as eventMultiAttributeValuesNotebookCells from "./notebooks/eventMultiAttributeValues.json";
 import * as modalityLog from "./modalityLog";
 
 export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTreeItemData> {

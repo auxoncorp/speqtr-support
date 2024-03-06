@@ -5,6 +5,7 @@ import * as api from "./modalityApi";
 import * as fs from "fs";
 import { Base64 } from "js-base64";
 import { getNonce } from "./webviewUtil";
+import * as transitionGraphWebViewApi from "../common-src/transitionGraphWebViewApi";
 
 export function register(context: vscode.ExtensionContext, apiClient: api.Client) {
     const tGraphDisposable = vscode.commands.registerCommand("auxon.transition.graph", async (params) => {
@@ -187,19 +188,17 @@ export class TransitionGraph {
 
     async load(webview: vscode.Webview, params: TransitionGraphParams) {
         webview.onDidReceiveMessage(
-            async (message) => {
+            async (message: transitionGraphWebViewApi.VsCodeMessage) => {
                 switch (message.command) {
-                    case "requestNodesAndEdges":
-                        this.postNodesAndEdges(webview);
-                        break;
                     case "saveAsPng":
                         await this.saveAsPng(message.data);
                         break;
                     case "logSelectedNodes": {
                         const selectedNodeIds = message.data;
                         const timelineIds = selectedNodeIds
+                            // TODO I think nId is a string here now? does that work?
                             .map((nId) => this.graph.nodes[nId].timelineId)
-                            .filter((tlName) => typeof tlName !== undefined);
+                            .filter((tlName) => !!tlName);
                         vscode.commands.executeCommand(
                             "auxon.modality.log",
                             new modalityLog.ModalityLogCommandArgs({
@@ -259,43 +258,22 @@ export class TransitionGraph {
     private generateHtmlContent(webview: vscode.Webview): string {
         const stylesUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "transitionGraph.css")
-        );
-        const jqueryJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "jquery.min.js")
-        );
-        const jqueryColorJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "jquery.color.min.js")
-        );
+        )
+
         const codiconCssUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "codicon.css")
         );
-        const cytoscapeJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cytoscape.min.js")
-        );
-        const layoutBaseJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "layout-base.js")
-        );
-        const coseBaseJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cose-base.js")
-        );
-        const coseBilkentJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cytoscape-cose-bilkent.js")
-        );
-        const contextMenuJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cytoscape-context-menus.js")
-        );
-        const webviewUiToolkitJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "webviewuitoolkit.min.js")
-        );
+
         const transitionGraphJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "transitionGraph.js")
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "out", "transitionGraphWebView.js")
         );
 
         const templateUri = vscode.Uri.joinPath(
             this.extensionContext.extensionUri,
-            "templates",
+            "resources",
             "transitionGraph.html"
         );
+
         const templateText = fs.readFileSync(templateUri.fsPath, "utf8");
         const template = handlebars.compile(templateText);
 
@@ -304,15 +282,7 @@ export class TransitionGraph {
             cspSource: webview.cspSource,
             nonce: getNonce(),
             stylesUri,
-            jqueryJsUri,
-            jqueryColorJsUri,
             codiconCssUri,
-            cytoscapeJsUri,
-            layoutBaseJsUri,
-            coseBaseJsUri,
-            coseBilkentJsUri,
-            contextMenuJsUri,
-            webviewUiToolkitJsUri,
             transitionGraphJsUri,
         });
 
@@ -436,32 +406,6 @@ class DirectedGraph {
     }
 }
 
-interface CytoscapeNode {
-    data: CytoscapeNodeData;
-    position?: { x: number; y: number };
-    selected?: boolean;
-    selectable?: boolean;
-    locted?: boolean;
-    grabbable?: boolean;
-    pannable?: boolean;
-    classes: string[];
-}
-
-interface CytoscapeNodeData {
-    id: number;
-    parent?: string;
-
-    label?: string;
-    labelvalign?: "top" | "center";
-    filepath?: string;
-    timeline?: string;
-    timelineName?: string;
-    eventName?: string;
-    severity?: number;
-    impactHtml?: string;
-    count?: number;
-}
-
 class Node {
     description?: string = undefined;
     // TODO unused? remove?
@@ -483,8 +427,8 @@ class Node {
         this.classes.push(cl);
     }
 
-    toCytoscapeObject(): CytoscapeNode {
-        const data: CytoscapeNodeData = { id: this.id };
+    toCytoscapeObject(): cytoscape.NodeDefinition {
+        const data: transitionGraphWebViewApi.NodeData = { id: this.id.toString() };
 
         const label = this.label.replace("'", "\\'");
         if (label !== undefined && label !== "") {
@@ -534,40 +478,6 @@ class Node {
 
         return { data: data, classes: this.classes };
     }
-
-    // timelineDetails(): TimelineDetails | undefined {
-    //     if (this.timelineId !== undefined) {
-    //         return { id: this.timelineId, name: this.timelineName };
-    //     } else {
-    //         return undefined;
-    //     }
-    // }
-
-    // eventDetails(): EventDetails | undefined {
-    //     if (this.eventName !== undefined && this.timelineId !== undefined) {
-    //         return {
-    //             name: this.eventName,
-    //             timeline: { id: this.timelineId, name: this.timelineName },
-    //             count: this.count,
-    //         };
-    //     } else {
-    //         return undefined;
-    //     }
-    // }
-}
-
-interface CytoscapeEdge {
-    data: CytoscapeEdgeData;
-}
-
-interface CytoscapeEdgeData {
-    /// cytoscape reserves the "id" attribute on edges, so we use idx instead
-    idx: number;
-    source: number;
-    target: number;
-    label?: string;
-    hidden?: boolean;
-    count?: number;
 }
 
 class Edge {
@@ -578,11 +488,11 @@ class Edge {
     /// Source/target map to the id/index of a Node
     constructor(public id: number, public source: number, public target: number) {}
 
-    toCytoscapeObject(): CytoscapeEdge {
-        const data: CytoscapeEdgeData = {
+    toCytoscapeObject(): cytoscape.EdgeDefinition {
+        const data: transitionGraphWebViewApi.EdgeData = {
             idx: this.id,
-            source: this.source,
-            target: this.target,
+            source: this.source.toString(),
+            target: this.target.toString(),
         };
 
         if (this.label !== undefined) {

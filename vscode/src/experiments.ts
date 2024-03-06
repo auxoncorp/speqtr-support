@@ -3,7 +3,7 @@ import * as api from "./modalityApi";
 import * as cliConfig from "./cliConfig";
 import * as config from "./config";
 import * as tmp from "tmp-promise";
-import {promises as fs} from "fs";
+import { promises as fs } from "fs";
 import { getNonce } from "./webviewUtil";
 import { AssignNodeProps } from "./transitionGraph";
 
@@ -50,7 +50,7 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
                 if (itemData instanceof ExperimentSpecTreeItemData) {
                     vscode.commands.executeCommand("auxon.specs.revealSpec", itemData.name);
                 }
-            })
+            }),
             vscode.commands.registerCommand("auxon.experiments.impact", (itemData) => this.impact(itemData)),
             vscode.commands.registerCommand("auxon.experiments.visualizeImpactScenario", (args) =>
                 this.visualizeImpactScenario(args)
@@ -157,7 +157,7 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
             );
 
             const scriptUri = webViewPanel.webview.asWebviewUri(
-                vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "experimentImpact.js")
+                vscode.Uri.joinPath(this.extensionContext.extensionUri, "out", "experimentImpactWebView.js")
             );
 
             const nonce = getNonce();
@@ -305,7 +305,7 @@ export class NamedExperimentTreeItemData extends ExperimentsTreeItemData {
     contextValue = "experiment";
     constructor(public experiment: api.Experiment, private dataScope: ExperimentDataScope) {
         super(experiment.name);
-        super.iconPath = new vscode.ThemeIcon("beaker");
+        this.iconPath = new vscode.ThemeIcon("beaker");
     }
 
     override canHaveChildren(_workspaceData: ExperimentsTreeMemento): boolean {
@@ -386,7 +386,7 @@ export class ExperimentMutatorConstraintsTreeItemData extends ExperimentsTreeIte
     contextValue = "experimentMutatorConstraints";
     constructor(public constraints: Map<string, api.MutatorUseConstraint>) {
         super("Mutator Constraints");
-        super.iconPath = new vscode.ThemeIcon("ungroup-by-ref-type");
+        this.iconPath = new vscode.ThemeIcon("ungroup-by-ref-type");
     }
 
     override canHaveChildren(_workspaceData: ExperimentsTreeMemento): boolean {
@@ -499,7 +499,7 @@ export class ExperimentExpectedMutatorsTreeItemData extends ExperimentsTreeItemD
     contextValue = "experimentExpectedMutators";
     constructor(public expectedMutators: api.UnstructuredMutatorFilter[]) {
         super("Expected Mutators");
-        super.iconPath = new vscode.ThemeIcon("outline-view-icon");
+        this.iconPath = new vscode.ThemeIcon("outline-view-icon");
     }
 
     override canHaveChildren(_workspaceData: ExperimentsTreeMemento): boolean {
@@ -524,7 +524,7 @@ export class ExperimentSpecsTreeItemData extends ExperimentsTreeItemData {
     contextValue = "experimentSpecs";
     constructor(public specs: api.ExperimentLinkedSpec[]) {
         super("Specs");
-        super.iconPath = new vscode.ThemeIcon("explorer-view-icon");
+        this.iconPath = new vscode.ThemeIcon("explorer-view-icon");
     }
 
     override canHaveChildren(_workspaceData: ExperimentsTreeMemento): boolean {
@@ -559,7 +559,7 @@ export class ExperimentResultsTreeItemData extends ExperimentsTreeItemData {
     contextValue = "experimentResults";
     constructor(public results: ExperimentResults) {
         super("Results");
-        super.iconPath = new vscode.ThemeIcon("graph");
+        this.iconPath = new vscode.ThemeIcon("graph");
     }
 
     override canHaveChildren(_workspaceData: ExperimentsTreeMemento): boolean {
@@ -590,7 +590,7 @@ export class ExperimentMutationsTreeItemData extends ExperimentsTreeItemData {
     contextValue = "experimentMutations";
     constructor(public mutations: ExperimentMutation[]) {
         super("Mutations");
-        super.iconPath = new vscode.ThemeIcon("replace-all");
+        this.iconPath = new vscode.ThemeIcon("replace-all");
     }
 
     override canHaveChildren(_workspaceData: ExperimentsTreeMemento): boolean {

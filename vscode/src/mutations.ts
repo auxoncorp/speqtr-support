@@ -373,7 +373,7 @@ export class MutationsGroupByNameTreeItemData extends MutationsTreeItemData {
     contextValue = "mutationsGroup";
     constructor(public name: string, public childItems: MutationsTreeItemData[]) {
         super(name);
-        super.iconPath = new vscode.ThemeIcon("replace-all");
+        this.iconPath = new vscode.ThemeIcon("replace-all");
         const tooltip = `- **Mutator Name**: ${name}`;
         this.tooltip = new vscode.MarkdownString(tooltip);
     }
@@ -447,7 +447,7 @@ export class NamedMutationTreeItemData extends MutationsTreeItemData {
         tooltip += `\n- **Mutator Id**: ${mutation.mutatorId}`;
         tooltip += `\n- **Mutation Id**: ${mutation.mutationId}`;
         this.tooltip = new vscode.MarkdownString(tooltip);
-        super.iconPath = new vscode.ThemeIcon("zap");
+        this.iconPath = new vscode.ThemeIcon("zap");
     }
 
     override canHaveChildren(): boolean {
@@ -505,7 +505,7 @@ export class MutationParametersTreeItemData extends MutationsTreeItemData {
     contextValue = "mutationParameters";
     constructor(public mutation: Mutation) {
         super("Parameters");
-        super.iconPath = new vscode.ThemeIcon("output");
+        this.iconPath = new vscode.ThemeIcon("output");
     }
 
     override canHaveChildren(): boolean {

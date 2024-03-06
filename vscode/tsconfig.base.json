@@ -1,0 +1,31 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
+        "paths": {
+            "vscode": ["src"],
+            "common": ["common-src"],
+            "webview": ["webview-src"]
+        },
+
+        "module": "commonjs",
+        "target": "es2020",
+        "lib": ["es2020"],
+        "outDir": "out",
+        "rootDir": ".",
+        "sourceMap": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "plugins": [
+            {
+                "name": "typescript-eslint-language-service"
+            }
+        ]
+    },
+
+    "include": ["templates"],
+    "exclude": []
+}
