@@ -226,6 +226,10 @@
                     "when": "view == auxon.events && listMultiSelection && viewItem == event"
                 },
                 {
+                    "command": "auxon.events.inspect",
+                    "when": "view == auxon.events && viewItem == event"
+                },
+                {
                     "command": "auxon.specs.showLatest",
                     "when": "view == auxon.specs && viewItem == spec && !listMultiSelection",
                     "group": "1_context@1"
@@ -647,6 +651,10 @@
                 "title": "Log Selected Events"
             },
             {
+                "command": "auxon.events.inspect",
+                "title": "Inspect Event"
+            },
+            {
                 "command": "auxon.specs.refresh",
                 "title": "Refresh Spec List",
                 "icon": "$(refresh)"
@@ -783,6 +791,10 @@
                 "command": "auxon.modality.log",
                 "title": "View Log",
                 "icon": "$(open-preview)"
+            },
+            {
+                "command": "auxon.modality.inspectEvent",
+                "title": "Inspect Event"
             },
             {
                 "command": "auxon.deviant.clearMutation",

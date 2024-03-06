@@ -12,6 +12,7 @@ import * as timelines from "./timelines";
 import * as events from "./events";
 import * as lsp from "./lsp";
 import * as modalityLog from "./modalityLog";
+import * as modalityEventInspect from "./modalityEventInspect";
 import * as terminalLinkProvider from "./terminalLinkProvider";
 import * as specFileCommands from "./specFileCommands";
 import * as experimentFileCommands from "./experimentFileCommands";
@@ -52,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     terminalLinkProvider.register(context);
     modalityLog.register(context);
+    modalityEventInspect.register(context);
     transitionGraph.register(context, apiClient);
     specFileCommands.register(context);
     speqtrLinkProvider.register(context);
