@@ -926,6 +926,7 @@
             }
         ],
         "configuration": {
+            "type": "object",
             "title": "Auxon",
             "properties": {
                 "auxon.tooldir": {

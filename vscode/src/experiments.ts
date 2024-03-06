@@ -210,7 +210,6 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
             type: "segment",
             segmentIds,
             title: `Experiment Impact for scenario '${scenario.scenarioName}'`,
-            //title: `Experiment Impact for '${scenario.experimentName}' scenario '${scenario.scenarioName}'`,
             groupBy: ["timeline.name"],
             assignNodeProps,
         });

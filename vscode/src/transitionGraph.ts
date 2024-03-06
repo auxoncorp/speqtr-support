@@ -276,7 +276,7 @@ export class TransitionGraph {
                 res = await this.apiClient.segment(params.segmentIds[0]).groupedGraph(params.groupBy);
             } else {
                 const timelineIds: api.TimelineId[] = [];
-                // TODO Not ideal...
+                // Not ideal, but okay for now #2714
                 for (const segmentId of params.segmentIds) {
                     for (const tl of await this.apiClient.segment(segmentId).timelines()) {
                         timelineIds.push(tl.id);
@@ -378,10 +378,8 @@ function postNodesAndEdges(webview: vscode.Webview, graph: DirectedGraph) {
         return;
     }
 
-    const nodes = graph.nodes.map(node => node.toCytoscapeObject());
-    const edges = graph.edges
-        .map(edge => edge.toCytoscapeObject())
-        .filter(edge => Object.keys(edge).length !== 0);
+    const nodes = graph.nodes.map((node) => node.toCytoscapeObject());
+    const edges = graph.edges.map((edge) => edge.toCytoscapeObject()).filter((edge) => Object.keys(edge).length !== 0);
 
     webview.postMessage({
         command: "nodesAndEdges",
@@ -389,7 +387,6 @@ function postNodesAndEdges(webview: vscode.Webview, graph: DirectedGraph) {
         edges,
     });
 }
-
 
 class DirectedGraph {
     nodes: Node[];
@@ -403,8 +400,6 @@ class DirectedGraph {
 
 class Node {
     description?: string = undefined;
-    // TODO unused? remove?
-    filePath?: vscode.Uri = undefined;
     parent?: string = undefined;
     hasChildren = false;
     label?: string = undefined;
@@ -430,10 +425,6 @@ class Node {
             data.label = label;
         } else {
             data.label = this.id.toString();
-        }
-
-        if (this.filePath !== undefined) {
-            data.filepath = this.filePath.fsPath;
         }
 
         if (this.parent !== undefined) {
