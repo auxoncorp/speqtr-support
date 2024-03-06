@@ -21,7 +21,7 @@ export interface SaveAsPngCommand {
 
 export interface LogSelectedNodesCommand {
     command: "logSelectedNodes";
-    data: string[];
+    thingsToLog: string[];
 }
 
 export interface NodeData extends cytoscape.NodeDataDefinition {

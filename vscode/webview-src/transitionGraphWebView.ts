@@ -315,14 +315,18 @@ function timelineDetailsRows(nodesWithTimelineId: transitionGraphWebViewApi.Node
     for (const n of unique) {
         const row = $("<div/>", { class: "vsc-grid-row", style: "grid-column: span 3" });
         $("<div/>", { class: "vsc-grid-cell", text: n.timelineName }).appendTo(row);
-        $("<div/>", { class: "vsc-grid-cell", style: "grid-column: span 2", text: formatTimelineId(n.timeline) }).appendTo(row);
+        $("<div/>", {
+            class: "vsc-grid-cell",
+            style: "grid-column: span 2",
+            text: formatTimelineId(n.timeline),
+        }).appendTo(row);
         newEls.push(row);
     }
 
     return newEls;
 }
 
-function interactionDetailsRows(selectedEdges: transitionGraphWebViewApi.EdgeData[] ) {
+function interactionDetailsRows(selectedEdges: transitionGraphWebViewApi.EdgeData[]) {
     const newEls = [];
 
     const header = $("<div/>", { class: "vsc-grid-row header", style: "grid-column: span 3" });
@@ -352,7 +356,7 @@ function cellTextForNode(node: transitionGraphWebViewApi.NodeData) {
     if (node.eventName && node.timelineName) {
         return `${node.eventName}@${node.timelineName}`;
     } else if (node.timelineName && node.timeline) {
-        return `${node.timelineName} (${formatTimelineId(node.timeline) })`;
+        return `${node.timelineName} (${formatTimelineId(node.timeline)})`;
     } else if (node.timelineName) {
         return node.timelineName;
     } else {
@@ -361,7 +365,7 @@ function cellTextForNode(node: transitionGraphWebViewApi.NodeData) {
 }
 
 function formatTimelineId(timelineId: string) {
-    var s = timelineId.replaceAll("-", "");
+    let s = timelineId.replaceAll("-", "");
     if (!s.startsWith("%")) {
         s = "%" + s;
     }
@@ -610,13 +614,14 @@ function constructGraph() {
                 coreAsWell: false,
                 show: false,
                 onClickFunction: function () {
-                    const selectedNodes = cy
+                    const thingsToLog = cy
                         .nodes()
-                        .filter((n) => n.hasClass("selected") && n.data("timeline") !== undefined)
-                        .map((n) => n.id());
+                        .filter((n) => n.hasClass("selected"))
+                        .map((n) => thingToLogForNodeData(n.data()))
+                        .filter((thingToLog) => !!thingToLog);
                     const msg: transitionGraphWebViewApi.LogSelectedNodesCommand = {
                         command: "logSelectedNodes",
-                        data: selectedNodes,
+                        thingsToLog,
                     };
                     vscode.postMessage(msg);
                 },
@@ -681,4 +686,20 @@ function lerp(a: number, b: number, position: number) {
 type RgbCssColor = `rgb(${number}, ${number}, ${number})`;
 function rgbToCssColor(rgb: RgbColor): RgbCssColor {
     return `rgb(${Math.floor(rgb[0])}, ${Math.floor(rgb[1])}, ${Math.floor(rgb[2])})`;
+}
+
+function thingToLogForNodeData(node: transitionGraphWebViewApi.NodeData): string | undefined {
+    if (node.timeline && node.eventName) {
+        return `"${node.eventName}"@${formatTimelineId(node.timeline)}`;
+    }
+    if (node.timelineName && node.eventName) {
+        return `"${node.eventName}"@${node.timelineName}`;
+    }
+    if (node.timeline) {
+        return formatTimelineId(node.timeline);
+    }
+    if (node.timelineName) {
+        return node.timelineName;
+    }
+    return undefined;
 }

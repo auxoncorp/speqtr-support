@@ -180,7 +180,6 @@ function showGraph(params: TransitionGraphParams) {
 
 export class TransitionGraph {
     private extensionContext: vscode.ExtensionContext;
-    private graph: DirectedGraph;
 
     constructor(context: vscode.ExtensionContext, private readonly apiClient: api.Client) {
         this.extensionContext = context;
@@ -194,15 +193,10 @@ export class TransitionGraph {
                         await this.saveAsPng(message.data);
                         break;
                     case "logSelectedNodes": {
-                        const selectedNodeIds = message.data;
-                        const timelineIds = selectedNodeIds
-                            // TODO I think nId is a string here now? does that work?
-                            .map((nId) => this.graph.nodes[nId].timelineId)
-                            .filter((tlName) => !!tlName);
                         vscode.commands.executeCommand(
                             "auxon.modality.log",
                             new modalityLog.ModalityLogCommandArgs({
-                                thingToLog: timelineIds,
+                                thingToLog: message.thingsToLog,
                             })
                         );
                         break;
@@ -217,25 +211,8 @@ export class TransitionGraph {
         // Shows the loading indicator, until the graph shows up
         webview.html = this.generateHtmlContent(webview);
 
-        this.graph = await this.generateGraph(params);
-        this.postNodesAndEdges(webview);
-    }
-
-    private postNodesAndEdges(webview: vscode.Webview) {
-        if (this.graph === undefined) {
-            return;
-        }
-
-        const nodes = this.graph.nodes.map((node) => node.toCytoscapeObject());
-        const edges = this.graph.edges
-            .map((edge) => edge.toCytoscapeObject())
-            .filter((edge) => Object.keys(edge).length !== 0);
-
-        webview.postMessage({
-            command: "nodesAndEdges",
-            nodes,
-            edges,
-        });
+        const graph = await this.generateGraph(params);
+        postNodesAndEdges(webview, graph);
     }
 
     private async saveAsPng(data: string) {
@@ -258,7 +235,7 @@ export class TransitionGraph {
     private generateHtmlContent(webview: vscode.Webview): string {
         const stylesUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "transitionGraph.css")
-        )
+        );
 
         const codiconCssUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "codicon.css")
@@ -395,6 +372,24 @@ export class TransitionGraph {
         return directedGraph;
     }
 }
+
+function postNodesAndEdges(webview: vscode.Webview, graph: DirectedGraph) {
+    if (graph === undefined) {
+        return;
+    }
+
+    const nodes = graph.nodes.map(node => node.toCytoscapeObject());
+    const edges = graph.edges
+        .map(edge => edge.toCytoscapeObject())
+        .filter(edge => Object.keys(edge).length !== 0);
+
+    webview.postMessage({
+        command: "nodesAndEdges",
+        nodes,
+        edges,
+    });
+}
+
 
 class DirectedGraph {
     nodes: Node[];
