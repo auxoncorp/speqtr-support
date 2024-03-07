@@ -5,19 +5,23 @@ import * as api from "./modalityApi";
 import * as fs from "fs";
 import { Base64 } from "js-base64";
 import { getNonce } from "./webviewUtil";
-import { TimelineDetails, EventDetails } from "./detailsPanel";
+import * as transitionGraphWebViewApi from "../common-src/transitionGraphWebViewApi";
 
 export function register(context: vscode.ExtensionContext, apiClient: api.Client) {
     const tGraphDisposable = vscode.commands.registerCommand("auxon.transition.graph", async (params) => {
         let docTitle = "Transition graph for ";
-        if (params.type == "timelines") {
+        if (params.title) {
+            docTitle = params.title;
+        } else if (params.type == "timelines") {
             if (params.timelines.length > 1) {
                 docTitle += "selected timelines";
             } else {
                 docTitle += params.timelines[0];
             }
         } else if (params.type == "segment") {
-            docTitle += "segment " + params.segmentId.segment_name;
+            if (params.segmentIds.length == 1) {
+                docTitle += "segment " + params.segmentIds[0].segment_name;
+            }
         }
 
         const webViewPanel = vscode.window.createWebviewPanel(
@@ -28,25 +32,68 @@ export function register(context: vscode.ExtensionContext, apiClient: api.Client
                 enableScripts: true,
             }
         );
+
+        context.subscriptions.push(
+            vscode.window.onDidChangeActiveColorTheme((_) => {
+                webViewPanel.webview.postMessage({ command: "themeChanged" });
+            })
+        );
+
         const tg = new TransitionGraph(context, apiClient);
         await tg.load(webViewPanel.webview, params);
     });
+
     context.subscriptions.push(tGraphDisposable);
 }
 
 export interface TimelineParams {
     type: "timelines";
+    title?: string;
     timelines: string[];
     groupBy?: string[];
+    assignNodeProps?: AssignNodeProps;
 }
 
 export interface SegmentParams {
     type: "segment";
-    segmentId: api.WorkspaceSegmentId;
+    title?: string;
+    segmentIds: [api.WorkspaceSegmentId];
     groupBy?: string[];
+    assignNodeProps?: AssignNodeProps;
 }
 
 export type TransitionGraphParams = TimelineParams | SegmentParams;
+
+export class AssignNodeProps {
+    private nodeNameToClasses: { [key: string]: string[] } = {};
+    private nodeNameToDataProps: { [key: string]: { [key: string]: string | number | boolean } } = {};
+
+    addClass(nodeName: string, klass: string) {
+        if (!this.nodeNameToClasses[nodeName]) {
+            this.nodeNameToClasses[nodeName] = [];
+        }
+        const classes = this.nodeNameToClasses[nodeName];
+        if (!classes.find((k) => k == klass)) {
+            classes.push(klass);
+        }
+    }
+
+    addDataProp(nodeName: string, key: string, val: string | number | boolean) {
+        if (!this.nodeNameToDataProps[nodeName]) {
+            this.nodeNameToDataProps[nodeName] = {};
+        }
+        const props = this.nodeNameToDataProps[nodeName];
+        props[key] = val;
+    }
+
+    getClasses(nodeName: string): string[] | undefined {
+        return this.nodeNameToClasses[nodeName];
+    }
+
+    getDataProps(nodeName: string): { [key: string]: string | number | boolean } | undefined {
+        return this.nodeNameToDataProps[nodeName];
+    }
+}
 
 interface GraphGroupingItem {
     label: string;
@@ -124,7 +171,7 @@ export function showGraphForTimelines(timelineIds: string[], groupBy?: string[])
 }
 
 export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy?: string[]) {
-    showGraph({ type: "segment", segmentId, groupBy });
+    showGraph({ type: "segment", segmentIds: [segmentId], groupBy });
 }
 
 function showGraph(params: TransitionGraphParams) {
@@ -133,7 +180,6 @@ function showGraph(params: TransitionGraphParams) {
 
 export class TransitionGraph {
     private extensionContext: vscode.ExtensionContext;
-    private graph: DirectedGraph;
 
     constructor(context: vscode.ExtensionContext, private readonly apiClient: api.Client) {
         this.extensionContext = context;
@@ -141,30 +187,20 @@ export class TransitionGraph {
 
     async load(webview: vscode.Webview, params: TransitionGraphParams) {
         webview.onDidReceiveMessage(
-            async (message) => {
+            async (message: transitionGraphWebViewApi.VsCodeMessage) => {
                 switch (message.command) {
-                    case "requestNodesAndEdges":
-                        this.postNodesAndEdges(webview);
-                        break;
                     case "saveAsPng":
                         await this.saveAsPng(message.data);
                         break;
                     case "logSelectedNodes": {
-                        const selectedNodeIds = message.data;
-                        const timelineIds = selectedNodeIds
-                            .map((nId) => this.graph.nodes[nId].timelineId)
-                            .filter((tlName) => typeof tlName !== undefined);
                         vscode.commands.executeCommand(
                             "auxon.modality.log",
                             new modalityLog.ModalityLogCommandArgs({
-                                thingToLog: timelineIds,
+                                thingToLog: message.thingsToLog,
                             })
                         );
                         break;
                     }
-                    case "showDetailsForSelection":
-                        this.showDetailsForSelection(message.data.nodes, message.data.edges);
-                        break;
                     default:
                 }
             },
@@ -172,23 +208,11 @@ export class TransitionGraph {
             this.extensionContext.subscriptions
         );
 
-        const html = this.generateHtmlContent(webview);
-        webview.html = html;
+        // Shows the loading indicator, until the graph shows up
+        webview.html = this.generateHtmlContent(webview);
 
-        this.graph = await this.generateGraph(params);
-    }
-
-    private postNodesAndEdges(webview: vscode.Webview) {
-        const nodes = this.graph.nodes.map((node) => node.toCytoscapeObject());
-        const edges = this.graph.edges
-            .map((edge) => edge.toCytoscapeObject())
-            .filter((edge) => Object.keys(edge).length !== 0);
-
-        webview.postMessage({
-            command: "nodesAndEdges",
-            nodes,
-            edges,
-        });
+        const graph = await this.generateGraph(params);
+        postNodesAndEdges(webview, graph);
     }
 
     private async saveAsPng(data: string) {
@@ -208,82 +232,25 @@ export class TransitionGraph {
         }
     }
 
-    private showDetailsForSelection(selectedNodeIds: number[], selectedEdgeIds: number[]) {
-        const nodes = selectedNodeIds.map((nId) => this.graph.nodes[nId]);
-        const edges = selectedEdgeIds.map((eId) => this.graph.edges[eId]);
-
-        const events = [];
-        const timelines = [];
-        const interactions = [];
-        for (const node of nodes) {
-            const timelineDetails = node.timelineDetails();
-            if (timelineDetails) {
-                timelines.push(timelineDetails);
-            }
-            const eventDetails = node.eventDetails();
-            if (eventDetails) {
-                events.push(eventDetails);
-            }
-        }
-        for (const edge of edges) {
-            const srcNode = this.graph.nodes[edge.source];
-            const srcTimelineDetails = srcNode.timelineDetails();
-            const dstNode = this.graph.nodes[edge.target];
-            const dstTimelineDetails = dstNode.timelineDetails();
-            if (srcTimelineDetails && dstTimelineDetails) {
-                interactions.push({
-                    sourceEvent: srcNode.eventName,
-                    sourceTimeline: srcTimelineDetails,
-                    destinationEvent: dstNode.eventName,
-                    destinationTimeline: dstTimelineDetails,
-                    count: edge.count,
-                });
-            }
-        }
-
-        vscode.commands.executeCommand("auxon.details.show", { events, timelines, interactions });
-    }
-
     private generateHtmlContent(webview: vscode.Webview): string {
         const stylesUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "transitionGraph.css")
         );
-        const jqueryJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "jquery.min.js")
-        );
-        const jqueryColorJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "jquery.color.min.js")
-        );
+
         const codiconCssUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "codicon.css")
         );
-        const cytoscapeJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cytoscape.min.js")
-        );
-        const layoutBaseJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "layout-base.js")
-        );
-        const coseBaseJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cose-base.js")
-        );
-        const coseBilkentJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cytoscape-cose-bilkent.js")
-        );
-        const contextMenuJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "cytoscape-context-menus.js")
-        );
-        const webviewUiToolkitJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "dist", "webviewuitoolkit.min.js")
-        );
+
         const transitionGraphJsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, "resources", "transitionGraph.js")
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, "out", "transitionGraphWebView.js")
         );
 
         const templateUri = vscode.Uri.joinPath(
             this.extensionContext.extensionUri,
-            "templates",
+            "resources",
             "transitionGraph.html"
         );
+
         const templateText = fs.readFileSync(templateUri.fsPath, "utf8");
         const template = handlebars.compile(templateText);
 
@@ -292,15 +259,7 @@ export class TransitionGraph {
             cspSource: webview.cspSource,
             nonce: getNonce(),
             stylesUri,
-            jqueryJsUri,
-            jqueryColorJsUri,
             codiconCssUri,
-            cytoscapeJsUri,
-            layoutBaseJsUri,
-            coseBaseJsUri,
-            coseBilkentJsUri,
-            contextMenuJsUri,
-            webviewUiToolkitJsUri,
             transitionGraphJsUri,
         });
 
@@ -313,7 +272,18 @@ export class TransitionGraph {
         if (params.type == "timelines") {
             res = await this.apiClient.timelines().groupedGraph(params.timelines, params.groupBy);
         } else if (params.type == "segment") {
-            res = await this.apiClient.segment(params.segmentId).groupedGraph(params.groupBy);
+            if (params.segmentIds.length == 1) {
+                res = await this.apiClient.segment(params.segmentIds[0]).groupedGraph(params.groupBy);
+            } else {
+                const timelineIds: api.TimelineId[] = [];
+                // Not ideal, but okay for now #2714
+                for (const segmentId of params.segmentIds) {
+                    for (const tl of await this.apiClient.segment(segmentId).timelines()) {
+                        timelineIds.push(tl.id);
+                    }
+                }
+                res = await this.apiClient.timelines().groupedGraph(timelineIds, params.groupBy);
+            }
         }
 
         const hideSelfEdges =
@@ -348,16 +318,33 @@ export class TransitionGraph {
             const graphNode = new Node(i);
             graphNode.count = node.count;
             graphNode.label = title;
+
+            if (params.assignNodeProps) {
+                const classes = params.assignNodeProps.getClasses(title);
+                if (classes) {
+                    for (const c of classes) {
+                        graphNode.addClass(c);
+                    }
+                }
+
+                const dataProps = params.assignNodeProps.getDataProps(title);
+                if (dataProps) {
+                    for (const [key, value] of Object.entries(dataProps)) {
+                        graphNode[key] = value;
+                    }
+                }
+            }
+
             const timelineIdIdx = res.attr_keys.indexOf("timeline.id");
-            if (timelineIdIdx !== undefined) {
+            if (timelineIdIdx != -1) {
                 graphNode.timelineId = node.attr_vals[timelineIdIdx]["TimelineId"];
             }
             const timelineNameIdx = res.attr_keys.indexOf("timeline.name");
-            if (timelineNameIdx !== undefined) {
+            if (timelineNameIdx != -1) {
                 graphNode.timelineName = node.attr_vals[timelineNameIdx] as string;
             }
             const eventNameIdx = res.attr_keys.indexOf("event.name");
-            if (eventNameIdx !== undefined) {
+            if (eventNameIdx != -1) {
                 graphNode.eventName = node.attr_vals[eventNameIdx] as string;
             }
 
@@ -386,6 +373,21 @@ export class TransitionGraph {
     }
 }
 
+function postNodesAndEdges(webview: vscode.Webview, graph: DirectedGraph) {
+    if (graph === undefined) {
+        return;
+    }
+
+    const nodes = graph.nodes.map((node) => node.toCytoscapeObject());
+    const edges = graph.edges.map((edge) => edge.toCytoscapeObject()).filter((edge) => Object.keys(edge).length !== 0);
+
+    webview.postMessage({
+        command: "nodesAndEdges",
+        nodes,
+        edges,
+    });
+}
+
 class DirectedGraph {
     nodes: Node[];
     edges: Edge[];
@@ -396,11 +398,8 @@ class DirectedGraph {
     }
 }
 
-type PropertiesMap = Map<string, string | number | boolean>;
-
 class Node {
     description?: string = undefined;
-    filePath?: vscode.Uri = undefined;
     parent?: string = undefined;
     hasChildren = false;
     label?: string = undefined;
@@ -408,61 +407,62 @@ class Node {
     timelineId?: string = undefined;
     eventName?: string = undefined;
     count?: number = undefined;
+    classes: string[] = [];
+    impactHtml?: string = undefined;
+    severity?: number = undefined;
 
     constructor(public id: number) {}
 
-    toCytoscapeObject(): object {
-        const props: PropertiesMap = new Map();
-        props.set("id", this.id);
+    addClass(cl: string) {
+        this.classes.push(cl);
+    }
+
+    toCytoscapeObject(): cytoscape.NodeDefinition {
+        const data: transitionGraphWebViewApi.NodeData = { id: this.id.toString() };
 
         const label = this.label.replace("'", "\\'");
         if (label !== undefined && label !== "") {
-            props.set("label", label);
+            data.label = label;
         } else {
-            props.set("label", this.id);
+            data.label = this.id.toString();
         }
-        if (this.filePath !== undefined) {
-            props.set("filepath", this.filePath.fsPath);
-        }
+
         if (this.parent !== undefined) {
-            props.set("parent", this.parent);
+            data.parent = this.parent;
         }
+
         if (this.hasChildren) {
-            props.set("labelvalign", "top");
+            data.labelvalign = "top";
         } else {
-            props.set("labelvalign", "center");
+            data.labelvalign = "center";
         }
+
         // We use this to indicate nodes that can be logged from the graph context menu
         if (this.timelineId !== undefined) {
-            props.set("timeline", this.timelineId);
+            data.timeline = this.timelineId;
         }
 
-        const obj = { data: {} };
-        for (const [k, v] of props) {
-            obj.data[k] = v;
+        if (this.timelineName !== undefined) {
+            data.timelineName = this.timelineName;
         }
 
-        return obj;
-    }
-
-    timelineDetails(): TimelineDetails | undefined {
-        if (this.timelineId !== undefined) {
-            return { id: this.timelineId, name: this.timelineName };
-        } else {
-            return undefined;
+        if (this.eventName !== undefined) {
+            data.eventName = this.eventName;
         }
-    }
 
-    eventDetails(): EventDetails | undefined {
-        if (this.eventName !== undefined && this.timelineId !== undefined) {
-            return {
-                name: this.eventName,
-                timeline: { id: this.timelineId, name: this.timelineName },
-                count: this.count,
-            };
-        } else {
-            return undefined;
+        if (this.count !== undefined) {
+            data.count = this.count;
         }
+
+        if (this.impactHtml !== undefined) {
+            data.impactHtml = this.impactHtml;
+        }
+
+        if (this.severity !== undefined) {
+            data.severity = this.severity;
+        }
+
+        return { data: data, classes: this.classes };
     }
 }
 
@@ -471,29 +471,28 @@ class Edge {
     visibility?: boolean = undefined;
     count?: number = undefined;
 
-    // Source/target map to the id/index of a Node
+    /// Source/target map to the id/index of a Node
     constructor(public id: number, public source: number, public target: number) {}
 
-    toCytoscapeObject(): object {
-        const props: PropertiesMap = new Map();
-
-        // cytoscape reserves the "id" attribute on edges, so we use idx instead
-        props.set("idx", this.id);
-        props.set("source", this.source);
-        props.set("target", this.target);
+    toCytoscapeObject(): cytoscape.EdgeDefinition {
+        const data: transitionGraphWebViewApi.EdgeData = {
+            idx: this.id,
+            source: this.source.toString(),
+            target: this.target.toString(),
+        };
 
         if (this.label !== undefined) {
-            props.set("label", this.label.replace("'", "\\'"));
+            data.label = this.label.replace("'", "\\'");
         }
+
         if (this.visibility !== undefined) {
-            props.set("hidden", this.visibility);
+            data.hidden = this.visibility;
         }
 
-        const obj = { data: {} };
-        for (const [k, v] of props) {
-            obj.data[k] = v;
+        if (this.count !== undefined) {
+            data.count = this.count;
         }
 
-        return obj;
+        return { data };
     }
 }

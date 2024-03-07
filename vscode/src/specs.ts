@@ -201,7 +201,11 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         );
         if (answer == "Delete") {
             const conform = config.toolPath("conform");
-            await execFile(conform, ["spec", "delete", spec.specMetadata.name, "--force"], { encoding: "utf8" });
+            await execFile(
+                conform,
+                ["spec", "delete", spec.specMetadata.name, "--force", ...config.extraCliArgs("conform spec delete")],
+                { encoding: "utf8" }
+            );
             this.refresh();
         }
     }
@@ -215,7 +219,17 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         if (answer == "Delete") {
             const conform = config.toolPath("conform");
             for (const spec of specs) {
-                await execFile(conform, ["spec", "delete", spec.specMetadata.name, "--force"], { encoding: "utf8" });
+                await execFile(
+                    conform,
+                    [
+                        "spec",
+                        "delete",
+                        spec.specMetadata.name,
+                        "--force",
+                        ...config.extraCliArgs("conform spec delete"),
+                    ],
+                    { encoding: "utf8" }
+                );
             }
             this.refresh();
         }
@@ -325,7 +339,7 @@ export class NamedSpecTreeItemData extends SpecsTreeItemData {
     contextValue = "spec";
     constructor(public specMetadata: api.SpecVersionMetadata, icon: vscode.ThemeIcon) {
         super(specMetadata.name);
-        super.iconPath = icon;
+        this.iconPath = icon;
     }
 
     override canHaveChildren(_workspaceData: SpecsTreeMemento): boolean {
@@ -365,7 +379,7 @@ export class MetadataTreeItemData extends SpecsTreeItemData {
     constructor(public attributeMap: api.AttributeMap) {
         super("Metadata");
         // icon: comment? tag?
-        super.iconPath = new vscode.ThemeIcon("output");
+        this.iconPath = new vscode.ThemeIcon("output");
     }
 
     override canHaveChildren(_workspaceData: SpecsTreeMemento): boolean {
@@ -382,9 +396,9 @@ export class AttrKVTreeItemData extends SpecsTreeItemData {
     constructor(public key: string, public val: api.AttrVal) {
         super(`${key}: ${val}`);
         if (key == "spec.author") {
-            super.iconPath = new vscode.ThemeIcon("person");
+            this.iconPath = new vscode.ThemeIcon("person");
         } else {
-            super.iconPath = new vscode.ThemeIcon("tag");
+            this.iconPath = new vscode.ThemeIcon("tag");
         }
     }
 }
@@ -393,7 +407,7 @@ export class SpecVersionsTreeItemData extends SpecsTreeItemData {
     contextValue = "specVersions";
     constructor(public specName: string) {
         super("Versions");
-        super.iconPath = new vscode.ThemeIcon("versions", new vscode.ThemeColor("symbolIcon.constructorForeground"));
+        this.iconPath = new vscode.ThemeIcon("versions", new vscode.ThemeColor("symbolIcon.constructorForeground"));
     }
 
     override canHaveChildren(_workspaceData: SpecsTreeMemento): boolean {
@@ -427,7 +441,7 @@ export class SpecVersionTreeItemData extends SpecsTreeItemData {
         icon: vscode.ThemeIcon
     ) {
         super("Spec Version: " + specVersionNumber);
-        super.iconPath = icon;
+        this.iconPath = icon;
     }
 
     override canHaveChildren(workspaceData: SpecsTreeMemento): boolean {
@@ -450,7 +464,7 @@ export class SpecResultsTreeItemData extends SpecsTreeItemData {
     contextValue = "specResults";
     constructor(public specName: api.SpecName, public specVersion: api.SpecVersionId) {
         super("Results");
-        super.iconPath = new vscode.ThemeIcon("graph");
+        this.iconPath = new vscode.ThemeIcon("graph");
     }
 
     override canHaveChildren(_workspaceData: SpecsTreeMemento): boolean {
@@ -474,12 +488,12 @@ export class SpecResultTreeItemData extends SpecsTreeItemData {
 
         const d = new Date(0);
         d.setUTCSeconds(evalOutcome.spec_eval_at_utc_seconds);
-        super.description = d.toString();
+        this.description = d.toString();
 
         if (evalOutcome.regions_failing > 0) {
-            super.iconPath = new vscode.ThemeIcon("testing-failed-icon");
+            this.iconPath = new vscode.ThemeIcon("testing-failed-icon");
         } else {
-            super.iconPath = new vscode.ThemeIcon("testing-passed-icon");
+            this.iconPath = new vscode.ThemeIcon("testing-passed-icon");
         }
     }
 }
@@ -502,7 +516,7 @@ export class BehaviorTreeItemData extends SpecsTreeItemData {
     contextValue = "specBehavior";
     constructor(public behaviorName: string, public structure: api.BehaviorStructure) {
         super(`Behavior: ${behaviorName}`);
-        super.iconPath = new vscode.ThemeIcon("pulse", new vscode.ThemeColor("symbolIcon.classForeground"));
+        this.iconPath = new vscode.ThemeIcon("pulse", new vscode.ThemeColor("symbolIcon.classForeground"));
     }
 
     override canHaveChildren(_workspaceData: SpecsTreeMemento): boolean {
@@ -561,7 +575,7 @@ class WhenTreeItemData extends BehaviorItemTreeItemData {
     contextValue = "specBehaviorWhen";
     constructor(itemName: string, attributeMap: api.AttributeMap) {
         super("When", itemName, attributeMap);
-        super.iconPath = new vscode.ThemeIcon("git-compare", new vscode.ThemeColor("symbolIcon.fieldForeground"));
+        this.iconPath = new vscode.ThemeIcon("git-compare", new vscode.ThemeColor("symbolIcon.fieldForeground"));
     }
 }
 
@@ -569,7 +583,7 @@ class UntilTreeItemData extends BehaviorItemTreeItemData {
     contextValue = "specBehaviorUntil";
     constructor(itemName: string, attributeMap: api.AttributeMap) {
         super("Until", itemName, attributeMap);
-        super.iconPath = new vscode.ThemeIcon(
+        this.iconPath = new vscode.ThemeIcon(
             "git-pull-request-closed",
             new vscode.ThemeColor("symbolIcon.fieldForeground")
         );
@@ -583,16 +597,16 @@ class CaseTreeItemData extends BehaviorItemTreeItemData {
         super(`${type} case`, itemName, attributeMap);
         switch (type) {
             case "Nominal":
-                super.iconPath = new vscode.ThemeIcon("bracket", new vscode.ThemeColor("symbolIcon.fieldForeground"));
+                this.iconPath = new vscode.ThemeIcon("bracket", new vscode.ThemeColor("symbolIcon.fieldForeground"));
                 break;
             case "Recovery":
-                super.iconPath = new vscode.ThemeIcon(
+                this.iconPath = new vscode.ThemeIcon(
                     "bracket-dot",
                     new vscode.ThemeColor("symbolIcon.fieldForeground")
                 );
                 break;
             case "Prohibited":
-                super.iconPath = new vscode.ThemeIcon(
+                this.iconPath = new vscode.ThemeIcon(
                     "bracket-error",
                     new vscode.ThemeColor("symbolIcon.fieldForeground")
                 );

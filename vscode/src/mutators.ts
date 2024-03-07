@@ -538,7 +538,7 @@ export class MutatorsGroupByNameTreeItemData extends MutatorsTreeItemData {
     contextValue = "mutatorsGroup";
     constructor(public name: string, public childItems: MutatorsTreeItemData[]) {
         super(name);
-        super.iconPath = new vscode.ThemeIcon("github-action");
+        this.iconPath = new vscode.ThemeIcon("github-action");
         const tooltip = `- **Mutator Name**: ${name}`;
         this.tooltip = new vscode.MarkdownString(tooltip);
     }
@@ -641,7 +641,7 @@ export class MutatorOrgMetadataTreeItemData extends MutatorsTreeItemData {
     contextValue = "mutatorOrgMetadata";
     constructor(public orgMetadataAttrs: Map<string, api.AttrVal>) {
         super("Organization Metadata");
-        super.iconPath = new vscode.ThemeIcon("organization");
+        this.iconPath = new vscode.ThemeIcon("organization");
     }
 
     override canHaveChildren(): boolean {
@@ -661,7 +661,7 @@ export class MutatorParametersTreeItemData extends MutatorsTreeItemData {
     contextValue = "mutatorParameters";
     constructor(public params: MutatorParameter[]) {
         super("Parameters");
-        super.iconPath = new vscode.ThemeIcon("output");
+        this.iconPath = new vscode.ThemeIcon("output");
     }
 
     override canHaveChildren(): boolean {

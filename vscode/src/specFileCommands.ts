@@ -127,7 +127,9 @@ async function upsertSpec(name: string, file: vscode.Uri): Promise<void> {
     const conform = config.toolPath("conform");
     let spec_exists: boolean;
     try {
-        await execFile(conform, ["spec", "inspect", name], { encoding: "utf8" });
+        await execFile(conform, ["spec", "inspect", name, ...config.extraCliArgs("modality spec inspect")], {
+            encoding: "utf8",
+        });
         // if it didn't error (that is, if it had a zero return code), the spec exists
         spec_exists = true;
     } catch {
@@ -135,7 +137,10 @@ async function upsertSpec(name: string, file: vscode.Uri): Promise<void> {
     }
 
     const verb = spec_exists ? "update" : "create";
-    await execFile(conform, ["spec", verb, name, "--file", file.fsPath], { encoding: "utf8" });
+    const commandName = spec_exists ? "modality spec update" : "modality spec create";
+    await execFile(conform, ["spec", verb, name, "--file", file.fsPath, ...config.extraCliArgs(commandName)], {
+        encoding: "utf8",
+    });
 }
 
 // This has to match the json returned by the lsp server for the 'auxon.conform.eval' action
@@ -189,6 +194,10 @@ export function runConformEvalCommand(args: SpecEvalCommandArgs): Thenable<vscod
 
     if (args.dry_run) {
         commandArgs.push("--dry-run");
+    }
+
+    for (const extra of config.extraCliArgs("conform spec eval")) {
+        commandArgs.push(extra);
     }
 
     const taskDef: vscode.TaskDefinition = {

@@ -164,6 +164,17 @@ export function toolPath(tool_name: string): string {
     return toolPath;
 }
 
+export function extraCliArgs(command: string): string[] {
+    const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
+    const argsMap = auxonConfig.get<{ [key: string]: string[] }>("extraCliArgs");
+    const args = argsMap[command];
+    if (args) {
+        return args;
+    } else {
+        return [];
+    }
+}
+
 /**
  * Return the first given path which exists, or null if none of them do.
  */

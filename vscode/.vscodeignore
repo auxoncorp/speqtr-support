@@ -1,7 +1,10 @@
 .vscode
 node_modules
 src/
+webview-src/
+common-src/
 tsconfig.json
+tsconfig-webview.json
 webpack.config.js
 test.rb
 *.zip

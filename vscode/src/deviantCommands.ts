@@ -23,7 +23,14 @@ export type ExperimentCreateCommandArgs = {
 export async function runDeviantExperimentCreateCommand(args: ExperimentCreateCommandArgs) {
     const deviantPath = config.toolPath("deviant");
 
-    const commandArgs = ["experiment", "create", "--file", args.file.fsPath, args.experimentName];
+    const commandArgs = [
+        "experiment",
+        "create",
+        "--file",
+        args.file.fsPath,
+        args.experimentName,
+        ...config.extraCliArgs("deviant experiment create"),
+    ];
 
     try {
         const res = await execFile(deviantPath, commandArgs, { encoding: "utf8" });
@@ -48,6 +55,10 @@ async function runDeviantMutationClearCommand(args: MutationClearCommandArgs) {
 
     if (args.mutationId) {
         commandArgs.push("--mutation-id", args.mutationId);
+    }
+
+    for (const extra of config.extraCliArgs("deviant mutation clear")) {
+        commandArgs.push(extra);
     }
 
     try {
@@ -83,6 +94,10 @@ async function runDeviantMutationCreateCommand(args: MutationCreateCommandArgs) 
         for (const paramKeyValuePair of args.params) {
             commandArgs.push("--params", paramKeyValuePair);
         }
+    }
+
+    for (const extra of config.extraCliArgs("deviant mutation create")) {
+        commandArgs.push(extra);
     }
 
     try {

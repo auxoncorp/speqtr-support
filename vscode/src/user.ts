@@ -1,6 +1,7 @@
 import * as util from "util";
 import * as vscode from "vscode";
 import * as child_process from "child_process";
+import * as config from "./config";
 import { toolPath } from "./config";
 
 const execFile = util.promisify(child_process.execFile);
@@ -26,7 +27,7 @@ export async function handleNewUserCreation() {
 export async function promptForValidAuthToken(): Promise<string | null> {
     const title = "An auth token is required to use the Auxon extension. Enter the auth token to use.";
     const placeHolder = "auth token";
-    const validateInput = async (text) => {
+    const validateInput = async (text: string) => {
         if (await validateUserAuthToken(text)) {
             return null;
         } else {
@@ -46,7 +47,12 @@ export async function promptForValidAuthToken(): Promise<string | null> {
  */
 async function numberOfModalityUsers(): Promise<number> {
     const modality = toolPath("modality");
-    const res = await execFile(modality, ["user", "list", "--format", "json"], { encoding: "utf8" });
+    const res = await execFile(
+        modality,
+        ["user", "list", "--format", "json", ...config.extraCliArgs("modality user list")],
+        { encoding: "utf8" }
+    );
+
     return JSON.parse(res.stdout).users.length as number;
 }
 
@@ -55,7 +61,11 @@ async function numberOfModalityUsers(): Promise<number> {
  */
 async function createAndUseNewUser(userName: string) {
     const modality = toolPath("modality");
-    await execFile(modality, ["user", "create", "--use", "--format", "json", userName], { encoding: "utf8" });
+    await execFile(
+        modality,
+        ["user", "create", "--use", "--format", "json", userName, ...config.extraCliArgs("modality user create")],
+        { encoding: "utf8" }
+    );
 }
 
 /**
@@ -64,9 +74,18 @@ async function createAndUseNewUser(userName: string) {
 async function validateUserAuthToken(authToken: string): Promise<boolean> {
     const modality = toolPath("modality");
     try {
-        const res = await execFile(modality, ["user", "inspect-auth-token", "--format", "json", authToken], {
-            encoding: "utf8",
-        });
+        const res = await execFile(
+            modality,
+            [
+                "user",
+                "inspect-auth-token",
+                "--format",
+                "json",
+                authToken,
+                ...config.extraCliArgs("modality user inspect-auth-token"),
+            ],
+            { encoding: "utf8" }
+        );
         return "user_name" in JSON.parse(res.stdout);
     } catch (e) {
         return false;

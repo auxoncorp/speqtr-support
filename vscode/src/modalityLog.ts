@@ -88,6 +88,10 @@ function runModalityLogCommand(args: ToLogCommandArgs) {
         modalityArgs.push("--segment", escapedAndQuotedSegment);
     }
 
+    for (const extra of config.extraCliArgs("modality log")) {
+        modalityArgs.push(extra);
+    }
+
     const term: vscode.Terminal = vscode.window.createTerminal({
         name: "modality log",
         location: vscode.TerminalLocation.Editor,

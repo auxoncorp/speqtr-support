@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'none'; font-src {{cspSource}}; style-src {{cspSource}} https://* 'unsafe-inline'; img-src 'self' data:; script-src 'nonce-{{nonce}}';"
+        />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <link href="{{stylesUri}}" rel="stylesheet" />
+        <link href="{{codiconCssUri}}" rel="stylesheet" />
+
+        <title>{{title}}</title>
+    </head>
+
+    <body>
+        <div id="sidebar" data-vscode-context='{"preventDefaultContextMenuItems": true}'>
+            <div id="actions">
+                <vscode-button id="toolbarSave" appearance="secondary" aria-label="Save Image">
+                    Save Image
+                    <span slot="start" class="codicon codicon-save"></span>
+                </vscode-button>
+                <vscode-button id="toolbarRefresh" appearance="secondary" aria-label="Refresh Layout">
+                    Refresh Layout
+                    <span slot="start" class="codicon codicon-refresh"></span>
+                </vscode-button>
+            </div>
+
+            <div class="dropdown-grid">
+                <div class="dropdown-grid-row">
+                    <label for="layoutDropdown">Graph Layout</label>
+                    <vscode-dropdown id="layoutDropdown">
+                        <vscode-option value="cose-bilkent">Cose Bilkent</vscode-option>
+                        <vscode-option value="cose">Cose</vscode-option>
+                        <vscode-option value="breadthfirst">Breadth first</vscode-option>
+                        <vscode-option value="concentric">Concentric</vscode-option>
+                        <vscode-option value="circle">Circle</vscode-option>
+                        <vscode-option value="grid">Grid</vscode-option>
+                        <vscode-option value="random">Random</vscode-option>
+                    </vscode-dropdown>
+                </div>
+
+                <div class="dropdown-grid-row">
+                    <label for="modeDropdown">Selection Mode</label>
+                    <vscode-dropdown id="modeDropdown">
+                        <vscode-option value="manual">Standard</vscode-option>
+                        <vscode-option value="causal-descendants">Causal Descendants</vscode-option>
+                        <vscode-option value="causal-ancestors">Causal Ancestors</vscode-option>
+                        <vscode-option value="bidirectional-neighbors">Neighbors</vscode-option>
+                        <vscode-option value="downstream-neighbors">Downstream Neighbors</vscode-option>
+                        <vscode-option value="upstream-neighbors">Upstream Neighbors</vscode-option>
+                    </vscode-dropdown>
+                </div>
+            </div>
+
+            <div style="overflow-x: clip; overflow-y: scroll">
+                <div id="detailsGrid" class="vsc-grid" aria-label="Selection Details"></div>
+
+                <div id="impactDetailsContainer" class="detail-container">
+                    <label for="impactDetailsHtml">Impact</label>
+                    <div id="impactDetailsHtml"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading">
+            <vscode-progress-ring></vscode-progress-ring>
+            <h1>Loading...</h1>
+        </div>
+
+        <div id="cy"></div>
+        <script nonce="{{nonce}}" type="text/javascript" src="{{transitionGraphJsUri}}"></script>
+    </body>
+</html>

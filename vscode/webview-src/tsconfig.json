@@ -1,0 +1,10 @@
+{
+    "extends": "../tsconfig.base.json",
+    "compilerOptions": {
+        "outDir": "../out/ts/webview",
+        "rootDir": "..",
+        "lib": ["es2021", "dom"]
+    },
+    "include": ["./**/*.ts"],
+    "references": [{ "path": "../common-src" }]
+}

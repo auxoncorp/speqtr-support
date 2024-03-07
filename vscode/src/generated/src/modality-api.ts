@@ -12,156 +12,156 @@ type OneOf<T extends any[]> = T extends [infer Only] ? Only : T extends [infer A
 export interface paths {
   "/v2/events/{timeline_id}/summary": {
     /**
-     * Get an event summary for a single timeline 
+     * Get an event summary for a single timeline
      * @description Get an event summary for a single timeline
      */
     get: operations["get_events_summary_for_timeline"];
   };
   "/v2/experiments": {
     /**
-     * List experiments 
+     * List experiments
      * @description List experiments
      */
     get: operations["list_experiments"];
   };
   "/v2/experiments/{experiment_name}": {
     /**
-     * Get an experiment 
+     * Get an experiment
      * @description Get an experiment
      */
     get: operations["get_experiment"];
   };
   "/v2/experiments/{experiment_name}/results/{workspace_version_id}": {
     /**
-     * Get the results of an experiment scoped to the given workspace 
+     * Get the results of an experiment scoped to the given workspace
      * @description Get the results of an experiment scoped to the given workspace
      */
     get: operations["get_experiment_workspace_results"];
   };
   "/v2/experiments/{experiment_name}/results/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
     /**
-     * Get the results of an experiment scoped to the given segment 
+     * Get the results of an experiment scoped to the given segment
      * @description Get the results of an experiment scoped to the given segment
      */
     get: operations["get_experiment_results"];
   };
   "/v2/mutations": {
     /**
-     * List all mutations 
+     * List all mutations
      * @description List all mutations
      */
     get: operations["list_mutations"];
   };
   "/v2/mutations/{workspace_version_id}": {
     /**
-     * List all mutations for the given workspace 
+     * List all mutations for the given workspace
      * @description List all mutations for the given workspace
      */
     get: operations["list_workspace_mutations"];
   };
   "/v2/mutations/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
     /**
-     * List all mutations for the given segment 
+     * List all mutations for the given segment
      * @description List all mutations for the given segment
      */
     get: operations["list_segment_mutations"];
   };
   "/v2/mutators": {
     /**
-     * List all mutators 
+     * List all mutators
      * @description List all mutators
      */
     get: operations["list_mutators"];
   };
   "/v2/mutators/grouped": {
     /**
-     * List all mutators, grouped by the given attr keys 
+     * List all mutators, grouped by the given attr keys
      * @description List all mutators, grouped by the given attr keys
      */
     get: operations["list_grouped_mutators"];
   };
   "/v2/mutators/{workspace_version_id}": {
     /**
-     * List all mutators for the given workspace 
+     * List all mutators for the given workspace
      * @description List all mutators for the given workspace
      */
     get: operations["list_workspace_mutators"];
   };
   "/v2/mutators/{workspace_version_id}/grouped": {
     /**
-     * List all mutators for the given workspace, grouped by the given attr keys 
+     * List all mutators for the given workspace, grouped by the given attr keys
      * @description List all mutators for the given workspace, grouped by the given attr keys
      */
     get: operations["list_workspace_grouped_mutators"];
   };
   "/v2/mutators/{workspace_version_id}/segments/{rule_name}/{segment_name}": {
     /**
-     * List all mutators for the given segment 
+     * List all mutators for the given segment
      * @description List all mutators for the given segment
      */
     get: operations["list_segment_mutators"];
   };
   "/v2/mutators/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped": {
     /**
-     * List all mutators for the given segment, grouped by the given attr keys 
+     * List all mutators for the given segment, grouped by the given attr keys
      * @description List all mutators for the given segment, grouped by the given attr keys
      */
     get: operations["list_segment_grouped_mutators"];
   };
   "/v2/specs": {
     /**
-     * List all specs 
+     * List all specs
      * @description List all specs
      */
     get: operations["list_specs"];
   };
   "/v2/specs/{spec_name}": {
     /**
-     * Get the current version of the named spec 
+     * Get the current version of the named spec
      * @description Get the current version of the named spec
      */
     get: operations["get_spec"];
   };
   "/v2/specs/{spec_name}/structure": {
     /**
-     * Get the structure of behaviors and cases for the stored spec 
+     * Get the structure of behaviors and cases for the stored spec
      * @description Get the structure of behaviors and cases for the stored spec
      */
     get: operations["get_spec_structure"];
   };
   "/v2/specs/{spec_name}/versions": {
     /**
-     * List all the versions of the named spec 
+     * List all the versions of the named spec
      * @description List all the versions of the named spec
      */
     get: operations["list_spec_versions"];
   };
   "/v2/specs/{spec_name}/versions/{spec_version}": {
     /**
-     * Get a specific verison of the named spec 
+     * Get a specific verison of the named spec
      * @description Get a specific verison of the named spec
      */
     get: operations["get_spec_version"];
   };
   "/v2/specs/{spec_name}/versions/{spec_version}/results": {
     /**
-     * List stored evaluation results for the given spec version 
+     * List stored evaluation results for the given spec version
      * @description List stored evaluation results for the given spec version
      */
     get: operations["list_spec_version_results"];
   };
   "/v2/specs/{spec_name}/versions/{spec_version}/structure": {
     /**
-     * List stored evaluation results for the given spec version 
+     * List stored evaluation results for the given spec version
      * @description List stored evaluation results for the given spec version
      */
     get: operations["get_spec_version_structure"];
   };
   "/v2/timelines/grouped_graph": {
     /**
-     * Get the contents of the given timelines as a graph, grouped by event attrbutes. 
+     * Get the contents of the given timelines as a graph, grouped by event attrbutes.
      * @description Get the contents of the given timelines as a graph, grouped by event attrbutes.
-     * 
+     *
      * If no keys are specified using the 'group_by' query parameter,
      * the graph is grouped by event.name.
      */
@@ -169,30 +169,30 @@ export interface paths {
   };
   "/v2/timelines/{timeline_id}": {
     /**
-     * Get a single timeline 
+     * Get a single timeline
      * @description Get a single timeline
      */
     get: operations["get_timeline"];
   };
   "/v2/workspaces": {
     /**
-     * List all workspaces 
+     * List all workspaces
      * @description List all workspaces
      */
     get: operations["list_workspaces"];
   };
   "/v2/workspaces/{workspace_version_id}/definition": {
     /**
-     * Get a workspace 
+     * Get a workspace
      * @description Get a workspace
      */
     get: operations["get_workspace"];
   };
   "/v2/workspaces/{workspace_version_id}/grouped_graph": {
     /**
-     * Get the contents of the workspace as a graph, grouped by event attrbutes. 
+     * Get the contents of the workspace as a graph, grouped by event attrbutes.
      * @description Get the contents of the workspace as a graph, grouped by event attrbutes.
-     * 
+     *
      * If no keys are specified using the 'group_by' query parameter,
      * the graph is grouped by (timeline.name, event.name).
      */
@@ -200,23 +200,23 @@ export interface paths {
   };
   "/v2/workspaces/{workspace_version_id}/grouped_timelines": {
     /**
-     * List workspace timelines, grouped by the given attr keys 
+     * List workspace timelines, grouped by the given attr keys
      * @description List workspace timelines, grouped by the given attr keys
      */
     get: operations["list_grouped_workspace_timelines"];
   };
   "/v2/workspaces/{workspace_version_id}/segments": {
     /**
-     * List all workspace segments 
+     * List all workspace segments
      * @description List all workspace segments
      */
     get: operations["list_workspace_segments"];
   };
   "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped_graph": {
     /**
-     * Get the contents of the segment as a graph, grouped by event attributes. 
+     * Get the contents of the segment as a graph, grouped by event attributes.
      * @description Get the contents of the segment as a graph, grouped by event attributes.
-     * 
+     *
      * If no keys are specified using the 'group_by' query parameter,
      * the graph is grouped by (timeline.name, event.name).
      */
@@ -224,16 +224,16 @@ export interface paths {
   };
   "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped_timelines": {
     /**
-     * List all timelines in a specific segment, grouped by the given attr keys 
+     * List all timelines in a specific segment, grouped by the given attr keys
      * @description List all timelines in a specific segment, grouped by the given attr keys
      */
     get: operations["list_grouped_segment_timelines"];
   };
   "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_coverage": {
     /**
-     * Get the spec-coverage of the segment. 
+     * Get the spec-coverage of the segment.
      * @description Get the spec-coverage of the segment.
-     * 
+     *
      * If no filters are 'group_by' query parameter,
      * the graph is grouped by (timeline.name, event.name).
      */
@@ -241,35 +241,35 @@ export interface paths {
   };
   "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/spec_summary": {
     /**
-     * List the named spec evaluation summaries of the segment 
+     * List the named spec evaluation summaries of the segment
      * @description List the named spec evaluation summaries of the segment
      */
     get: operations["segment_spec_summary"];
   };
   "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timeline_attr_keys": {
     /**
-     * List all timeline attr keys in a specific segment 
+     * List all timeline attr keys in a specific segment
      * @description List all timeline attr keys in a specific segment
      */
     get: operations["list_segment_timeline_attr_keys"];
   };
   "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/timelines": {
     /**
-     * List all timelines in a specific segment 
+     * List all timelines in a specific segment
      * @description List all timelines in a specific segment
      */
     get: operations["list_segment_timelines"];
   };
   "/v2/workspaces/{workspace_version_id}/timeline_attr_keys": {
     /**
-     * List the attr keys found on all timelines in this workspace 
+     * List the attr keys found on all timelines in this workspace
      * @description List the attr keys found on all timelines in this workspace
      */
     get: operations["list_workspace_timeline_attr_keys"];
   };
   "/v2/workspaces/{workspace_version_id}/timelines": {
     /**
-     * List all workspace timelines 
+     * List all workspace timelines
      * @description List all workspace timelines
      */
     get: operations["list_workspace_timelines"];
@@ -280,28 +280,28 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    AttrVal: OneOf<[string, number, number, boolean, {
+    AttrVal: string | number | boolean | {
       TimelineId?: components["schemas"]["TimelineId"];
-    }, {
+    } | {
       Timestamp?: components["schemas"]["Nanoseconds"];
-    }, {
+    } | {
       LogicalTime?: components["schemas"]["LogicalTime"];
-    }, {
+    } | {
       EventCoordinate?: components["schemas"]["EventCoordinate"];
-    }, {
+    } | {
       BigInt?: string;
-    }, {
+    } | ({
       /** @enum {string} */
       NonFiniteFloat?: "NaN" | "-NaN" | "Infinity" | "-Infinity";
-    }]>;
+    });
     AttributeMap: {
-      [key: string]: components["schemas"]["AttrVal"] | undefined;
+      [key: string]: components["schemas"]["AttrVal"];
     };
     /** @enum {string} */
     BehaviorCaseType: "Nominal" | "Recovery" | "Prohibited";
     BehaviorCoverage: {
       case_coverage: {
-        [key: string]: components["schemas"]["CaseCoverage"] | undefined;
+        [key: string]: components["schemas"]["CaseCoverage"];
       };
       ever_vacuous: boolean;
       name: string;
@@ -353,11 +353,11 @@ export interface components {
       percentage_specs_passing: number;
     };
     EventCoordinate: {
-      id?: (number)[];
+      id?: number[];
       timeline_id?: components["schemas"]["TimelineId"];
     };
     EventSummary: {
-      attributes: (string)[];
+      attributes: string[];
       /** Format: int32 */
       n_instances: number;
       name?: string | null;
@@ -373,7 +373,7 @@ export interface components {
       Internal: string;
     }]>;
     EventsSummary: {
-      events: (components["schemas"]["EventSummary"])[];
+      events: components["schemas"]["EventSummary"][];
     };
     Experiment: {
       definition: components["schemas"]["ExperimentDefinition"];
@@ -383,12 +383,12 @@ export interface components {
     ExperimentApproach: "Random" | "StructuredBreadth" | "LearnedPerturbation";
     ExperimentDefinition: {
       approach: components["schemas"]["ExperimentApproach"];
-      expected_mutators: (components["schemas"]["UnstructuredMutatorFilter"])[];
+      expected_mutators: components["schemas"]["UnstructuredMutatorFilter"][];
       mutator_constraints: {
-        [key: string]: components["schemas"]["MutatorUseConstraint"] | undefined;
+        [key: string]: components["schemas"]["MutatorUseConstraint"];
       };
       mutator_filter?: components["schemas"]["UnstructuredMutatorFilter"] | null;
-      specs: (components["schemas"]["ExperimentLinkedSpec"])[];
+      specs: components["schemas"]["ExperimentLinkedSpec"][];
     };
     ExperimentLinkedSpec: {
       name: string;
@@ -412,7 +412,7 @@ export interface components {
        * because we expect to fill in that content in the `mutators` collection.
        */
       mutations: ((components["schemas"]["Mutation"] & components["schemas"]["ExperimentMutationChecklist"])[])[];
-      mutators: (components["schemas"]["Mutator"])[];
+      mutators: components["schemas"]["Mutator"][];
       /**
        * @description Estimate of how many mutations have been suggested so far for this experiment,
        * regardless of how many have been commanded/injected/etc.
@@ -421,34 +421,34 @@ export interface components {
       regions: ((components["schemas"]["RegionKind"] & (((components["schemas"]["MutationId"] & components["schemas"]["ExperimentMutationChecklist"])[])[]))[])[];
     };
     /** @description Experiments operation errors */
-    ExperimentsError: OneOf<[{
+    ExperimentsError: {
       /** @description Experiment not found */
       ExperimentNotFound: string;
-    }, {
+    } | {
       /** @description Invalid mutator filter expression */
       InvalidMutatorFilter: string;
-    }, {
+    } | {
       SpecVersionNotFound: components["schemas"]["SpecVersionId"];
-    }, {
+    } | {
       /** @description Workspace not found */
       WorkspaceNotFound: string;
-    }, "SegmentNotFound", {
+    } | "SegmentNotFound" | {
       /** @description Internal Server Error */
       Internal: string;
-    }]>;
+    };
     /** @description A graph created by grouping together events by their attribute values. */
     GroupedGraph: {
       /** @description The grouping keys used to compute this graph */
-      attr_keys: (string)[];
+      attr_keys: string[];
       /** @description The edges in the graph; node indices in this collection refer to `nodes`. */
-      edges: (components["schemas"]["GroupedGraphEdge"])[];
+      edges: components["schemas"]["GroupedGraphEdge"][];
       /** @description The nodes in the graph */
-      nodes: (components["schemas"]["GroupedGraphNode"])[];
+      nodes: components["schemas"]["GroupedGraphNode"][];
     };
     /** @description An edge in a `GroupedGraph` */
     GroupedGraphEdge: {
       /**
-       * Format: int64 
+       * Format: int64
        * @description How many times did this particular transition occur?
        */
       count: number;
@@ -465,12 +465,12 @@ export interface components {
        */
       attr_vals: (components["schemas"]["AttrVal"] | null)[];
       /**
-       * Format: int64 
+       * Format: int64
        * @description How many times did events of this group occur?
        */
       count?: number | null;
     };
-    LogicalTime: (number)[];
+    LogicalTime: number[];
     /**
      * @description A serialization helper type, for when you actually want Option<AttrVal>. (We're
      * not allowed to implement ToSchema on that...)
@@ -484,11 +484,11 @@ export interface components {
       linked_experiment?: string | null;
       mutation_id: components["schemas"]["MutationId"];
       mutator_attributes: {
-        [key: string]: components["schemas"]["AttrVal"] | undefined;
+        [key: string]: components["schemas"]["AttrVal"];
       };
       mutator_id: components["schemas"]["MutatorId"];
       params: {
-        [key: string]: components["schemas"]["AttrVal"] | undefined;
+        [key: string]: components["schemas"]["AttrVal"];
       };
       region_details_summary?: components["schemas"]["MutationRegionDetailsSummary"] | null;
     };
@@ -525,16 +525,16 @@ export interface components {
     }]>;
     Mutator: {
       mutator_attributes: {
-        [key: string]: components["schemas"]["AttrVal"] | undefined;
+        [key: string]: components["schemas"]["AttrVal"];
       };
       mutator_id: components["schemas"]["MutatorId"];
       mutator_state: components["schemas"]["MutatorState"];
     };
     MutatorGroup: {
       group_attributes: {
-        [key: string]: components["schemas"]["MaybeAttrVal"] | undefined;
+        [key: string]: components["schemas"]["MaybeAttrVal"];
       };
-      mutators: (components["schemas"]["Mutator"])[];
+      mutators: components["schemas"]["Mutator"][];
     };
     /** Format: uuid */
     MutatorId: string;
@@ -543,7 +543,7 @@ export interface components {
     MutatorUseConstraint: {
       mutator_selector: components["schemas"]["UnstructuredMutatorFilter"];
       param_constraints: {
-        [key: string]: components["schemas"]["ParamConstraint"] | undefined;
+        [key: string]: components["schemas"]["ParamConstraint"];
       };
     };
     /** @description Mutator operation errors */
@@ -559,7 +559,7 @@ export interface components {
     }]>;
     Nanoseconds: number;
     ParamConstraint: {
-      exact_value_set?: (components["schemas"]["AttrVal"])[] | null;
+      exact_value_set?: components["schemas"]["AttrVal"][] | null;
       inclusive_value_max?: components["schemas"]["AttrVal"] | null;
       inclusive_value_min?: components["schemas"]["AttrVal"] | null;
     };
@@ -570,7 +570,7 @@ export interface components {
     }]>;
     SegmentCoverage: {
       coverage_aggregates: components["schemas"]["CoverageAggregates"];
-      spec_coverages: (components["schemas"]["SpecCoverage"])[];
+      spec_coverages: components["schemas"]["SpecCoverage"][];
     };
     SegmentRegionKind: {
       id: components["schemas"]["WorkspaceSegmentId"];
@@ -584,13 +584,13 @@ export interface components {
     };
     SpecCoverage: {
       behavior_to_coverage: {
-        [key: string]: components["schemas"]["BehaviorCoverage"] | undefined;
+        [key: string]: components["schemas"]["BehaviorCoverage"];
       };
       spec_at_version_meta: components["schemas"]["SpecVersionMetadata"];
       test_counts: components["schemas"]["TestCounts"];
     };
     SpecEvalOutcomeHighlights: {
-      behaviors: (string)[];
+      behaviors: string[];
       /** Format: int32 */
       regions_failing: number;
       /** Format: int32 */
@@ -652,15 +652,15 @@ export interface components {
     };
     Timeline: {
       attributes: {
-        [key: string]: components["schemas"]["AttrVal"] | undefined;
+        [key: string]: components["schemas"]["AttrVal"];
       };
       id: components["schemas"]["TimelineId"];
     };
     TimelineGroup: {
       group_attributes: {
-        [key: string]: components["schemas"]["MaybeAttrVal"] | undefined;
+        [key: string]: components["schemas"]["MaybeAttrVal"];
       };
-      timelines: (components["schemas"]["TimelineOverview"])[];
+      timelines: components["schemas"]["TimelineOverview"][];
     };
     /** Format: uuid */
     TimelineId: string;
@@ -701,7 +701,7 @@ export interface components {
       /** Format: int64 */
       created_at_utc_seconds: number;
       created_by: string;
-      mutator_grouping_attrs: (string)[];
+      mutator_grouping_attrs: string[];
       version_number: number;
     };
     WorkspaceName: string;
@@ -720,13 +720,13 @@ export interface components {
     /** Format: uuid */
     WorkspaceVersionId: string;
     /** @description Workspace operation errors */
-    WorkspacesError: OneOf<[{
+    WorkspacesError: {
       /** @description Workspace not found */
       WorkspaceNotFound: string;
-    }, "SegmentNotFound", "NoGroupsSpecified", "InvalidSpecVersionId", "InvalidSpecResultId", {
+    } | "SegmentNotFound" | "NoGroupsSpecified" | "InvalidSpecVersionId" | "InvalidSpecResultId" | {
       /** @description Internal Server Error */
       Internal: string;
-    }]>;
+    };
   };
   responses: never;
   parameters: never;
@@ -735,12 +735,14 @@ export interface components {
   pathItems: never;
 }
 
+export type $defs = Record<string, never>;
+
 export type external = Record<string, never>;
 
 export interface operations {
 
   /**
-   * Get an event summary for a single timeline 
+   * Get an event summary for a single timeline
    * @description Get an event summary for a single timeline
    */
   get_events_summary_for_timeline: {
@@ -764,7 +766,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Timeline Not Found */
       404: {
         content: {
@@ -774,7 +778,7 @@ export interface operations {
     };
   };
   /**
-   * List experiments 
+   * List experiments
    * @description List experiments
    */
   list_experiments: {
@@ -782,11 +786,13 @@ export interface operations {
       /** @description List experiments successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["ExperimentName"])[];
+          "application/json": components["schemas"]["ExperimentName"][];
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -796,7 +802,7 @@ export interface operations {
     };
   };
   /**
-   * Get an experiment 
+   * Get an experiment
    * @description Get an experiment
    */
   get_experiment: {
@@ -814,7 +820,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Experiment not found */
       404: {
         content: {
@@ -830,7 +838,7 @@ export interface operations {
     };
   };
   /**
-   * Get the results of an experiment scoped to the given workspace 
+   * Get the results of an experiment scoped to the given workspace
    * @description Get the results of an experiment scoped to the given workspace
    */
   get_experiment_workspace_results: {
@@ -856,7 +864,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Experiment not found */
       404: {
         content: {
@@ -872,7 +882,7 @@ export interface operations {
     };
   };
   /**
-   * Get the results of an experiment scoped to the given segment 
+   * Get the results of an experiment scoped to the given segment
    * @description Get the results of an experiment scoped to the given segment
    */
   get_experiment_results: {
@@ -902,7 +912,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Experiment not found */
       404: {
         content: {
@@ -918,12 +930,12 @@ export interface operations {
     };
   };
   /**
-   * List all mutations 
+   * List all mutations
    * @description List all mutations
    */
   list_mutations: {
     parameters: {
-      query: {
+      query?: {
         /** @description Mutator ID */
         mutator_id?: string | null;
         /** @description Experiment name */
@@ -934,7 +946,7 @@ export interface operations {
       /** @description List mutations successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["Mutation"])[];
+          "application/json": components["schemas"]["Mutation"][];
         };
       };
       /** @description Invalid mutator_id */
@@ -944,7 +956,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -954,12 +968,12 @@ export interface operations {
     };
   };
   /**
-   * List all mutations for the given workspace 
+   * List all mutations for the given workspace
    * @description List all mutations for the given workspace
    */
   list_workspace_mutations: {
     parameters: {
-      query: {
+      query?: {
         /** @description Mutator ID */
         mutator_id?: string | null;
         /** @description Experiment name */
@@ -974,7 +988,7 @@ export interface operations {
       /** @description List mutations successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["Mutation"])[];
+          "application/json": components["schemas"]["Mutation"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -984,7 +998,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -1000,12 +1016,12 @@ export interface operations {
     };
   };
   /**
-   * List all mutations for the given segment 
+   * List all mutations for the given segment
    * @description List all mutations for the given segment
    */
   list_segment_mutations: {
     parameters: {
-      query: {
+      query?: {
         /** @description Mutator ID */
         mutator_id?: string | null;
         /** @description Experiment name */
@@ -1024,7 +1040,7 @@ export interface operations {
       /** @description List mutations successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["Mutation"])[];
+          "application/json": components["schemas"]["Mutation"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -1034,7 +1050,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -1050,12 +1068,12 @@ export interface operations {
     };
   };
   /**
-   * List all mutators 
+   * List all mutators
    * @description List all mutators
    */
   list_mutators: {
     parameters: {
-      query: {
+      query?: {
         /** @description Mutator filter expression */
         mutator_filter?: string | null;
       };
@@ -1064,7 +1082,7 @@ export interface operations {
       /** @description List mutators successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["Mutator"])[];
+          "application/json": components["schemas"]["Mutator"][];
         };
       };
       /** @description Invalid mutator_filter */
@@ -1074,7 +1092,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -1084,12 +1104,12 @@ export interface operations {
     };
   };
   /**
-   * List all mutators, grouped by the given attr keys 
+   * List all mutators, grouped by the given attr keys
    * @description List all mutators, grouped by the given attr keys
    */
   list_grouped_mutators: {
     parameters: {
-      query: {
+      query?: {
         /** @description Mutator filter expression */
         mutator_filter?: string | null;
       };
@@ -1098,7 +1118,7 @@ export interface operations {
       /** @description List grouped mutators successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["MutatorGroup"])[];
+          "application/json": components["schemas"]["MutatorGroup"][];
         };
       };
       /** @description Invalid mutator_filter */
@@ -1108,7 +1128,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -1118,12 +1140,12 @@ export interface operations {
     };
   };
   /**
-   * List all mutators for the given workspace 
+   * List all mutators for the given workspace
    * @description List all mutators for the given workspace
    */
   list_workspace_mutators: {
     parameters: {
-      query: {
+      query?: {
         /** @description Mutator filter expression */
         mutator_filter?: string | null;
       };
@@ -1136,7 +1158,7 @@ export interface operations {
       /** @description List mutators successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["Mutator"])[];
+          "application/json": components["schemas"]["Mutator"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -1146,7 +1168,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -1162,12 +1186,12 @@ export interface operations {
     };
   };
   /**
-   * List all mutators for the given workspace, grouped by the given attr keys 
+   * List all mutators for the given workspace, grouped by the given attr keys
    * @description List all mutators for the given workspace, grouped by the given attr keys
    */
   list_workspace_grouped_mutators: {
     parameters: {
-      query: {
+      query?: {
         /** @description Mutator filter expression */
         mutator_filter?: string | null;
       };
@@ -1180,7 +1204,7 @@ export interface operations {
       /** @description List grouped mutators successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["MutatorGroup"])[];
+          "application/json": components["schemas"]["MutatorGroup"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -1190,7 +1214,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -1206,12 +1232,12 @@ export interface operations {
     };
   };
   /**
-   * List all mutators for the given segment 
+   * List all mutators for the given segment
    * @description List all mutators for the given segment
    */
   list_segment_mutators: {
     parameters: {
-      query: {
+      query?: {
         /** @description Mutator filter expression */
         mutator_filter?: string | null;
       };
@@ -1228,7 +1254,7 @@ export interface operations {
       /** @description List mutators successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["Mutator"])[];
+          "application/json": components["schemas"]["Mutator"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -1238,7 +1264,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -1254,12 +1282,12 @@ export interface operations {
     };
   };
   /**
-   * List all mutators for the given segment, grouped by the given attr keys 
+   * List all mutators for the given segment, grouped by the given attr keys
    * @description List all mutators for the given segment, grouped by the given attr keys
    */
   list_segment_grouped_mutators: {
     parameters: {
-      query: {
+      query?: {
         /** @description Mutator filter expression */
         mutator_filter?: string | null;
       };
@@ -1276,7 +1304,7 @@ export interface operations {
       /** @description List grouped mutators successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["MutatorGroup"])[];
+          "application/json": components["schemas"]["MutatorGroup"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -1286,7 +1314,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -1302,7 +1332,7 @@ export interface operations {
     };
   };
   /**
-   * List all specs 
+   * List all specs
    * @description List all specs
    */
   list_specs: {
@@ -1310,11 +1340,13 @@ export interface operations {
       /** @description List all specs successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["SpecVersionMetadata"])[];
+          "application/json": components["schemas"]["SpecVersionMetadata"][];
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -1324,7 +1356,7 @@ export interface operations {
     };
   };
   /**
-   * Get the current version of the named spec 
+   * Get the current version of the named spec
    * @description Get the current version of the named spec
    */
   get_spec: {
@@ -1336,7 +1368,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Spec not found */
       404: {
         content: {
@@ -1352,7 +1386,7 @@ export interface operations {
     };
   };
   /**
-   * Get the structure of behaviors and cases for the stored spec 
+   * Get the structure of behaviors and cases for the stored spec
    * @description Get the structure of behaviors and cases for the stored spec
    */
   get_spec_structure: {
@@ -1364,7 +1398,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Spec not found */
       404: {
         content: {
@@ -1380,7 +1416,7 @@ export interface operations {
     };
   };
   /**
-   * List all the versions of the named spec 
+   * List all the versions of the named spec
    * @description List all the versions of the named spec
    */
   list_spec_versions: {
@@ -1388,11 +1424,13 @@ export interface operations {
       /** @description List spec versions */
       200: {
         content: {
-          "application/json": (components["schemas"]["SpecVersionMetadata"])[];
+          "application/json": components["schemas"]["SpecVersionMetadata"][];
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Spec not found */
       404: {
         content: {
@@ -1408,7 +1446,7 @@ export interface operations {
     };
   };
   /**
-   * Get a specific verison of the named spec 
+   * Get a specific verison of the named spec
    * @description Get a specific verison of the named spec
    */
   get_spec_version: {
@@ -1432,7 +1470,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Spec or spec version not found */
       404: {
         content: {
@@ -1448,7 +1488,7 @@ export interface operations {
     };
   };
   /**
-   * List stored evaluation results for the given spec version 
+   * List stored evaluation results for the given spec version
    * @description List stored evaluation results for the given spec version
    */
   list_spec_version_results: {
@@ -1462,7 +1502,7 @@ export interface operations {
       /** @description List spec evalutation results */
       200: {
         content: {
-          "application/json": (components["schemas"]["SpecEvalOutcomeHighlights"])[];
+          "application/json": components["schemas"]["SpecEvalOutcomeHighlights"][];
         };
       };
       /** @description Invalid spec version */
@@ -1472,7 +1512,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Spec or spec version not found */
       404: {
         content: {
@@ -1488,7 +1530,7 @@ export interface operations {
     };
   };
   /**
-   * List stored evaluation results for the given spec version 
+   * List stored evaluation results for the given spec version
    * @description List stored evaluation results for the given spec version
    */
   get_spec_version_structure: {
@@ -1512,7 +1554,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Spec or spec version not found */
       404: {
         content: {
@@ -1528,9 +1572,9 @@ export interface operations {
     };
   };
   /**
-   * Get the contents of the given timelines as a graph, grouped by event attrbutes. 
+   * Get the contents of the given timelines as a graph, grouped by event attrbutes.
    * @description Get the contents of the given timelines as a graph, grouped by event attrbutes.
-   * 
+   *
    * If no keys are specified using the 'group_by' query parameter,
    * the graph is grouped by event.name.
    */
@@ -1538,9 +1582,9 @@ export interface operations {
     parameters: {
       query: {
         /** @description Timeline Id */
-        timeline_id: (string)[];
+        timeline_id: string[];
         /** @description Grouping attr key */
-        group_by?: (string)[] | null;
+        group_by?: string[] | null;
       };
     };
     responses: {
@@ -1557,7 +1601,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Timeline Not Found */
       404: {
         content: {
@@ -1567,7 +1613,7 @@ export interface operations {
     };
   };
   /**
-   * Get a single timeline 
+   * Get a single timeline
    * @description Get a single timeline
    */
   get_timeline: {
@@ -1591,7 +1637,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Timeline Not Found */
       404: {
         content: {
@@ -1601,7 +1649,7 @@ export interface operations {
     };
   };
   /**
-   * List all workspaces 
+   * List all workspaces
    * @description List all workspaces
    */
   list_workspaces: {
@@ -1609,11 +1657,13 @@ export interface operations {
       /** @description List all workspaces successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["Workspace"])[];
+          "application/json": components["schemas"]["Workspace"][];
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -1623,7 +1673,7 @@ export interface operations {
     };
   };
   /**
-   * Get a workspace 
+   * Get a workspace
    * @description Get a workspace
    */
   get_workspace: {
@@ -1641,7 +1691,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace not found */
       404: {
         content: {
@@ -1657,17 +1709,17 @@ export interface operations {
     };
   };
   /**
-   * Get the contents of the workspace as a graph, grouped by event attrbutes. 
+   * Get the contents of the workspace as a graph, grouped by event attrbutes.
    * @description Get the contents of the workspace as a graph, grouped by event attrbutes.
-   * 
+   *
    * If no keys are specified using the 'group_by' query parameter,
    * the graph is grouped by (timeline.name, event.name).
    */
   workspace_grouped_graph: {
     parameters: {
-      query: {
+      query?: {
         /** @description Grouping attr key */
-        group_by?: (string)[] | null;
+        group_by?: string[] | null;
       };
       path: {
         /** @description Workspace version id */
@@ -1688,7 +1740,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace not found */
       404: {
         content: {
@@ -1704,14 +1758,14 @@ export interface operations {
     };
   };
   /**
-   * List workspace timelines, grouped by the given attr keys 
+   * List workspace timelines, grouped by the given attr keys
    * @description List workspace timelines, grouped by the given attr keys
    */
   list_grouped_workspace_timelines: {
     parameters: {
-      query: {
+      query?: {
         /** @description Grouping attr key */
-        group_by?: (string)[] | null;
+        group_by?: string[] | null;
       };
       path: {
         /** @description Workspace version id */
@@ -1722,7 +1776,7 @@ export interface operations {
       /** @description List grouped timelines successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["TimelineGroup"])[];
+          "application/json": components["schemas"]["TimelineGroup"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -1732,7 +1786,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace not found */
       404: {
         content: {
@@ -1748,7 +1804,7 @@ export interface operations {
     };
   };
   /**
-   * List all workspace segments 
+   * List all workspace segments
    * @description List all workspace segments
    */
   list_workspace_segments: {
@@ -1762,7 +1818,7 @@ export interface operations {
       /** @description List all segments successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["WorkspaceSegmentMetadata"])[];
+          "application/json": components["schemas"]["WorkspaceSegmentMetadata"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -1772,7 +1828,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace not found */
       404: {
         content: {
@@ -1788,17 +1846,17 @@ export interface operations {
     };
   };
   /**
-   * Get the contents of the segment as a graph, grouped by event attributes. 
+   * Get the contents of the segment as a graph, grouped by event attributes.
    * @description Get the contents of the segment as a graph, grouped by event attributes.
-   * 
+   *
    * If no keys are specified using the 'group_by' query parameter,
    * the graph is grouped by (timeline.name, event.name).
    */
   segment_grouped_graph: {
     parameters: {
-      query: {
+      query?: {
         /** @description Grouping attr key */
-        group_by?: (string)[] | null;
+        group_by?: string[] | null;
       };
       path: {
         /** @description Workspace Version Id */
@@ -1823,7 +1881,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -1839,14 +1899,14 @@ export interface operations {
     };
   };
   /**
-   * List all timelines in a specific segment, grouped by the given attr keys 
+   * List all timelines in a specific segment, grouped by the given attr keys
    * @description List all timelines in a specific segment, grouped by the given attr keys
    */
   list_grouped_segment_timelines: {
     parameters: {
-      query: {
+      query?: {
         /** @description Grouping attr key */
-        group_by?: (string)[] | null;
+        group_by?: string[] | null;
       };
       path: {
         /** @description Workspace Version Id */
@@ -1861,7 +1921,7 @@ export interface operations {
       /** @description List grouped timelines successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["TimelineGroup"])[];
+          "application/json": components["schemas"]["TimelineGroup"][];
         };
       };
       /** @description No grouping attrs specified */
@@ -1871,7 +1931,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -1887,21 +1949,21 @@ export interface operations {
     };
   };
   /**
-   * Get the spec-coverage of the segment. 
+   * Get the spec-coverage of the segment.
    * @description Get the spec-coverage of the segment.
-   * 
+   *
    * If no filters are 'group_by' query parameter,
    * the graph is grouped by (timeline.name, event.name).
    */
   segment_spec_coverage: {
     parameters: {
-      query: {
+      query?: {
         /** @description Include the latest results of the latest version of this spec in the analysis */
-        spec_name?: (string)[] | null;
+        spec_name?: string[] | null;
         /** @description Include the latest results of this spec version in the analysis */
-        spec_version?: (string)[] | null;
+        spec_version?: string[] | null;
         /** @description Include this spec result in the analysis */
-        spec_result?: (string)[] | null;
+        spec_result?: string[] | null;
         /** @description Expression for filtering specs from the perspective of spec attributes. */
         spec_filter?: string | null;
         /** @description Expression for filtering specs and their behaviors from the perspective of behavior attributes. */
@@ -1932,7 +1994,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -1948,12 +2012,12 @@ export interface operations {
     };
   };
   /**
-   * List the named spec evaluation summaries of the segment 
+   * List the named spec evaluation summaries of the segment
    * @description List the named spec evaluation summaries of the segment
    */
   segment_spec_summary: {
     parameters: {
-      query: {
+      query?: {
         /** @description Expression for filtering specs from the perspective of spec attributes. */
         spec_filter?: string | null;
         /** @description Expression for filtering specs and their behaviors from the perspective of behavior attributes. */
@@ -1974,7 +2038,7 @@ export interface operations {
       /** @description Retrieve the segment spec summary successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["SpecSegmentEvalOutcomeSummary"])[];
+          "application/json": components["schemas"]["SpecSegmentEvalOutcomeSummary"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -1984,7 +2048,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -2000,7 +2066,7 @@ export interface operations {
     };
   };
   /**
-   * List all timeline attr keys in a specific segment 
+   * List all timeline attr keys in a specific segment
    * @description List all timeline attr keys in a specific segment
    */
   list_segment_timeline_attr_keys: {
@@ -2018,7 +2084,7 @@ export interface operations {
       /** @description List all timelineattr_keys successfully */
       200: {
         content: {
-          "application/json": (string)[];
+          "application/json": string[];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -2028,7 +2094,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -2044,7 +2112,7 @@ export interface operations {
     };
   };
   /**
-   * List all timelines in a specific segment 
+   * List all timelines in a specific segment
    * @description List all timelines in a specific segment
    */
   list_segment_timelines: {
@@ -2062,7 +2130,7 @@ export interface operations {
       /** @description List all timelines successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["TimelineOverview"])[];
+          "application/json": components["schemas"]["TimelineOverview"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -2072,7 +2140,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace or segment not found */
       404: {
         content: {
@@ -2088,7 +2158,7 @@ export interface operations {
     };
   };
   /**
-   * List the attr keys found on all timelines in this workspace 
+   * List the attr keys found on all timelines in this workspace
    * @description List the attr keys found on all timelines in this workspace
    */
   list_workspace_timeline_attr_keys: {
@@ -2102,7 +2172,7 @@ export interface operations {
       /** @description List all timeline attr keys successfully */
       200: {
         content: {
-          "application/json": (string)[];
+          "application/json": string[];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -2112,7 +2182,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace not found */
       404: {
         content: {
@@ -2128,7 +2200,7 @@ export interface operations {
     };
   };
   /**
-   * List all workspace timelines 
+   * List all workspace timelines
    * @description List all workspace timelines
    */
   list_workspace_timelines: {
@@ -2142,7 +2214,7 @@ export interface operations {
       /** @description List all timelines successfully */
       200: {
         content: {
-          "application/json": (components["schemas"]["TimelineOverview"])[];
+          "application/json": components["schemas"]["TimelineOverview"][];
         };
       };
       /** @description Invalid workspace_version_id */
@@ -2152,7 +2224,9 @@ export interface operations {
         };
       };
       /** @description Operation not authorized */
-      403: never;
+      403: {
+        content: never;
+      };
       /** @description Workspace not found */
       404: {
         content: {

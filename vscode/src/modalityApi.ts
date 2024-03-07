@@ -1,4 +1,4 @@
-import * as gen from "../generated/src/modality-api";
+import * as gen from "./generated/src/modality-api";
 import createClient from "openapi-fetch";
 
 // See https://github.com/ajaishankar/openapi-typescript-fetch#server-side-usage
