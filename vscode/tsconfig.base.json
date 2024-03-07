@@ -19,6 +19,7 @@
         "resolveJsonModule": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
+        "strict": true,
         "plugins": [
             {
                 "name": "typescript-eslint-language-service"

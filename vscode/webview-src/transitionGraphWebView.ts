@@ -18,29 +18,45 @@ cytoscape.use(contextMenus);
 
 const defaultZoom = 1.25;
 
-const loadingDiv = document.getElementById("loading");
-const cyContainerDiv = document.getElementById("cy");
-const layoutDropdown = document.getElementById("layoutDropdown");
-const modeDropdown = document.getElementById("modeDropdown");
-const toolbarSave = document.getElementById("toolbarSave");
-const toolbarRefresh = document.getElementById("toolbarRefresh");
+function getRequiredElement(id: string): HTMLElement {
+    const el = document.getElementById(id);
+    if (el == null) {
+        throw new Error("Missing required html element, id=" + id);
+    }
+    return el;
+}
+
+const loadingDiv = getRequiredElement("loading");
+const cyContainerDiv = getRequiredElement("cy");
+const layoutDropdown = getRequiredElement("layoutDropdown");
+const modeDropdown = getRequiredElement("modeDropdown");
+const toolbarSave = getRequiredElement("toolbarSave");
+const toolbarRefresh = getRequiredElement("toolbarRefresh");
+const detailsGrid = getRequiredElement("detailsGrid");
+const impactDetailsContainer = getRequiredElement("impactDetailsContainer");
+$(impactDetailsContainer).hide();
+
 const txtCanvas = document.createElement("canvas");
 const txtCtx = txtCanvas.getContext("2d");
-const detailsGrid = document.getElementById("detailsGrid");
-const impactDetailsContainer = document.getElementById("impactDetailsContainer");
-$(impactDetailsContainer).hide();
 
 const vscode: vw.WebviewApi<PersistentState> = acquireVsCodeApi();
 
-// The cytoscape interface
-let cy: cytoscape.Core = undefined;
+// Initialize with a placeholder cytoscape; this is replaced in constructGraph
+let cy: cytoscape.Core = cytoscape({});
 
-const validLayouts = ["cose-bilkent", "breadthfirst", "cose", "circle", "grid"];
-type LayoutType = (typeof validLayouts)[number];
+type LayoutType = "cose-bilkent" | "breadthfirst" | "cose" | "concentric" | "circle" | "grid" | "random";
+const validLayouts = ["cose-bilkent", "breadthfirst", "cose", "concentric", "circle", "grid", "random"];
 function isLayout(s: string): s is LayoutType {
     return !!validLayouts.find((l) => s === l);
 }
 
+type SelectionMode =
+    | "manual"
+    | "bidirectional-neighbors"
+    | "upstream-neighbors"
+    | "downstream-neighbors"
+    | "causal-descendants"
+    | "causal-ancestors";
 const validSelectionModes = [
     "manual",
     "bidirectional-neighbors",
@@ -49,7 +65,6 @@ const validSelectionModes = [
     "causal-descendants",
     "causal-ancestors",
 ];
-type SelectionMode = (typeof validSelectionModes)[number];
 function isSelectionMode(s: string): s is SelectionMode {
     return !!validSelectionModes.find((m) => s === m);
 }
@@ -172,7 +187,7 @@ function updateLayoutDropdown() {
         if (i.getAttribute("value") === persistentState.selectedLayout) {
             i.setAttribute("class", "selected");
             layoutDropdown.setAttribute("activedescendant", `option-${j + 1}`);
-            layoutDropdown.setAttribute("current-value", i.getAttribute("value"));
+            layoutDropdown.setAttribute("current-value", persistentState.selectedLayout);
             break;
         }
     }
@@ -208,7 +223,7 @@ function changeLayout(newLayout: LayoutType) {
     }
 }
 
-function changeSelectionMode(newMode) {
+function changeSelectionMode(newMode: SelectionMode) {
     if (newMode != persistentState.selectionMode) {
         persistentState.selectionMode = newMode;
         if (cy) {
@@ -229,7 +244,7 @@ function updateSelectionDetails() {
         .filter((e) => e.hasClass("selected"))
         .map((e) => e.data() as transitionGraphWebViewApi.EdgeData);
 
-    let newEls = [];
+    let newEls: JQuery<HTMLElement>[] = [];
 
     const nodesWithEventName = selectedNodes.filter((nodeData) => nodeData.eventName !== undefined);
     if (nodesWithEventName?.length > 0) {
@@ -278,7 +293,7 @@ function updateSelectionDetails() {
     }
 }
 
-function eventDetailsRows(nodesWithEventName: transitionGraphWebViewApi.NodeData[]) {
+function eventDetailsRows(nodesWithEventName: transitionGraphWebViewApi.NodeData[]): JQuery<HTMLElement>[] {
     const newEls = [];
 
     const header = $("<div/>", { class: "vsc-grid-row header", style: "grid-column: span 3" });
@@ -297,7 +312,7 @@ function eventDetailsRows(nodesWithEventName: transitionGraphWebViewApi.NodeData
     return newEls;
 }
 
-function timelineDetailsRows(nodesWithTimelineId: transitionGraphWebViewApi.NodeData[]) {
+function timelineDetailsRows(nodesWithTimelineId: transitionGraphWebViewApi.NodeData[]): JQuery<HTMLElement>[] {
     const newEls = [];
 
     const header = $("<div/>", { class: "vsc-grid-row header", style: "grid-column: span 3" });
@@ -305,7 +320,7 @@ function timelineDetailsRows(nodesWithTimelineId: transitionGraphWebViewApi.Node
     $("<div/>", { class: "vsc-grid-cell column-header", text: "Timeline Id" }).appendTo(header);
     newEls.push(header);
 
-    const unique = [];
+    const unique: transitionGraphWebViewApi.NodeData[] = [];
     for (const n of nodesWithTimelineId) {
         if (!unique.some((u) => u.timeline == n.timeline && u.timelineId == n.timelineId)) {
             unique.push(n);
@@ -318,7 +333,7 @@ function timelineDetailsRows(nodesWithTimelineId: transitionGraphWebViewApi.Node
         $("<div/>", {
             class: "vsc-grid-cell",
             style: "grid-column: span 2",
-            text: formatTimelineId(n.timeline),
+            text: formatTimelineId(n.timeline || ""),
         }).appendTo(row);
         newEls.push(row);
     }
@@ -326,7 +341,7 @@ function timelineDetailsRows(nodesWithTimelineId: transitionGraphWebViewApi.Node
     return newEls;
 }
 
-function interactionDetailsRows(selectedEdges: transitionGraphWebViewApi.EdgeData[]) {
+function interactionDetailsRows(selectedEdges: transitionGraphWebViewApi.EdgeData[]): JQuery<HTMLElement>[] {
     const newEls = [];
 
     const header = $("<div/>", { class: "vsc-grid-row header", style: "grid-column: span 3" });
@@ -352,7 +367,7 @@ function interactionDetailsRows(selectedEdges: transitionGraphWebViewApi.EdgeDat
     return newEls;
 }
 
-function cellTextForNode(node: transitionGraphWebViewApi.NodeData) {
+function cellTextForNode(node: transitionGraphWebViewApi.NodeData): string {
     if (node.eventName && node.timelineName) {
         return `${node.eventName}@${node.timelineName}`;
     } else if (node.timelineName && node.timeline) {
@@ -364,7 +379,7 @@ function cellTextForNode(node: transitionGraphWebViewApi.NodeData) {
     }
 }
 
-function formatTimelineId(timelineId: string) {
+function formatTimelineId(timelineId: string): string {
     let s = timelineId.replaceAll("-", "");
     if (!s.startsWith("%")) {
         s = "%" + s;
@@ -470,54 +485,85 @@ function constructGraph() {
 
     calculateLabelHeightsAndWidths();
 
-    let layout: cytoscape.LayoutOptions = undefined;
+    let layout: cytoscape.LayoutOptions;
     if (Object.keys(persistentState.nodeCoordinates).length > 0) {
-        const l: cytoscape.PresetLayoutOptions = {
+        layout = {
             name: "preset",
             animate: false,
             positions: persistentState.nodeCoordinates,
-        };
-        layout = l;
-    } else if (persistentState.selectedLayout === "breadthfirst") {
-        const l: cytoscape.BreadthFirstLayoutOptions = {
-            name: "breadthfirst",
-            directed: true,
-            grid: true,
-            spacingFactor: 1,
-        };
-        layout = l;
-    } else if (persistentState.selectedLayout === "cose-bilkent") {
-        const l: cytoscapeExtTypes.CoseBilkentLayoutOptions = {
-            name: "cose-bilkent",
-            animate: false,
-            nodeDimensionsIncludeLabels: true,
-            nodeRepulsion: 1000000,
-            numIter: 5000,
-        };
-        layout = l;
-    } else if (persistentState.selectedLayout === "cose") {
-        const l: cytoscape.CoseLayoutOptions = {
-            name: "cose",
-            animate: false,
-            nodeDimensionsIncludeLabels: true,
-            randomize: true,
-            gravity: 1,
-            nestingFactor: 1.2,
-            nodeRepulsion: function () {
-                return 1000000;
-            },
-            nodeOverlap: 5,
-            componentSpacing: 5,
-            numIter: 5000,
-        };
-        layout = l;
-    } else if (persistentState.selectedLayout === "circle" || persistentState.selectedLayout === "grid") {
-        const l: cytoscape.ShapedLayoutOptions = {
-            name: persistentState.selectedLayout,
-            spacingFactor: 0.5,
-            padding: 1,
-        };
-        layout = l;
+        } as cytoscape.PresetLayoutOptions;
+    } else {
+        switch (persistentState.selectedLayout) {
+            case "breadthfirst":
+                layout = {
+                    name: "breadthfirst",
+                    directed: true,
+                    grid: true,
+                    spacingFactor: 1,
+                } as cytoscape.BreadthFirstLayoutOptions;
+                break;
+
+            case "cose-bilkent":
+                layout = {
+                    name: "cose-bilkent",
+                    animate: false,
+                    nodeDimensionsIncludeLabels: true,
+                    nodeRepulsion: 1000000,
+                    numIter: 5000,
+                } as cytoscapeExtTypes.CoseBilkentLayoutOptions;
+                break;
+
+            case "cose":
+                layout = {
+                    name: "cose",
+                    animate: false,
+                    nodeDimensionsIncludeLabels: true,
+                    randomize: true,
+                    gravity: 1,
+                    nestingFactor: 1.2,
+                    nodeRepulsion: function () {
+                        return 1000000;
+                    },
+                    nodeOverlap: 5,
+                    componentSpacing: 5,
+                    numIter: 5000,
+                } as cytoscape.CoseLayoutOptions;
+                break;
+
+            case "concentric":
+                layout = {
+                    name: "concentric",
+                    animate: false,
+                    nodeDimensionsIncludeLabels: true,
+                    randomize: true,
+                    gravity: 1,
+                    nestingFactor: 1.2,
+                    nodeRepulsion: function () {
+                        return 1000000;
+                    },
+                    nodeOverlap: 5,
+                    componentSpacing: 5,
+                    numIter: 5000,
+                } as cytoscape.ConcentricLayoutOptions;
+                break;
+
+            case "circle":
+            case "grid":
+                layout = {
+                    name: persistentState.selectedLayout,
+                    spacingFactor: 0.5,
+                    padding: 1,
+                } as cytoscape.ShapedLayoutOptions;
+                break;
+
+            case "random":
+                layout = {
+                    name: "random",
+                    spacingFactor: 0.5,
+                    padding: 1,
+                } as cytoscape.ShapedLayoutOptions;
+                break;
+        }
     }
 
     cy = cytoscape({
@@ -614,11 +660,12 @@ function constructGraph() {
                 coreAsWell: false,
                 show: false,
                 onClickFunction: function () {
-                    const thingsToLog = cy
+                    const thingsToLog: string[] = cy
                         .nodes()
                         .filter((n) => n.hasClass("selected"))
                         .map((n) => thingToLogForNodeData(n.data()))
-                        .filter((thingToLog) => !!thingToLog);
+                        // notNullOrUndefined has to be a standalone type-predicate-style function for this to typecheck
+                        .filter(notNullOrUndefined);
                     const msg: transitionGraphWebViewApi.LogSelectedNodesCommand = {
                         command: "logSelectedNodes",
                         thingsToLog,
@@ -641,10 +688,17 @@ function constructGraph() {
     });
 }
 
+function notNullOrUndefined<T>(value: T): value is NonNullable<T> {
+    return value != null;
+}
+
 // Copied from https://github.com/CoderAllan/vscode-dgmlviewer
 // Copyright (c) 2021 Allan Simonsen
 // See the license file third_party_licenses/LICENSE_vscode-dgmlviewr
 function calculateLabelHeightsAndWidths() {
+    if (txtCtx == null) {
+        throw new Error("Failed to freate canvas for text metrics");
+    }
     persistentState.nodeElements.forEach((node) => {
         if (node.data.label && node.data.label.length > 0) {
             let labelText = node.data.label;

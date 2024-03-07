@@ -4,10 +4,19 @@ import createClient from "openapi-fetch";
 // See https://github.com/ajaishankar/openapi-typescript-fetch#server-side-usage
 import fetch, { Headers, Request, Response } from "node-fetch";
 import { Uri } from "vscode";
+
+// @ts-ignore
 if (!globalThis.fetch) {
+    // @ts-ignore
     globalThis.fetch = fetch;
+
+    // @ts-ignore
     globalThis.Headers = Headers;
+
+    // @ts-ignore
     globalThis.Request = Request;
+
+    // @ts-ignore
     globalThis.Response = Response;
 }
 
@@ -157,7 +166,8 @@ export class WorkspacesClient {
 
     async list(): Promise<Workspace[]> {
         const res = await this.client.get("/v2/workspaces", {});
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<Workspace[], any>(res);
     }
 }
 
@@ -170,7 +180,8 @@ export class WorkspaceClient {
                 path: { workspace_version_id: this.workspaceVersionId },
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<WorkspaceDefinition, any>(res);
     }
 
     async segments(): Promise<WorkspaceSegmentMetadata[]> {
@@ -179,7 +190,8 @@ export class WorkspaceClient {
                 path: { workspace_version_id: this.workspaceVersionId },
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<WorkspaceSegmentMetadata[], any>(res);
     }
 
     async timelines(): Promise<TimelineOverview[]> {
@@ -188,7 +200,8 @@ export class WorkspaceClient {
                 path: { workspace_version_id: this.workspaceVersionId },
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<TimelineOverview[], any>(res);
     }
 
     async groupedTimelines(groupBy: string[]): Promise<TimelineGroup[]> {
@@ -203,7 +216,8 @@ export class WorkspaceClient {
                 query: groupBy.map((gb) => ["group_by", gb]),
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<TimelineGroup[], any>(res);
     }
 
     async timelineAttrKeys(): Promise<string[]> {
@@ -212,7 +226,8 @@ export class WorkspaceClient {
                 path: { workspace_version_id: this.workspaceVersionId },
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<string[], any>(res);
     }
 
     async mutators(): Promise<Mutator[]> {
@@ -223,7 +238,8 @@ export class WorkspaceClient {
                 query: [],
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<Mutator[], any>(res);
     }
 
     async groupedMutators(groupBy: string[]): Promise<MutatorGroup[]> {
@@ -234,7 +250,8 @@ export class WorkspaceClient {
                 query: groupBy.map((gb) => ["group_by", gb]),
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<MutatorGroup[], any>(res);
     }
 
     async mutations(mutatorId?: MutatorId): Promise<Mutation[]> {
@@ -249,7 +266,8 @@ export class WorkspaceClient {
                 query: q,
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<Mutation[], any>(res);
     }
 
     async experimentResults(experimentName: string): Promise<ExperimentResults> {
@@ -261,7 +279,8 @@ export class WorkspaceClient {
                 },
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<ExperimentResults, any>(res);
     }
 }
 
@@ -275,7 +294,8 @@ export class SegmentClient {
                 params: { path: this.segmentId },
             }
         );
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<TimelineOverview[], any>(res);
     }
 
     async groupedTimelines(groupBy: string[]): Promise<TimelineGroup[]> {
@@ -294,7 +314,8 @@ export class SegmentClient {
                 },
             }
         );
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<TimelineGroup[], any>(res);
     }
 
     async timelineAttrKeys(): Promise<string[]> {
@@ -304,7 +325,8 @@ export class SegmentClient {
                 params: { path: this.segmentId },
             }
         );
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<string[], any>(res);
     }
 
     async groupedGraph(groupBy: string[]): Promise<GroupedGraph> {
@@ -323,7 +345,8 @@ export class SegmentClient {
             }
         );
 
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<GroupedGraph, any>(res);
     }
 
     async specCoverage(
@@ -365,7 +388,8 @@ export class SegmentClient {
             }
         );
 
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<SegmentCoverage, any>(res);
     }
 
     async specSummary(spec_filter?: string): Promise<SpecSegmentEvalOutcomeSummary[]> {
@@ -389,7 +413,8 @@ export class SegmentClient {
             }
         );
 
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<SpecSegmentEvalOutcomeSummary[], any>(res);
     }
 
     async mutators(): Promise<Mutator[]> {
@@ -400,7 +425,8 @@ export class SegmentClient {
                 query: [],
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<Mutator[], any>(res);
     }
 
     async groupedMutators(groupBy: string[]): Promise<MutatorGroup[]> {
@@ -414,7 +440,8 @@ export class SegmentClient {
                 },
             }
         );
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<MutatorGroup[], any>(res);
     }
 
     async mutations(mutatorId?: MutatorId): Promise<Mutation[]> {
@@ -429,7 +456,8 @@ export class SegmentClient {
                 query: q,
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<Mutation[], any>(res);
     }
 
     async experimentResults(experimentName: string): Promise<ExperimentResults> {
@@ -446,7 +474,8 @@ export class SegmentClient {
                 },
             }
         );
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<ExperimentResults, any>(res);
     }
 }
 
@@ -467,7 +496,8 @@ export class TimelinesClient {
                 query,
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<GroupedGraph, any>(res);
     }
 }
 
@@ -478,7 +508,8 @@ export class TimelineClient {
         const res = await this.client.get("/v2/timelines/{timeline_id}", {
             params: { path: { timeline_id: this.timelineId } },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<Timeline, any>(res);
     }
 }
 
@@ -489,7 +520,8 @@ export class EventsClient {
         const res = await this.client.get("/v2/events/{timeline_id}/summary", {
             params: { path: { timeline_id: timelineId } },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<EventsSummary, any>(res);
     }
 }
 
@@ -498,7 +530,8 @@ export class SpecsClient {
 
     async list(): Promise<SpecVersionMetadata[]> {
         const res = await this.client.get("/v2/specs", {});
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<SpecVersionMetadata[], any>(res);
     }
 }
 
@@ -513,21 +546,24 @@ export class SpecClient {
         const res = await this.client.get("/v2/specs/{spec_name}", {
             params: { path: { spec_name: this.specName } },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<SpecContent, any>(res);
     }
 
     async structure(): Promise<SpecStructure> {
         const res = await this.client.get("/v2/specs/{spec_name}/structure", {
             params: { path: { spec_name: this.specName } },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<SpecStructure, any>(res);
     }
 
     async versions(): Promise<SpecVersionMetadata[]> {
         const res = await this.client.get("/v2/specs/{spec_name}/versions", {
             params: { path: { spec_name: this.specName } },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<SpecVersionMetadata[], any>(res);
     }
 }
 
@@ -547,7 +583,8 @@ export class SpecVersionClient {
                 },
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<SpecContent, any>(res);
     }
 
     async structure(): Promise<SpecStructure> {
@@ -559,7 +596,8 @@ export class SpecVersionClient {
                 },
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<SpecStructure, any>(res);
     }
 
     async results(): Promise<SpecEvalOutcomeHighlights[]> {
@@ -571,7 +609,8 @@ export class SpecVersionClient {
                 },
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<SpecEvalOutcomeHighlights[], any>(res);
     }
 }
 
@@ -585,7 +624,8 @@ export class MutatorsClient {
                 query: [],
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<Mutator[], any>(res);
     }
 
     async groupedMutators(groupBy: string[]): Promise<MutatorGroup[]> {
@@ -599,7 +639,8 @@ export class MutatorsClient {
                 query: groupBy.map((gb) => ["group_by", gb]),
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<MutatorGroup[], any>(res);
     }
 }
 
@@ -615,7 +656,8 @@ export class MutatorClient {
                 query: q,
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<Mutation[], any>(res);
     }
 }
 
@@ -633,7 +675,8 @@ export class MutationsClient {
                 query: q,
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<Mutation[], any>(res);
     }
 }
 
@@ -642,7 +685,8 @@ export class ExperimentsClient {
 
     async list(): Promise<ExperimentName[]> {
         const res = await this.client.get("/v2/experiments", {});
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<ExperimentName[], any>(res);
     }
 }
 
@@ -657,7 +701,8 @@ export class ExperimentClient {
                 },
             },
         });
-        return unwrapData(res);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return unwrapData<Experiment, any>(res);
     }
 }
 
@@ -665,9 +710,12 @@ export class ExperimentClient {
  * Convert a repsonse to just the data; if it's an error, throw the error.
  */
 function unwrapData<T, E>(res: { data: T; error?: never } | { data?: never; error: E }): T {
-    if (res.error) {
+    if (res.data != null) {
+        return res.data;
+    } else if (res.error != null) {
         throw new Error(res.error.toString());
     } else {
-        return res.data;
+        // Unreachable, but I can't convince typescript of that fact
+        throw new Error("Unknown api error");
     }
 }

@@ -1,21 +1,12 @@
 import * as vscode from "vscode";
-import * as util from "util";
-import { isDeepStrictEqual } from "util";
-import * as child_process from "child_process";
 
 import * as api from "./modalityApi";
-import * as cliConfig from "./cliConfig";
-import * as config from "./config";
 import * as specCoverage from "./specCoverage";
 import * as transitionGraph from "./transitionGraph";
+import * as workspaceState from "./workspaceState";
 import { ModalityLogCommandArgs } from "./modalityLog";
 
-const execFile = util.promisify(child_process.execFile);
-
 export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<SegmentTreeItemData> {
-    activeWorkspaceVersionId: string;
-    usedSegmentConfig: cliConfig.ContextSegment;
-    activeSegmentIds: api.WorkspaceSegmentId[];
     modalityView: vscode.TreeView<SegmentTreeItemData>;
     conformView: vscode.TreeView<SegmentTreeItemData>;
     deviantView: vscode.TreeView<SegmentTreeItemData>;
@@ -26,12 +17,12 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     readonly onDidChangeTreeData: vscode.Event<SegmentTreeItemData | SegmentTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
 
-    private _onDidChangeUsedSegments: vscode.EventEmitter<UsedSegmentsChangeEvent> = new vscode.EventEmitter();
-    readonly onDidChangeUsedSegments: vscode.Event<UsedSegmentsChangeEvent> = this._onDidChangeUsedSegments.event;
-
-    constructor(private readonly apiClient: api.Client, private readonly cov: specCoverage.SpecCoverageProvider) {}
-
-    register(context: vscode.ExtensionContext) {
+    constructor(
+        private readonly apiClient: api.Client,
+        private readonly cov: specCoverage.SpecCoverageProvider,
+        private wss: workspaceState.WorkspaceAndSegmentState,
+        context: vscode.ExtensionContext
+    ) {
         this.modalityView = vscode.window.createTreeView("auxon.modality_segments", {
             treeDataProvider: this,
             canSelectMany: true,
@@ -87,7 +78,8 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
             ),
             vscode.commands.registerCommand("auxon.segments.transitionGraph", (itemData) =>
                 this.transitionGraph(itemData)
-            )
+            ),
+            wss.onDidChangeUsedSegments(() => this.refresh())
         );
     }
 
@@ -100,138 +92,57 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     }
 
     async getChildren(element?: SegmentTreeItemData): Promise<SegmentTreeItemData[]> {
-        if (element) {
-            return;
-        }
-        if (!this.activeWorkspaceVersionId) {
-            return;
+        // only the root has children
+        if (element != null) {
+            return [];
         }
 
-        const usedSegmentConfig = await cliConfig.usedSegments();
-
-        let activeSegmentIds: api.WorkspaceSegmentId[];
-        if (usedSegmentConfig.type == "Latest" || usedSegmentConfig.type == "Set") {
-            activeSegmentIds = (await cliConfig.activeSegments()).map((meta) => meta.id);
-        }
-
-        const workspaceSegments = await this.apiClient.workspace(this.activeWorkspaceVersionId).segments();
+        const workspaceSegments = await this.apiClient.workspace(this.wss.activeWorkspaceVersionId).segments();
 
         const items = [];
         for (const segment of workspaceSegments) {
-            let isActive = false;
-            switch (usedSegmentConfig.type) {
-                case "All":
-                    isActive = true;
-                    break;
-
-                case "WholeWorkspace":
-                    break;
-
-                case "Latest":
-                case "Set":
-                    isActive = activeSegmentIds.some((active_seg_id) => isDeepStrictEqual(active_seg_id, segment.id));
-                    break;
-            }
-
-            items.push(new SegmentTreeItemData(segment, isActive));
+            items.push(new SegmentTreeItemData(segment, this.wss.isSegmentActive(segment.id)));
         }
 
         items.sort((a, b) => {
-            if (a === null || a.name === null) {
+            if (a?.segment?.latest_receive_time == null) {
                 return 1;
             }
-            if (b === null || b.name === null) {
+            if (b?.segment?.latest_receive_time == null) {
                 return -1;
             }
             return a.segment.latest_receive_time - b.segment.latest_receive_time;
         });
 
-        if (
-            !isDeepStrictEqual(usedSegmentConfig, this.usedSegmentConfig) ||
-            !isDeepStrictEqual(activeSegmentIds, this.activeSegmentIds)
-        ) {
-            this.usedSegmentConfig = usedSegmentConfig;
-            this.activeSegmentIds = activeSegmentIds;
-            this._onDidChangeUsedSegments.fire(
-                new UsedSegmentsChangeEvent(this.usedSegmentConfig, this.activeSegmentIds)
-            );
-        }
-
-        if (usedSegmentConfig.type == "WholeWorkspace") {
+        if (this.wss.isWholeWorkspaceActive()) {
             this.activeView.message =
                 "The whole workspace is currently active as a single universe, without any segmentation applied.";
             return [];
         } else {
-            this.activeView.message = null;
+            this.activeView.message = undefined;
             return items;
         }
     }
 
     async setActiveCommand(item: SegmentTreeItemData) {
-        const modality = config.toolPath("modality");
-        const args = [
-            "segment",
-            "use",
-            "--segmentation-rule",
-            item.segment.id.rule_name,
-            item.segment.id.segment_name,
-            ...config.extraCliArgs("modality segment use"),
-        ];
-        await execFile(modality, args);
-        this.refresh();
+        await this.wss.setActiveSegments([item.segment.id]);
     }
 
     async setActiveFromSelectionCommand() {
-        const args = ["segment", "use"];
-        let ruleName: string;
-        for (const item of this.activeView.selection) {
-            if (!ruleName) {
-                ruleName = item.segment.id.rule_name;
-                args.push("--segmentation-rule", item.segment.id.rule_name);
-            } else if (item.segment.id.rule_name != ruleName) {
-                // TODO can we make this possible? Might just be a cli limitation.
-                throw new Error("Segments from different segmentation rules cannot be used together.");
-            }
-
-            args.push(item.segment.id.segment_name);
-        }
-
-        for (const extra of config.extraCliArgs("modality segment use")) {
-            args.push(extra);
-        }
-
-        await execFile(config.toolPath("modality"), args);
-        this.refresh();
+        const segmentIds = this.activeView.selection.map((item) => item.segment.id);
+        this.wss.setActiveSegments(segmentIds);
     }
 
     async setLatestActiveCommand() {
-        await execFile(config.toolPath("modality"), [
-            "segment",
-            "use",
-            "--latest",
-            ...config.extraCliArgs("modality segment use"),
-        ]);
-        this.refresh();
+        await this.wss.useLatestSegment();
     }
 
     async setAllActiveCommand() {
-        await execFile(config.toolPath("modality"), [
-            "segment",
-            "use",
-            "--all-segments",
-            ...config.extraCliArgs("modality segment use"),
-        ]);
-        this.refresh();
+        await this.wss.setAllActiveSegments();
     }
 
     async setWholeWorkspaceActiveCommand() {
-        await execFile(config.toolPath("modality"), [
-            "segment",
-            "use",
-            "--whole-workspace",
-            ...config.extraCliArgs("modality segment use"),
-        ]);
-        this.refresh();
+        await this.wss.setWholeWorkspaceActive();
     }
 
     async showSpecCoverageForSegment(item: SegmentTreeItemData) {
@@ -243,13 +154,6 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
             transitionGraph.showGraphForSegment(item.segment.id, groupBy);
         });
     }
-}
-
-export class UsedSegmentsChangeEvent {
-    constructor(
-        public usedSegmentConfig: cliConfig.ContextSegment,
-        public activeSegmentIds: api.WorkspaceSegmentId[]
-    ) {}
 }
 
 const ACTIVE_ITEM_MARKER = "✦";
@@ -273,8 +177,10 @@ class SegmentTreeItem extends vscode.TreeItem {
         super(label, vscode.TreeItemCollapsibleState.None);
 
         // js date is millis since the epoch; we have nanos.
-        const segDate = new Date(data.segment.latest_receive_time / 1_000_000);
-        this.description = segDate.toLocaleString();
+        if (data?.segment?.latest_receive_time != null) {
+            const segDate = new Date(data.segment.latest_receive_time / 1_000_000);
+            this.description = segDate.toLocaleString();
+        }
 
         let tooltip = `- **Segment Name**: ${data.segment.id.segment_name}`;
         tooltip += `\n- **Segmentation Rule Name**: ${data.segment.id.rule_name}`;

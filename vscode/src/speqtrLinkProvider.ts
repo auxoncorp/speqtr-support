@@ -14,6 +14,10 @@ export class SpeqtrLinkProvider implements vscode.DocumentLinkProvider {
     provideDocumentLinks(document: vscode.TextDocument): vscode.ProviderResult<vscode.DocumentLink[]> {
         const links: vscode.DocumentLink[] = [];
         for (const m of document.getText().matchAll(EVENT_AT_TIMELINE_RE)) {
+            if (m.index == null) {
+                continue;
+            }
+
             {
                 const link = new vscode.DocumentLink(
                     new vscode.Range(document.positionAt(m.index), document.positionAt(m.index + m[0].length))

@@ -34,24 +34,33 @@ const EVENT_COORDS_TERMINAL_LINK_PROVIDER: vscode.TerminalLinkProvider<EventCoor
             }
 
             const coord = match[1];
-            links.push({
+            if (match.index == null) {
+                continue;
+            }
+
+            const link: EventCoordsTerminalLink = {
                 startIndex: match.index,
                 length: match[0].length,
                 tooltip: "View log around this event",
-                data: { around: coord, radius: 5 },
-            });
+                data: { around: coord, radius: "5" },
+            };
+            links.push(link);
         }
 
         for (const match of context.line.matchAll(EVENT_COORDS_RANGE_RE)) {
             const firstCoord = match[1];
             const secondCoord = match[2];
+            if (match.index == null) {
+                continue;
+            }
 
-            links.push({
+            const link: EventCoordsTerminalLink = {
                 startIndex: match.index,
                 length: match[0].length,
                 tooltip: "View log of this causal region",
                 data: { from: firstCoord, to: secondCoord },
-            });
+            };
+            links.push(link);
         }
 
         return links;
