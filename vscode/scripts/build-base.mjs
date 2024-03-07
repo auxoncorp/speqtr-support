@@ -3,6 +3,7 @@ import * as esbuild from "esbuild";
 var watch = false;
 var sourcemap = false;
 var minify = false;
+var bundle = false;
 
 for (const arg of process.argv.slice(2)) {
     switch (arg) {
@@ -36,9 +37,10 @@ const buildStatusPlugin = {
 
 let ctxMain = await esbuild.context({
     plugins: [buildStatusPlugin],
-    entryPoints: ["src/main.ts"],
+    entryPoints: ["src/main.ts", "src/test/runTest.ts"],
     bundle: true,
-    outfile: "out/main.js",
+    treeShaking: true,
+    outdir: "out",
     external: ["vscode"],
     format: "cjs",
     platform: "node",
@@ -51,6 +53,7 @@ let ctxWebView = await esbuild.context({
     plugins: [buildStatusPlugin],
     entryPoints: ["webview-src/transitionGraphWebView.ts", "webview-src/experimentImpactWebView.ts"],
     bundle: true,
+    treeShaking: true,
     outdir: "out",
     format: "iife",
     platform: "browser",

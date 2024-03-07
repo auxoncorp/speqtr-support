@@ -1003,8 +1003,8 @@
         "build-base": "node scripts/build-base.mjs",
         "build": "npm run build-base -- --sourcemap",
         "watch": "npm run build-base -- --sourcemap --watch",
-        "pretest": "tsc -p ./",
-        "test": "node ./out/src/test/runTest.js",
+        "pretest": "tsc -p ./common-src && tsc -p ./src && tsc -p ./webview-src",
+        "test": "node ./out/ts/extension/src/test/runTest.js",
         "lint": "tsc -p ./common-src && tsc -p ./src --noemit && tsc -p ./webview-src --noemit && eslint ./src && eslint ./webview-src && eslint ./common-src && prettier --check .",
         "fix": "prettier --write . && eslint ./src --fix && eslint ./webview-src --fix && eslint ./common-src --fix",
         "codegen": "openapi-typescript src/modality-api.json --output src/generated/"
