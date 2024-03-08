@@ -6,6 +6,7 @@ import * as eventTimingNotebookCells from "./notebooks/eventTiming.json";
 import * as eventAttributeValuesNotebookCells from "./notebooks/eventAttributeValues.json";
 import * as eventMultiAttributeValuesNotebookCells from "./notebooks/eventMultiAttributeValues.json";
 import * as modalityLog from "./modalityLog";
+import * as modalityEventInspect from "./modalityEventInspect";
 
 export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTreeItemData> {
     selectedTimelineId?: api.TimelineId = undefined;
@@ -40,7 +41,8 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
             ),
             vscode.commands.registerCommand("auxon.events.createEventAttrNotebook", async (itemData) =>
                 this.createEventAttrNotebook(itemData)
-            )
+            ),
+            vscode.commands.registerCommand("auxon.events.inspect", (itemData) => this.inspectEventCommand(itemData))
         );
     }
 
@@ -119,6 +121,13 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
             const varMap = this.templateVariableMap();
             varMap["eventName"] = eventName;
             await this.createJupyterNotebook(eventTimingNotebookCells.cells, varMap);
+        }
+    }
+
+    async inspectEventCommand(item: EventNameTreeItemData) {
+        if (item instanceof EventNameTreeItemData) {
+            const literalTimelineId = "%" + item.timelineId.replace(/-/g, "");
+            vscode.commands.executeCommand(modalityEventInspect.COMMAND, `'${item.eventName}'@${literalTimelineId}`);
         }
     }
 
