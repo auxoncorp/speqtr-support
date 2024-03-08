@@ -50,7 +50,7 @@ export interface TimelineParams {
     type: "timelines";
     title?: string;
     timelines: string[];
-    groupBy?: string[];
+    groupBy: string[];
     assignNodeProps?: AssignNodeProps;
 }
 
@@ -58,7 +58,7 @@ export interface SegmentParams {
     type: "segment";
     title?: string;
     segmentIds: [api.WorkspaceSegmentId];
-    groupBy?: string[];
+    groupBy: string[];
     assignNodeProps?: AssignNodeProps;
 }
 
@@ -166,11 +166,11 @@ export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
     step1();
 }
 
-export function showGraphForTimelines(timelineIds: string[], groupBy?: string[]) {
+export function showGraphForTimelines(timelineIds: string[], groupBy: string[]) {
     showGraph({ type: "timelines", timelines: timelineIds, groupBy });
 }
 
-export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy?: string[]) {
+export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy: string[]) {
     showGraph({ type: "segment", segmentIds: [segmentId], groupBy });
 }
 
@@ -269,21 +269,24 @@ export class TransitionGraph {
     private async generateGraph(params: TransitionGraphParams): Promise<DirectedGraph> {
         let res: api.GroupedGraph;
 
-        if (params.type == "timelines") {
-            res = await this.apiClient.timelines().groupedGraph(params.timelines, params.groupBy);
-        } else if (params.type == "segment") {
-            if (params.segmentIds.length == 1) {
-                res = await this.apiClient.segment(params.segmentIds[0]).groupedGraph(params.groupBy);
-            } else {
-                const timelineIds: api.TimelineId[] = [];
-                // Not ideal, but okay for now #2714
-                for (const segmentId of params.segmentIds) {
-                    for (const tl of await this.apiClient.segment(segmentId).timelines()) {
-                        timelineIds.push(tl.id);
+        switch (params.type) {
+            case "timelines":
+                res = await this.apiClient.timelines().groupedGraph(params.timelines, params.groupBy);
+                break;
+            case "segment":
+                if (params.segmentIds.length == 1) {
+                    res = await this.apiClient.segment(params.segmentIds[0]).groupedGraph(params.groupBy);
+                } else {
+                    const timelineIds: api.TimelineId[] = [];
+                    // Not ideal, but okay for now #2714
+                    for (const segmentId of params.segmentIds) {
+                        for (const tl of await this.apiClient.segment(segmentId).timelines()) {
+                            timelineIds.push(tl.id);
+                        }
                     }
+                    res = await this.apiClient.timelines().groupedGraph(timelineIds, params.groupBy);
                 }
-                res = await this.apiClient.timelines().groupedGraph(timelineIds, params.groupBy);
-            }
+                break;
         }
 
         const hideSelfEdges =
@@ -316,7 +319,9 @@ export class TransitionGraph {
             }
 
             const graphNode = new Node(i);
-            graphNode.count = node.count;
+            if (node.count) {
+                graphNode.count = node.count;
+            }
             graphNode.label = title;
 
             if (params.assignNodeProps) {
@@ -329,15 +334,16 @@ export class TransitionGraph {
 
                 const dataProps = params.assignNodeProps.getDataProps(title);
                 if (dataProps) {
-                    for (const [key, value] of Object.entries(dataProps)) {
-                        graphNode[key] = value;
-                    }
+                    Object.assign(graphNode, dataProps);
                 }
             }
 
             const timelineIdIdx = res.attr_keys.indexOf("timeline.id");
             if (timelineIdIdx != -1) {
-                graphNode.timelineId = node.attr_vals[timelineIdIdx]["TimelineId"];
+                const timelineIdAttrVal = node.attr_vals[timelineIdIdx];
+                if (timelineIdAttrVal && isTimelineId(timelineIdAttrVal)) {
+                    graphNode.timelineId = timelineIdAttrVal.TimelineId;
+                }
             }
             const timelineNameIdx = res.attr_keys.indexOf("timeline.name");
             if (timelineNameIdx != -1) {
@@ -357,13 +363,14 @@ export class TransitionGraph {
                 continue;
             }
 
-            const sourceOccurCount = res.nodes[edge.source].count;
-            const percent = (edge.count / sourceOccurCount) * 100;
-            const label = `${percent.toFixed(1)}% (${edge.count})`;
-
             const graphEdge = new Edge(edgeIdx, edge.source, edge.destination);
-            graphEdge.label = label;
             graphEdge.count = edge.count;
+
+            const sourceOccurCount = res.nodes[edge.source]?.count;
+            if (sourceOccurCount) {
+                const percent = (edge.count / sourceOccurCount) * 100;
+                graphEdge.label = `${percent.toFixed(1)}% (${edge.count})`;
+            }
 
             directedGraph.edges.push(graphEdge);
             edgeIdx++;
@@ -371,6 +378,10 @@ export class TransitionGraph {
 
         return directedGraph;
     }
+}
+
+function isTimelineId(value: api.AttrVal): value is { TimelineId?: api.TimelineId } {
+    return Object.prototype.hasOwnProperty.call(value, "TimelineId");
 }
 
 function postNodesAndEdges(webview: vscode.Webview, graph: DirectedGraph) {
@@ -418,9 +429,9 @@ class Node {
     }
 
     toCytoscapeObject(): cytoscape.NodeDefinition {
-        const data: transitionGraphWebViewApi.NodeData = { id: this.id.toString() };
+        const data: transitionGraphWebViewApi.NodeData = { id: this.id.toString(), labelvalign: "center" };
 
-        const label = this.label.replace("'", "\\'");
+        const label = this.label?.replace("'", "\\'");
         if (label !== undefined && label !== "") {
             data.label = label;
         } else {
@@ -433,8 +444,6 @@ class Node {
 
         if (this.hasChildren) {
             data.labelvalign = "top";
-        } else {
-            data.labelvalign = "center";
         }
 
         // We use this to indicate nodes that can be logged from the graph context menu

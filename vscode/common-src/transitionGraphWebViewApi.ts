@@ -26,7 +26,7 @@ export interface LogSelectedNodesCommand {
 
 export interface NodeData extends cytoscape.NodeDataDefinition {
     label?: string;
-    labelvalign?: "top" | "center";
+    labelvalign: "top" | "center";
     filepath?: string;
     timeline?: string;
     timelineName?: string;

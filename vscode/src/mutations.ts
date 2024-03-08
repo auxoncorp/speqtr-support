@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import * as cliConfig from "./cliConfig";
 import * as api from "./modalityApi";
 import * as modalityLog from "./modalityLog";
+import * as workspaceState from "./workspaceState";
 
 class MutationsTreeMemento {
     constructor(private readonly memento: vscode.Memento) {}
@@ -37,20 +37,17 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     readonly onDidChangeTreeData: vscode.Event<MutationsTreeItemData | MutationsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
 
-    workspaceState?: MutationsTreeMemento = undefined;
+    uiState: MutationsTreeMemento;
     data: MutationsTreeItemData[] = [];
     view: vscode.TreeView<MutationsTreeItemData>;
     selectedMutatorId?: api.MutatorId = undefined;
 
-    // Data scope related
-    usedSegmentConfig?: cliConfig.ContextSegment = undefined;
-    activeWorkspaceVersionId?: string = undefined;
-    activeSegments: api.WorkspaceSegmentId[] = [];
-
-    constructor(private readonly apiClient: api.Client) {}
-
-    register(context: vscode.ExtensionContext) {
-        this.workspaceState = new MutationsTreeMemento(context.workspaceState);
+    constructor(
+        private readonly apiClient: api.Client,
+        private wss: workspaceState.WorkspaceAndSegmentState,
+        context: vscode.ExtensionContext
+    ) {
+        this.uiState = new MutationsTreeMemento(context.workspaceState);
         this.view = vscode.window.createTreeView("auxon.mutations", {
             treeDataProvider: this,
             canSelectMany: false,
@@ -84,7 +81,8 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
             }),
             vscode.commands.registerCommand("auxon.mutations.viewLogFromMutation", (itemData) =>
                 this.viewLogFromMutation(itemData)
-            )
+            ),
+            this.wss.onDidChangeUsedSegments(() => this.refresh())
         );
 
         this.refresh();
@@ -94,69 +92,60 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
         vscode.commands.executeCommand(
             "setContext",
             "auxon.mutations.groupBy",
-            this.workspaceState.getGroupByMutatorName() ? "MUTATOR_NAME" : "NONE"
+            this.uiState.getGroupByMutatorName() ? "MUTATOR_NAME" : "NONE"
         );
         vscode.commands.executeCommand(
             "setContext",
             "auxon.mutations.filterBy",
-            this.workspaceState.getFilterBySelectedMutator() ? "MUTATOR_ID" : "NONE"
+            this.uiState.getFilterBySelectedMutator() ? "MUTATOR_ID" : "NONE"
         );
         vscode.commands.executeCommand(
             "setContext",
             "auxon.mutations.cleared",
-            this.workspaceState.getShowClearedMutations() ? "SHOW" : "HIDE"
+            this.uiState.getShowClearedMutations() ? "SHOW" : "HIDE"
         );
 
         this._onDidChangeTreeData.fire(undefined);
     }
 
     getTreeItem(element: MutationsTreeItemData): vscode.TreeItem {
-        return element.treeItem(this.workspaceState);
+        return element.treeItem(this.uiState);
     }
 
     async getChildren(element?: MutationsTreeItemData): Promise<MutationsTreeItemData[]> {
-        // This is an 'uninitialized' condition
-        if (!this.usedSegmentConfig) {
-            return [];
-        }
-
-        if (this.workspaceState.getFilterBySelectedMutator() && this.selectedMutatorId == null) {
+        if (this.uiState.getFilterBySelectedMutator() && this.selectedMutatorId == null) {
             // Need a selected mutator to populate with
             return [];
         } else if (!element) {
             let mutations = [];
             this.data = [];
 
-            switch (this.usedSegmentConfig.type) {
-                case "All":
-                    mutations = await this.apiClient.mutations().list(this.selectedMutatorId);
-                    break;
+            switch (this.wss.activeSegments.type) {
                 case "WholeWorkspace":
-                    if (!this.activeWorkspaceVersionId) {
-                        return [];
-                    }
                     mutations = await this.apiClient
-                        .workspace(this.activeWorkspaceVersionId)
+                        .workspace(this.wss.activeWorkspaceVersionId)
                         .mutations(this.selectedMutatorId);
                     break;
-                case "Latest":
-                case "Set":
-                    if (this.activeSegments.length === 0) {
-                        return [];
-                    }
-                    for (const segmentId of this.activeSegments) {
-                        const segMutations = await this.apiClient.segment(segmentId).mutations(this.selectedMutatorId);
-                        mutations.push(...segMutations);
+                case "Explicit":
+                    if (this.wss.activeSegments.isAllSegments) {
+                        mutations = await this.apiClient.mutations().list(this.selectedMutatorId);
+                    } else {
+                        for (const segmentId of this.wss.activeSegments.segmentIds) {
+                            const segMutations = await this.apiClient
+                                .segment(segmentId)
+                                .mutations(this.selectedMutatorId);
+                            mutations.push(...segMutations);
+                        }
                     }
                     break;
             }
 
             mutations = mutations.map((m) => new Mutation(m));
-            if (!this.workspaceState.getShowClearedMutations()) {
+            if (!this.uiState.getShowClearedMutations()) {
                 mutations = mutations.filter((m) => !m.wasCleared());
             }
 
-            if (this.workspaceState.getGroupByMutatorName()) {
+            if (this.uiState.getGroupByMutatorName()) {
                 const root = new MutationsGroupByNameTreeItemData("", []);
                 for (const m of mutations) {
                     root.insertNode(m);
@@ -183,7 +172,7 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     }
 
     getParent(element: MutationsTreeItemData): vscode.ProviderResult<MutationsTreeItemData> {
-        if (this.workspaceState.getGroupByMutatorName()) {
+        if (this.uiState.getGroupByMutatorName()) {
             for (const group of this.data) {
                 if (!(group instanceof MutationsGroupByNameTreeItemData)) {
                     throw new Error("Internal error: mutations tree node not of expected type");
@@ -198,12 +187,12 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
 
     // Set the selected mutator when grouping by mutator name or only showing a single mutator
     setSelectedMutator(mutatorId: api.MutatorId) {
-        if (this.workspaceState.getFilterBySelectedMutator()) {
+        if (this.uiState.getFilterBySelectedMutator()) {
             if (this.selectedMutatorId != mutatorId) {
                 this.selectedMutatorId = mutatorId;
                 this.refresh();
             }
-        } else if (this.workspaceState.getGroupByMutatorName() && this.selectedMutatorId != mutatorId) {
+        } else if (this.uiState.getGroupByMutatorName() && this.selectedMutatorId != mutatorId) {
             this.selectedMutatorId = mutatorId;
 
             for (const group of this.data) {
@@ -221,7 +210,7 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     }
 
     revealMutation(mutationId: api.MutationId) {
-        if (this.workspaceState.getGroupByMutatorName()) {
+        if (this.uiState.getGroupByMutatorName()) {
             for (const group of this.data) {
                 if (!(group instanceof MutationsGroupByNameTreeItemData)) {
                     throw new Error("Internal error: mutations tree node not of expected type");
@@ -245,53 +234,36 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     }
 
     disableMutationGrouping() {
-        this.workspaceState.setGroupByMutatorName(false);
+        this.uiState.setGroupByMutatorName(false);
         this.clearSelectedMutator();
         this.refresh();
     }
 
     groupMutationsByName() {
-        this.workspaceState.setGroupByMutatorName(true);
+        this.uiState.setGroupByMutatorName(true);
         this.clearSelectedMutator();
         this.refresh();
     }
 
     disableMutationFiltering() {
-        this.workspaceState.setFilterBySelectedMutator(false);
+        this.uiState.setFilterBySelectedMutator(false);
         this.clearSelectedMutator();
         this.refresh();
     }
 
     filterBySelectedMutator() {
-        this.workspaceState.setFilterBySelectedMutator(true);
+        this.uiState.setFilterBySelectedMutator(true);
         this.clearSelectedMutator();
         this.refresh();
     }
 
     showClearedMutations(show: boolean) {
-        this.workspaceState.setShowClearedMutations(show);
+        this.uiState.setShowClearedMutations(show);
         this.refresh();
     }
 
     clearSelectedMutator() {
         this.selectedMutatorId = undefined;
-    }
-
-    setActiveWorkspace(workspaceVersionId: string) {
-        this.activeWorkspaceVersionId = workspaceVersionId;
-        this.clearSelectedMutator();
-        this.refresh();
-    }
-
-    setActiveSegmentIds(usedSegmentConfig?: cliConfig.ContextSegment, segmentIds?: api.WorkspaceSegmentId[]) {
-        if (usedSegmentConfig) {
-            this.usedSegmentConfig = usedSegmentConfig;
-        }
-        if (segmentIds) {
-            this.activeSegments = segmentIds;
-        }
-        this.clearSelectedMutator();
-        this.refresh();
     }
 
     clearMutation(item: MutationsTreeItemData) {
@@ -303,6 +275,10 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
 
     viewLogFromMutation(item: MutationsTreeItemData) {
         if (item instanceof MutationCoordinateTreeItemData) {
+            if (item.coordinate.id == null || item.coordinate.timeline_id == null) {
+                throw new Error("Malformed event coordinate");
+            }
+
             // Encode the opaque_event_id as a string for the log command
             let eventIdStr = "";
             const opaque_event_id = item.coordinate.id;
@@ -311,7 +287,9 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
                     eventIdStr += octet.toString(16).padStart(2, "0");
                 }
             }
+
             const literalTimelineId = "%" + item.coordinate.timeline_id.replace(/-/g, "");
+
             vscode.commands.executeCommand(
                 "auxon.modality.log",
                 new modalityLog.ModalityLogCommandArgs({
@@ -464,7 +442,12 @@ export class NamedMutationTreeItemData extends MutationsTreeItemData {
         if (this.mutation.regionDetailsSummary && this.mutation.regionDetailsSummary.command_communicated_and_success) {
             const coord = this.mutation.regionDetailsSummary.command_communicated_and_success[0];
             const maybeSuccess = this.mutation.regionDetailsSummary.command_communicated_and_success[1];
+
+            if (coord.timeline_id == null) {
+                throw new Error("Malformed timeline id");
+            }
             const timeline = await apiClient.timeline(coord.timeline_id).get();
+
             let timelineStr = `${coord.timeline_id}`;
             if (Object.prototype.hasOwnProperty.call(timeline.attributes, "timeline.name")) {
                 timelineStr = timeline.attributes["timeline.name"] as string;
@@ -473,20 +456,32 @@ export class NamedMutationTreeItemData extends MutationsTreeItemData {
                 new MutationCoordinateTreeItemData(`Communicated Timeline: ${timelineStr}`, coord, maybeSuccess)
             );
         }
+
         if (this.mutation.regionDetailsSummary && this.mutation.regionDetailsSummary.inject_attempted_and_success) {
             const coord = this.mutation.regionDetailsSummary.inject_attempted_and_success[0];
             const maybeSuccess = this.mutation.regionDetailsSummary.inject_attempted_and_success[1];
+
+            if (coord.timeline_id == null) {
+                throw new Error("Malformed timeline id");
+            }
             const timeline = await apiClient.timeline(coord.timeline_id).get();
+
             let timelineStr = `${coord.timeline_id}`;
             if (Object.prototype.hasOwnProperty.call(timeline.attributes, "timeline.name")) {
                 timelineStr = timeline.attributes["timeline.name"] as string;
             }
             children.push(new MutationCoordinateTreeItemData(`Injected Timeline: ${timelineStr}`, coord, maybeSuccess));
         }
+
         if (this.mutation.regionDetailsSummary && this.mutation.regionDetailsSummary.clear_communicated_and_success) {
             const coord = this.mutation.regionDetailsSummary.clear_communicated_and_success[0];
             const maybeSuccess = this.mutation.regionDetailsSummary.clear_communicated_and_success[1];
+
+            if (coord.timeline_id == null) {
+                throw new Error("Malformed timeline id");
+            }
             const timeline = await apiClient.timeline(coord.timeline_id).get();
+
             let timelineStr = `${coord.timeline_id}`;
             if (Object.prototype.hasOwnProperty.call(timeline.attributes, "timeline.name")) {
                 timelineStr = timeline.attributes["timeline.name"] as string;

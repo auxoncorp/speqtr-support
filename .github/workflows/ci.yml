@@ -17,9 +17,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install vsce tool
-        run: npm install -g @vscode/vsce
-
       - run: npm install
       - run: npm run lint
 
@@ -28,7 +25,7 @@ jobs:
       - run: npm test
         if: runner.os != 'Linux'
 
-      - run: vsce package
+      - run: npx vsce package
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:

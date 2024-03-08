@@ -6,6 +6,7 @@ import * as child_process from "child_process";
 import * as config from "./config";
 import * as specCoverage from "./specCoverage";
 import * as cliConfig from "./cliConfig";
+import * as workspaceState from "./workspaceState";
 
 const execFile = util.promisify(child_process.execFile);
 
@@ -34,15 +35,17 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         new vscode.EventEmitter();
     readonly onDidChangeTreeData: vscode.Event<SpecsTreeItemData | SpecsTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
-    workspaceState?: SpecsTreeMemento = undefined;
-    activeSegmentId?: api.WorkspaceSegmentId = undefined;
+    uiState: SpecsTreeMemento;
     view: vscode.TreeView<SpecsTreeItemData>;
     data: SpecsTreeItemData[] = [];
 
-    constructor(private readonly apiClient: api.Client, private readonly cov: specCoverage.SpecCoverageProvider) {}
-
-    register(context: vscode.ExtensionContext) {
-        this.workspaceState = new SpecsTreeMemento(context.workspaceState);
+    constructor(
+        private readonly apiClient: api.Client,
+        private readonly cov: specCoverage.SpecCoverageProvider,
+        private wss: workspaceState.WorkspaceAndSegmentState,
+        context: vscode.ExtensionContext
+    ) {
+        this.uiState = new SpecsTreeMemento(context.workspaceState);
         this.view = vscode.window.createTreeView("auxon.specs", {
             treeDataProvider: this,
             canSelectMany: true,
@@ -95,7 +98,8 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
                     // could be more efficient here by looking for the '--dry-run' arg in the task execution
                     this.refresh();
                 }
-            })
+            }),
+            this.wss.onDidChangeUsedSegments(() => this.refresh())
         );
 
         this.refresh();
@@ -105,25 +109,16 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         vscode.commands.executeCommand(
             "setContext",
             "auxon.specs.versions",
-            this.workspaceState.getShowVersions() ? "SHOW" : "HIDE"
+            this.uiState.getShowVersions() ? "SHOW" : "HIDE"
         );
 
         vscode.commands.executeCommand(
             "setContext",
             "auxon.specs.results",
-            this.workspaceState.getShowResults() ? "SHOW" : "HIDE"
+            this.uiState.getShowResults() ? "SHOW" : "HIDE"
         );
 
         this._onDidChangeTreeData.fire(undefined);
-    }
-
-    setActiveSegmentIds(segmentIds?: api.WorkspaceSegmentId[]) {
-        if (segmentIds && segmentIds.length == 1) {
-            this.activeSegmentId = segmentIds[0];
-        } else {
-            this.activeSegmentId = undefined;
-        }
-        this.refresh();
     }
 
     revealSpec(specName: string) {
@@ -134,27 +129,31 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
     }
 
     showVersions(show: boolean) {
-        this.workspaceState.setShowVersions(show);
+        this.uiState.setShowVersions(show);
         this.refresh();
     }
 
     showResults(show: boolean) {
-        this.workspaceState.setShowResults(show);
+        this.uiState.setShowResults(show);
         this.refresh();
     }
 
     getTreeItem(element: SpecsTreeItemData): vscode.TreeItem {
-        return element.treeItem(this.workspaceState);
+        return element.treeItem(this.uiState);
     }
 
     async getChildren(element?: SpecsTreeItemData): Promise<SpecsTreeItemData[]> {
         if (!element) {
             this.data = [];
             const specs = await this.apiClient.specs().list();
-            let evalSummaries: api.SpecSegmentEvalOutcomeSummary[] = [];
-            const showResultsOrVersions = this.workspaceState.getShowResults() || this.workspaceState.getShowVersions();
-            if (!showResultsOrVersions && this.activeSegmentId) {
-                evalSummaries = await this.apiClient.segment(this.activeSegmentId).specSummary();
+            const evalSummaries: api.SpecSegmentEvalOutcomeSummary[] = [];
+            const showResultsOrVersions = this.uiState.getShowResults() || this.uiState.getShowVersions();
+            if (!showResultsOrVersions && this.wss.activeSegments) {
+                if (this.wss.activeSegments.type == "Explicit") {
+                    for (const seg of this.wss.activeSegments.segmentIds) {
+                        evalSummaries.push(...(await this.apiClient.segment(seg).specSummary()));
+                    }
+                }
             }
             const items = await Promise.all(
                 specs.map(async (spec) => {
@@ -168,7 +167,7 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
             this.data = items.sort((a, b) => compare(a.name, b.name));
             return this.data;
         } else {
-            return await element.children(this.apiClient, this.workspaceState);
+            return await element.children(this.apiClient, this.uiState);
         }
     }
 
@@ -276,7 +275,7 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
                 if (item instanceof SpecResultTreeItemData) {
                     params.specResultIds.push(item.evalOutcome.spec_eval_results_id);
                 } else if (item instanceof SpecResultsTreeItemData) {
-                    const children = await item.children(this.apiClient, this.workspaceState);
+                    const children = await item.children(this.apiClient, this.uiState);
                     for (const child of children) {
                         const childResult = child as SpecResultTreeItemData;
                         params.specResultIds.push(childResult.evalOutcome.spec_eval_results_id);
@@ -456,6 +455,8 @@ export class SpecVersionTreeItemData extends SpecsTreeItemData {
             } else {
                 return results.map((result) => new SpecResultTreeItemData(result));
             }
+        } else {
+            return [];
         }
     }
 }
@@ -544,9 +545,11 @@ export class BehaviorTreeItemData extends SpecsTreeItemData {
             children.push(new UntilTreeItemData(name, attributes));
         }
 
-        for (const [name, type, attrs] of this.structure.cases) {
-            removeNamesFromAttrMap(attrs);
-            children.push(new CaseTreeItemData(name, type, attrs));
+        if (this.structure.cases != null) {
+            for (const [name, type, attrs] of this.structure.cases) {
+                removeNamesFromAttrMap(attrs);
+                children.push(new CaseTreeItemData(name, type, attrs));
+            }
         }
 
         return children;

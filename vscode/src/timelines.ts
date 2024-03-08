@@ -4,9 +4,9 @@
 
 import * as api from "./modalityApi";
 import * as vscode from "vscode";
-import * as cliConfig from "./cliConfig";
 import * as modalityLog from "./modalityLog";
 import * as transitionGraph from "./transitionGraph";
+import * as workspaceState from "./workspaceState";
 
 class TimelinesTreeMemento {
     constructor(private readonly memento: vscode.Memento) {}
@@ -35,21 +35,20 @@ enum TimelinesGroupingMode {
 }
 
 export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<TimelineTreeItemData> {
-    activeWorkspaceVersionId: string;
-    usedSegmentConfig: cliConfig.ContextSegment;
-    activeSegments: api.WorkspaceSegmentId[];
     view: vscode.TreeView<TimelineTreeItemData>;
-    workspaceState?: TimelinesTreeMemento;
+    uiState: TimelinesTreeMemento;
 
     private _onDidChangeTreeData: vscode.EventEmitter<TimelineTreeItemData | TimelineTreeItemData[] | undefined> =
         new vscode.EventEmitter();
     readonly onDidChangeTreeData: vscode.Event<TimelineTreeItemData | TimelineTreeItemData[] | undefined> =
         this._onDidChangeTreeData.event;
 
-    constructor(private readonly apiClient: api.Client) {}
-
-    register(context: vscode.ExtensionContext) {
-        this.workspaceState = new TimelinesTreeMemento(context.workspaceState);
+    constructor(
+        private readonly apiClient: api.Client,
+        private wss: workspaceState.WorkspaceAndSegmentState,
+        context: vscode.ExtensionContext
+    ) {
+        this.uiState = new TimelinesTreeMemento(context.workspaceState);
         this.view = vscode.window.createTreeView("auxon.timelines", {
             treeDataProvider: this,
             canSelectMany: true,
@@ -93,41 +92,27 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     async getChildren(element?: TimelineTreeItemData): Promise<TimelineTreeItemData[]> {
-        // This is an 'uninitialized' condition
-        if (!this.usedSegmentConfig) {
-            return [];
-        }
-
         if (element) {
             return element.children();
         }
 
         // root element
-        const groupingAttrKeys = this.workspaceState.getGroupingAttrKeys();
-        const groupByTimelineNameComponents = this.workspaceState.getGroupByTimelineNameComponents();
+        const groupingAttrKeys = this.uiState.getGroupingAttrKeys();
+        const groupByTimelineNameComponents = this.uiState.getGroupByTimelineNameComponents();
         if (groupingAttrKeys.length > 0) {
             let groups: api.TimelineGroup[] = [];
-            switch (this.usedSegmentConfig.type) {
-                case "All":
+            switch (this.wss.activeSegments.type) {
                 case "WholeWorkspace":
-                    if (!this.activeWorkspaceVersionId) {
-                        return [];
-                    }
                     groups = await this.apiClient
-                        .workspace(this.activeWorkspaceVersionId)
+                        .workspace(this.wss.activeWorkspaceVersionId)
                         .groupedTimelines(groupingAttrKeys);
                     break;
 
-                case "Latest":
-                case "Set":
-                    if (this.activeSegments) {
-                        for (const segmentId of this.activeSegments) {
-                            const api_groups = await this.apiClient
-                                .segment(segmentId)
-                                .groupedTimelines(groupingAttrKeys);
-                            for (const tl_group of api_groups) {
-                                groups.push(tl_group);
-                            }
+                case "Explicit":
+                    for (const segmentId of this.wss.activeSegments.segmentIds) {
+                        const api_groups = await this.apiClient.segment(segmentId).groupedTimelines(groupingAttrKeys);
+                        for (const tl_group of api_groups) {
+                            groups.push(tl_group);
                         }
                     }
                     break;
@@ -137,31 +122,24 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         } else {
             // Not grouping by attr keys; just get the timelines
             let timelines: api.TimelineOverview[] = [];
-            switch (this.usedSegmentConfig.type) {
-                case "All":
+            switch (this.wss.activeSegments.type) {
                 case "WholeWorkspace":
-                    if (!this.activeWorkspaceVersionId) {
-                        return [];
-                    }
-                    timelines = await this.apiClient.workspace(this.activeWorkspaceVersionId).timelines();
+                    timelines = await this.apiClient.workspace(this.wss.activeWorkspaceVersionId).timelines();
                     break;
 
-                case "Latest":
-                case "Set":
-                    if (this.activeSegments) {
-                        for (const segmentId of this.activeSegments) {
-                            for (const timeline of await this.apiClient.segment(segmentId).timelines()) {
-                                timelines.push(timeline);
-                            }
+                case "Explicit":
+                    for (const segmentId of this.wss.activeSegments.segmentIds) {
+                        for (const timeline of await this.apiClient.segment(segmentId).timelines()) {
+                            timelines.push(timeline);
                         }
                     }
                     break;
             }
             timelines.sort((a, b) => {
-                if (a === null || a.name === null) {
+                if (!a?.name) {
                     return 1;
                 }
-                if (b === null || b.name === null) {
+                if (!b?.name) {
                     return -1;
                 }
                 return a.name.localeCompare(b.name);
@@ -170,7 +148,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             if (groupByTimelineNameComponents) {
                 const root = new TimelineGroupByNameTreeItemData("", []);
                 for (const timeline of timelines) {
-                    let timelineNamePath = [];
+                    let timelineNamePath: string[] = [];
                     if (timeline.name) {
                         timelineNamePath = timeline.name.split(".");
                     }
@@ -223,15 +201,15 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     async disableTimelineGrouping() {
-        this.workspaceState.setGroupingAttrKeys([]);
-        this.workspaceState.setGroupByTimelineNameComponents(false);
+        this.uiState.setGroupingAttrKeys([]);
+        this.uiState.setGroupByTimelineNameComponents(false);
         this.refresh();
     }
 
     async setGroupingAttrs() {
-        this.workspaceState.setGroupByTimelineNameComponents(false);
+        this.uiState.setGroupByTimelineNameComponents(false);
         const tlAttrs = await this.getAvailableTimelineAttrKeys();
-        const groupingAttrKeys = this.workspaceState.getGroupingAttrKeys();
+        const groupingAttrKeys = this.uiState.getGroupingAttrKeys();
         const pickItems: vscode.QuickPickItem[] = tlAttrs.map((tlAttr) => {
             const picked = groupingAttrKeys.find((el) => el == tlAttr) !== undefined;
             const label = tlAttr;
@@ -241,33 +219,28 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         const pickedItems = await vscode.window.showQuickPick(pickItems, { canPickMany: true });
         if (pickedItems) {
             // User actually selected some attributes to use
-            this.workspaceState.setGroupingAttrKeys(pickedItems.map((pi) => pi.label).sort());
+            this.uiState.setGroupingAttrKeys(pickedItems.map((pi) => pi.label).sort());
             this.refresh();
         }
     }
 
     groupTimelinesByNameComponents() {
-        this.workspaceState.setGroupingAttrKeys([]);
-        this.workspaceState.setGroupByTimelineNameComponents(true);
+        this.uiState.setGroupingAttrKeys([]);
+        this.uiState.setGroupByTimelineNameComponents(true);
         this.refresh();
     }
 
     async getAvailableTimelineAttrKeys(): Promise<string[]> {
-        switch (this.usedSegmentConfig.type) {
-            case "All":
+        switch (this.wss.activeSegments.type) {
             case "WholeWorkspace":
-                if (!this.activeWorkspaceVersionId) {
-                    return [];
-                }
-                return await this.apiClient.workspace(this.activeWorkspaceVersionId).timelineAttrKeys();
+                return await this.apiClient.workspace(this.wss.activeWorkspaceVersionId).timelineAttrKeys();
 
-            case "Latest":
-            case "Set":
-                if (!this.activeSegments) {
-                    return [];
+            case "Explicit": {
+                if (this.wss.activeSegments.isAllSegments) {
+                    return await this.apiClient.workspace(this.wss.activeWorkspaceVersionId).timelineAttrKeys();
                 } else {
                     const keys = new Set<string>();
-                    for (const segmentId of this.activeSegments) {
+                    for (const segmentId of this.wss.activeSegments.segmentIds) {
                         for (const key of await this.apiClient.segment(segmentId).timelineAttrKeys()) {
                             keys.add(key);
                         }
@@ -275,6 +248,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
 
                     return [...keys];
                 }
+            }
         }
     }
 
@@ -282,9 +256,9 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     // It's not elegant, but it's all we can do for now
     updateGroupingMenuContext() {
         let groupingMode = TimelinesGroupingMode.FlatList;
-        if (this.workspaceState.getGroupByTimelineNameComponents()) {
+        if (this.uiState.getGroupByTimelineNameComponents()) {
             groupingMode = TimelinesGroupingMode.ByNameComponents;
-        } else if (this.workspaceState.getGroupingAttrKeys().length > 0) {
+        } else if (this.uiState.getGroupingAttrKeys().length > 0) {
             groupingMode = TimelinesGroupingMode.ByAttributes;
         }
         vscode.commands.executeCommand("setContext", "auxon.timelinesGroupingMode", groupingMode);
@@ -337,7 +311,7 @@ abstract class TimelineTreeItemData {
     }
 
     getTimelineIds(): api.TimelineId[] {
-        const ids = [];
+        const ids: api.TimelineId[] = [];
         this.postwalk((n: TimelineTreeItemData) => {
             if (n.timelineId) {
                 ids.push(n.timelineId);
@@ -378,11 +352,11 @@ export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
     }
 
     insertNode(timeline: api.TimelineOverview, timelineNamePath: string[]) {
-        if (timelineNamePath.length == 0) {
+        const nextNodeName = timelineNamePath.shift();
+
+        if (!nextNodeName) {
             this.childItems.push(new TimelineLeafTreeItemData(timeline));
         } else {
-            const nextNodeName = timelineNamePath.shift();
-
             let nextNodeIndex = this.childItems.findIndex((item) => item.name == nextNodeName);
             if (nextNodeIndex == -1) {
                 this.childItems.push(new TimelineGroupByNameTreeItemData(nextNodeName, []));
@@ -435,20 +409,21 @@ export class TimelineGroupTreeItemData extends TimelineTreeItemData {
 
     override children(): TimelineTreeItemData[] {
         const timelines = this.timeline_group.timelines.sort((a, b) => {
-            if (a === null || a.name === null) {
+            if (!a?.name) {
                 return 1;
             }
-            if (b === null || b.name === null) {
+            if (!b?.name) {
                 return -1;
             }
             return a.name.localeCompare(b.name);
         });
+
         return timelines.map((timeline_overview) => new TimelineLeafTreeItemData(timeline_overview));
     }
 }
 
 export class TimelineLeafTreeItemData extends TimelineTreeItemData {
-    name = "";
+    name = "<unnamed>";
     contextValue = "timeline";
     iconPath = new vscode.ThemeIcon("git-commit");
 
@@ -456,11 +431,10 @@ export class TimelineLeafTreeItemData extends TimelineTreeItemData {
         super();
 
         this.timelineId = this.timeline_overview.id;
-        let label = this.timeline_overview.name;
-        if (label === null) {
-            label = "<unnamed>";
+        const label = this.timeline_overview.name;
+        if (label) {
+            this.name = label;
         }
-        this.name = label;
         this.description = this.timeline_overview.id;
 
         let tooltip = `- **Timeline Name**: ${this.timeline_overview.name}`;

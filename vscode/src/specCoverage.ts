@@ -15,10 +15,8 @@ export interface SpecCoverageParams {
 
 /// Shows a spec coverage report as a webview, when asked.
 export class SpecCoverageProvider {
-    private template?: HandlebarsTemplateDelegate<TemplateContext>;
-    constructor(private readonly apiClient: api.Client) {}
-
-    async initialize(context: vscode.ExtensionContext) {
+    private template: HandlebarsTemplateDelegate<TemplateContext>;
+    constructor(private readonly apiClient: api.Client, context: vscode.ExtensionContext) {
         const templateUri = vscode.Uri.joinPath(context.extensionUri, "resources", "specCoverage.handlebars.html");
 
         const templateText = fs.readFileSync(templateUri.fsPath, "utf8");
@@ -206,11 +204,16 @@ function behaviorViewModel(bhCov: api.BehaviorCoverage): BehaviorViewModel {
         }
     }
 
+    let triggerCount = undefined;
+    if (bhCov.triggered_n_times != null) {
+        triggerCount = bhCov.triggered_n_times;
+    }
+
     return {
         name: bhCov.name,
         executed: bhCov.test_counts.ever_executed,
         passed: !bhCov.test_counts.ever_failed,
-        triggerCount: bhCov.triggered_n_times,
+        triggerCount,
         style,
         isTriggered: style == "triggered",
         isGlobal: style == "global",

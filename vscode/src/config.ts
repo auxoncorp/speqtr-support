@@ -57,9 +57,9 @@ export async function modalityUrl(): Promise<vscode.Uri> {
 /**
  * Extra environment variables to use for all command invocations, including the LSP server.
  */
-function extraEnv(): null | object {
+function extraEnv(): object | undefined {
     const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
-    return auxonConfig.get<null | object>("extraEnv");
+    return auxonConfig.get<object>("extraEnv");
 }
 
 /**
@@ -85,14 +85,18 @@ export async function allowInsecureHttps(): Promise<boolean> {
  */
 export async function toolEnv(): Promise<Record<string, string>> {
     const env: Record<string, string> = {
-        MODALITY_AUTH_TOKEN: await userAuthToken(),
         // TODO implement this in the CLI
         MODALITY_ALLOW_INSECURE_TLS: (await allowInsecureHttps()).toString(),
         MODALITY_URL: (await modalityUrlV1()).toString(),
     };
 
+    const auth_token = await userAuthToken();
+    if (auth_token != null) {
+        env["MODALITY_AUTH_TOKEN"] = auth_token;
+    }
+
     const extra = extraEnv();
-    if (extra) {
+    if (extra != null) {
         for (const [k, v] of Object.entries(extra)) {
             env[k] = v.toString();
         }
@@ -123,7 +127,7 @@ export async function toolDebugEnv(): Promise<Record<string, string>> {
 export function toolPath(tool_name: string): string {
     const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
     const toolDir = auxonConfig.get<null | string>("tooldir");
-    let toolPath: string;
+    let toolPath: string | undefined;
 
     if (process.platform == "win32") {
         let customPath = null;
@@ -167,18 +171,22 @@ export function toolPath(tool_name: string): string {
 export function extraCliArgs(command: string): string[] {
     const auxonConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("auxon");
     const argsMap = auxonConfig.get<{ [key: string]: string[] }>("extraCliArgs");
-    const args = argsMap[command];
-    if (args) {
-        return args;
-    } else {
+    if (argsMap == null) {
         return [];
     }
+
+    const args = argsMap[command];
+    if (args == null) {
+        return [];
+    }
+
+    return args;
 }
 
 /**
  * Return the first given path which exists, or null if none of them do.
  */
-function firstExistingPath(...paths: string[]): string | null {
+function firstExistingPath(...paths: (string | null)[]): string | undefined {
     for (let i = 0; i < paths.length; i++) {
         const path = paths[i];
         if (path == null) {
@@ -189,6 +197,4 @@ function firstExistingPath(...paths: string[]): string | null {
             return path;
         }
     }
-
-    return null;
 }

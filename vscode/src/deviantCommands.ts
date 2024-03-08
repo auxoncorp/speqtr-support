@@ -35,8 +35,12 @@ export async function runDeviantExperimentCreateCommand(args: ExperimentCreateCo
     try {
         const res = await execFile(deviantPath, commandArgs, { encoding: "utf8" });
         const _dont_wait = vscode.window.showInformationMessage(res.stdout);
-    } catch (e) {
-        vscode.window.showErrorMessage(e.stderr.trim());
+    } catch (e: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
+        if (Object.prototype.hasOwnProperty.call(e, "stderr")) {
+            vscode.window.showErrorMessage(e.stderr.trim());
+        } else {
+            vscode.window.showErrorMessage(e.toString());
+        }
     }
 }
 
@@ -64,8 +68,12 @@ async function runDeviantMutationClearCommand(args: MutationClearCommandArgs) {
     try {
         const res = await execFile(deviantPath, commandArgs, { encoding: "utf8" });
         const _dont_wait = vscode.window.showInformationMessage(res.stdout);
-    } catch (e) {
-        vscode.window.showErrorMessage(e.stderr.trim());
+    } catch (e: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
+        if (Object.prototype.hasOwnProperty.call(e, "stderr")) {
+            vscode.window.showErrorMessage(e.stderr.trim());
+        } else {
+            vscode.window.showErrorMessage(e.toString());
+        }
     }
 
     vscode.commands.executeCommand("auxon.mutations.refresh");
@@ -102,13 +110,21 @@ async function runDeviantMutationCreateCommand(args: MutationCreateCommandArgs) 
 
     try {
         const res = await execFile(deviantPath, commandArgs, { encoding: "utf8" });
-        const output = JSON.parse(res.stdout) as string;
-        const _dont_wait = vscode.window.showInformationMessage(`Created mutation '${output["mutation_id"]}'`);
-    } catch (e) {
-        vscode.window.showErrorMessage(e.stderr.trim());
+        const output = JSON.parse(res.stdout) as MutationCreateOutput;
+        const _dont_wait = vscode.window.showInformationMessage(`Created mutation '${output.mutation_id}'`);
+    } catch (e: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
+        if (Object.prototype.hasOwnProperty.call(e, "stderr")) {
+            vscode.window.showErrorMessage(e.stderr.trim());
+        } else {
+            vscode.window.showErrorMessage(e.toString());
+        }
     }
 
     vscode.commands.executeCommand("auxon.mutations.refresh");
+}
+
+interface MutationCreateOutput {
+    mutation_id: string;
 }
 
 // TODO - add linked experiment option
@@ -138,7 +154,7 @@ async function runCreateMutationWizard(mutator: Mutator) {
                 title: `${title} (${step}/${maxSteps})`,
                 placeHolder: `Enter the parameter value for '${param.name}' or leave blank for Deviant-suggested values`,
                 ignoreFocusOut: true,
-                validateInput: (input) => validateParameter(input, param),
+                validateInput: (input: string) => validateParameter(input, param),
             };
             let paramValue = await vscode.window.showInputBox(options);
             if (paramValue === undefined) {
@@ -194,18 +210,24 @@ function validateParameter(input: string, param: MutatorParameter): string | nul
     }
 }
 
-function isFloat(val) {
+function isFloat(val: string) {
     const floatRegex = /^-?\d+(?:[.]\d*?)?$/;
-    if (!floatRegex.test(val)) return false;
+    if (!floatRegex.test(val)) {
+        return false;
+    }
 
-    val = parseFloat(val);
-    if (isNaN(val)) return false;
+    const fVal = parseFloat(val);
+    if (isNaN(fVal)) {
+        return false;
+    }
     return true;
 }
 
-function isInt(val) {
+function isInt(val: string) {
     const intRegex = /^-?\d+$/;
-    if (!intRegex.test(val)) return false;
+    if (!intRegex.test(val)) {
+        return false;
+    }
 
     const intVal = parseInt(val, 10);
     return parseFloat(val) == intVal && !isNaN(intVal);

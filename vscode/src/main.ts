@@ -23,6 +23,7 @@ import * as mutators from "./mutators";
 import * as mutations from "./mutations";
 import * as deviantCommands from "./deviantCommands";
 import * as experiments from "./experiments";
+import * as workspaceState from "./workspaceState";
 
 export let log: vscode.OutputChannel;
 let lspClient: LanguageClient;
@@ -50,6 +51,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     const apiClient = new api.Client(apiUrl.toString(), token, allowInsecure);
+    const wss = await workspaceState.WorkspaceAndSegmentState.create(apiClient);
 
     terminalLinkProvider.register(context);
     modalityLog.register(context);
@@ -60,70 +62,20 @@ export async function activate(context: vscode.ExtensionContext) {
     deviantCommands.register(context);
     experimentFileCommands.register(context);
 
-    const specCoverageProvider = new specCoverage.SpecCoverageProvider(apiClient);
-    await specCoverageProvider.initialize(context);
+    const specCoverageProvider = new specCoverage.SpecCoverageProvider(apiClient, context);
 
-    const workspacesTreeDataProvider = new workspaces.WorkspacesTreeDataProvider(apiClient);
-    const segmentsTreeDataProvider = new segments.SegmentsTreeDataProvider(apiClient, specCoverageProvider);
-    const timelinesTreeDataProvider = new timelines.TimelinesTreeDataProvider(apiClient);
-    const eventsTreeDataProvider = new events.EventsTreeDataProvider(apiClient);
-    const specsTreeDataProvider = new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider);
-    const mutatorsTreeDataProvider = new mutators.MutatorsTreeDataProvider(apiClient);
-    const mutationsTreeDataProvider = new mutations.MutationsTreeDataProvider(apiClient);
-    const experimentsTreeDataProvider = new experiments.ExperimentsTreeDataProvider(apiClient, context);
+    // The tree view providers all register themselves with the window
+    // when we new them up, so we don't need to hold on to them.
+    new workspaces.WorkspacesTreeDataProvider(apiClient, wss, context);
+    new segments.SegmentsTreeDataProvider(apiClient, specCoverageProvider, wss, context);
+    new timelines.TimelinesTreeDataProvider(apiClient, wss, context);
+    new events.EventsTreeDataProvider(apiClient, wss, context);
 
-    workspacesTreeDataProvider.onDidChangeActiveWorkspace(async (ws_ver) => {
-        log.appendLine(`Active workspace change! ${ws_ver}`);
-        const wsDef = await apiClient.workspace(ws_ver).definition();
+    new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider, wss, context);
 
-        segmentsTreeDataProvider.activeWorkspaceVersionId = ws_ver;
-        segmentsTreeDataProvider.refresh();
-
-        timelinesTreeDataProvider.activeWorkspaceVersionId = ws_ver;
-        timelinesTreeDataProvider.refresh();
-
-        eventsTreeDataProvider.activeWorkspaceVersionId = ws_ver;
-        eventsTreeDataProvider.refresh();
-
-        mutatorsTreeDataProvider.setWorkspaceMutatorGroupingAttrs(wsDef.mutator_grouping_attrs);
-        mutatorsTreeDataProvider.setActiveWorkspace(ws_ver);
-
-        mutationsTreeDataProvider.setActiveWorkspace(ws_ver);
-
-        experimentsTreeDataProvider.setActiveWorkspace(ws_ver);
-    });
-
-    segmentsTreeDataProvider.onDidChangeUsedSegments((ev) => {
-        specsTreeDataProvider.setActiveSegmentIds(ev.activeSegmentIds);
-
-        timelinesTreeDataProvider.usedSegmentConfig = ev.usedSegmentConfig;
-        timelinesTreeDataProvider.activeSegments = ev.activeSegmentIds;
-        timelinesTreeDataProvider.refresh();
-
-        eventsTreeDataProvider.activeSegments = ev.activeSegmentIds;
-        eventsTreeDataProvider.refresh();
-
-        mutatorsTreeDataProvider.setActiveSegmentIds(ev.usedSegmentConfig, ev.activeSegmentIds);
-
-        mutationsTreeDataProvider.setActiveSegmentIds(ev.usedSegmentConfig, ev.activeSegmentIds);
-
-        experimentsTreeDataProvider.setActiveSegmentIds(ev.usedSegmentConfig, ev.activeSegmentIds);
-    });
-
-    workspacesTreeDataProvider.register(context);
-    segmentsTreeDataProvider.register(context);
-    timelinesTreeDataProvider.register(context);
-    eventsTreeDataProvider.register(context);
-    specsTreeDataProvider.register(context);
-    mutatorsTreeDataProvider.register(context);
-    mutationsTreeDataProvider.register(context);
-    experimentsTreeDataProvider.register(context);
-
-    // Explicitly load views that are referenceable across views
-    await workspacesTreeDataProvider.getChildren();
-    await mutatorsTreeDataProvider.getChildren();
-    await mutationsTreeDataProvider.getChildren();
-    await specsTreeDataProvider.getChildren();
+    new mutators.MutatorsTreeDataProvider(apiClient, wss, context);
+    new mutations.MutationsTreeDataProvider(apiClient, wss, context);
+    new experiments.ExperimentsTreeDataProvider(apiClient, wss, context);
 }
 
 export function deactivate(): Thenable<void> | undefined {
