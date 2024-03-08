@@ -113,6 +113,17 @@ export class MutationsTreeDataProvider implements vscode.TreeDataProvider<Mutati
     }
 
     async getChildren(element?: MutationsTreeItemData): Promise<MutationsTreeItemData[]> {
+        const children = await this.getChildrenInner(element);
+        if (children.length === 0) {
+            this.view.message =
+                "The active data scope doesn't contain any mutations. Create a mutation in the Mutators view or the Experiments view.";
+        } else {
+            this.view.message = undefined;
+        }
+        return children;
+    }
+
+    private async getChildrenInner(element?: MutationsTreeItemData): Promise<MutationsTreeItemData[]> {
         if (this.uiState.getFilterBySelectedMutator() && this.selectedMutatorId == null) {
             // Need a selected mutator to populate with
             return [];

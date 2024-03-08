@@ -92,6 +92,16 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     async getChildren(element?: TimelineTreeItemData): Promise<TimelineTreeItemData[]> {
+        const children = await this.getChildrenInner(element);
+        if (children.length === 0) {
+            this.view.message = "Select one or more segments to view their timelines.";
+        } else {
+            this.view.message = undefined;
+        }
+        return children;
+    }
+
+    private async getChildrenInner(element?: TimelineTreeItemData): Promise<TimelineTreeItemData[]> {
         if (element) {
             return element.children();
         }
