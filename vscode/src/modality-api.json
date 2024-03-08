@@ -1702,15 +1702,45 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Invalid Parameter",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
                     "403": {
                         "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Workspace Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/WorkspacesError"
+                                    "$ref": "#/components/schemas/ApiError"
                                 }
                             }
                         }
@@ -2846,6 +2876,86 @@
     },
     "components": {
         "schemas": {
+            "ApiError": {
+                "oneOf": [
+                    {
+                        "type": "string",
+                        "enum": ["Internal"]
+                    },
+                    {
+                        "type": "object",
+                        "required": ["NotFound"],
+                        "properties": {
+                            "NotFound": {
+                                "type": "object",
+                                "required": ["kind_of_thing", "specific_thing"],
+                                "properties": {
+                                    "kind_of_thing": {
+                                        "type": "string"
+                                    },
+                                    "specific_thing": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": ["InvalidRequest"],
+                        "properties": {
+                            "InvalidRequest": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": ["InvalidParameter"],
+                        "properties": {
+                            "InvalidParameter": {
+                                "type": "object",
+                                "required": ["parameter", "reason"],
+                                "properties": {
+                                    "parameter": {
+                                        "type": "string"
+                                    },
+                                    "reason": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": ["InvalidParameterLocated"],
+                        "properties": {
+                            "InvalidParameterLocated": {
+                                "type": "object",
+                                "required": ["parameter", "located_errors"],
+                                "properties": {
+                                    "located_errors": {
+                                        "$ref": "#/components/schemas/LocatedErrors"
+                                    },
+                                    "parameter": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": ["AuthError"],
+                        "properties": {
+                            "AuthError": {
+                                "$ref": "#/components/schemas/TokenAuthError"
+                            }
+                        }
+                    }
+                ]
+            },
             "AttrVal": {
                 "oneOf": [
                     {
@@ -3532,6 +3642,39 @@
                         "description": "How many times did events of this group occur?",
                         "nullable": true,
                         "minimum": 0
+                    }
+                }
+            },
+            "LocatedError": {
+                "type": "object",
+                "required": ["start", "end", "message"],
+                "properties": {
+                    "end": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "start": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                }
+            },
+            "LocatedErrors": {
+                "type": "object",
+                "description": "A wire-compatible encoding for located errors",
+                "required": ["errors", "text"],
+                "properties": {
+                    "errors": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/LocatedError"
+                        }
+                    },
+                    "text": {
+                        "type": "string"
                     }
                 }
             },
@@ -4232,6 +4375,10 @@
                     }
                 ],
                 "description": "Timelines operation errors"
+            },
+            "TokenAuthError": {
+                "type": "string",
+                "enum": ["TokenMissing", "TokenNotValid", "TokenUnderPermitted"]
             },
             "UnstructuredMutatorFilter": {
                 "type": "string",

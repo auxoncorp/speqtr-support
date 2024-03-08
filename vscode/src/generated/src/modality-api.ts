@@ -280,6 +280,26 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    ApiError: "Internal" | {
+      NotFound: {
+        kind_of_thing: string;
+        specific_thing: string;
+      };
+    } | {
+      InvalidRequest: string;
+    } | {
+      InvalidParameter: {
+        parameter: string;
+        reason: string;
+      };
+    } | {
+      InvalidParameterLocated: {
+        located_errors: components["schemas"]["LocatedErrors"];
+        parameter: string;
+      };
+    } | {
+      AuthError: components["schemas"]["TokenAuthError"];
+    };
     AttrVal: string | number | boolean | {
       TimelineId?: components["schemas"]["TimelineId"];
     } | {
@@ -469,6 +489,16 @@ export interface components {
        * @description How many times did events of this group occur?
        */
       count?: number | null;
+    };
+    LocatedError: {
+      end: number;
+      message: string;
+      start: number;
+    };
+    /** @description A wire-compatible encoding for located errors */
+    LocatedErrors: {
+      errors: components["schemas"]["LocatedError"][];
+      text: string;
     };
     LogicalTime: number[];
     /**
@@ -678,6 +708,8 @@ export interface components {
       /** @description Internal Server Error */
       Internal: string;
     }]>;
+    /** @enum {string} */
+    TokenAuthError: "TokenMissing" | "TokenNotValid" | "TokenUnderPermitted";
     /**
      * @description Stringy representation of an unparsed, unstructured DSL for expressing how to filter mutators,
      * likely through attribute evaluation.
@@ -1660,14 +1692,32 @@ export interface operations {
           "application/json": components["schemas"]["Workspace"][];
         };
       };
+      /** @description Invalid Parameter */
+      400: {
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unauthorized Not Found */
+      401: {
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
       /** @description Operation not authorized */
       403: {
         content: never;
       };
+      /** @description Workspace Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
-          "application/json": components["schemas"]["WorkspacesError"];
+          "application/json": components["schemas"]["ApiError"];
         };
       };
     };
