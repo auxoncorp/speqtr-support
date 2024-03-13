@@ -12,7 +12,11 @@ export interface ThemeChangedCommand {
     command: "themeChanged";
 }
 
-export type VsCodeMessage = SaveAsPngCommand | LogSelectedNodesCommand;
+export type VsCodeMessage = RequestNodesAndEdgesCommand | SaveAsPngCommand | LogSelectedNodesCommand;
+
+export interface RequestNodesAndEdgesCommand {
+    command: "requestNodesAndEdges";
+}
 
 export interface SaveAsPngCommand {
     command: "saveAsPng";
@@ -37,8 +41,6 @@ export interface NodeData extends cytoscape.NodeDataDefinition {
 }
 
 export interface EdgeData extends cytoscape.EdgeDataDefinition {
-    /// cytoscape reserves the "id" attribute on edges, so we use idx instead
-    idx: number;
     label?: string;
     hidden?: boolean;
     count?: number;

@@ -51,7 +51,7 @@ let ctxMain = await esbuild.context({
 
 let ctxWebView = await esbuild.context({
     plugins: [buildStatusPlugin],
-    entryPoints: ["webview-src/transitionGraphWebView.ts", "webview-src/experimentImpactWebView.ts"],
+    entryPoints: ["webview-src/transitionGraphWebView.tsx", "webview-src/experimentImpactWebView.ts"],
     bundle: true,
     treeShaking: true,
     outdir: "out",
