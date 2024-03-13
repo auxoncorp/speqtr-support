@@ -45,6 +45,7 @@ function App() {
 
     const [layout, setLayout] = useState<cytoscape.LayoutType>("cose-bilkent");
     const [selectionMode, setSelectionMode] = useState<cytoscape.GraphSelectionMode>("manual");
+    const [edgeLabelMode, setEdgeLabelMode] = useState<cytoscape.EdgeLabelMode>("none");
     const [selection, setSelection] = useState<cytoscape.Selection>({ nodes: [], edges: [] });
 
     let initialPan = { x: 0, y: 0 };
@@ -125,6 +126,9 @@ function App() {
             selectionMode,
             onSelectionMode: setSelectionMode,
 
+            edgeLabelMode,
+            onEdgeLabelMode: setEdgeLabelMode,
+
             selection,
             getNodeDataById,
             getEdgeDataById,
@@ -142,6 +146,7 @@ function App() {
                 graphElements,
                 layout,
                 selectionMode,
+                edgeLabelMode,
                 selection,
                 onSelection: setSelection,
                 pan,
@@ -179,6 +184,9 @@ interface SidebarProps {
 
     selectionMode: cytoscape.GraphSelectionMode;
     onSelectionMode: (s: cytoscape.GraphSelectionMode) => void;
+
+    edgeLabelMode: cytoscape.EdgeLabelMode;
+    onEdgeLabelMode: (s: cytoscape.EdgeLabelMode) => void;
 
     selection: cytoscape.Selection;
     getNodeDataById: (id: string) => transitionGraphWebViewApi.NodeData | undefined;
@@ -220,6 +228,14 @@ function Sidebar(props: SidebarProps) {
                     <SelectionModeDropdown
                         selectionMode={props.selectionMode}
                         onSelectionMode={props.onSelectionMode}
+                    />
+                </div>
+
+                <div className="dropdown-grid-row">
+                    <label htmlFor="edgeLabelModeDropdown">Edge Labels</label>
+                    <EdgeLabelModeDropdown
+                        edgeLabelMode={props.edgeLabelMode}
+                        onEdgeLabelMode={props.onEdgeLabelMode}
                     />
                 </div>
             </div>
@@ -310,6 +326,27 @@ function SelectionModeDropdown(props: SelectionModeDropdownProps): ReactNode {
     }
 
     return createElement(ReactiveDropdown, { options, onChange: setValue, value: props.selectionMode });
+}
+
+interface EdgeLabelModeDropdownProps {
+    edgeLabelMode: cytoscape.EdgeLabelMode;
+    onEdgeLabelMode: (s: cytoscape.EdgeLabelMode) => void;
+}
+
+function EdgeLabelModeDropdown(props: EdgeLabelModeDropdownProps): ReactNode {
+    const options: [cytoscape.EdgeLabelMode, string][] = [
+        ["none", "None"],
+        ["count", "Transition Count"],
+        ["percentOfSource", "Percentage of Source Events"],
+    ];
+
+    function setValue(value: string) {
+        if (cytoscape.isEdgeLayoutMode(value)) {
+            props.onEdgeLabelMode(value);
+        }
+    }
+
+    return createElement(ReactiveDropdown, { options, onChange: setValue, value: props.edgeLabelMode });
 }
 
 interface ReactiveDropdownProps<T extends string> {

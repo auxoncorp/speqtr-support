@@ -376,7 +376,7 @@ export class TransitionGraph {
             const sourceOccurCount = res.nodes[edge.source]?.count;
             if (sourceOccurCount) {
                 const percent = (edge.count / sourceOccurCount) * 100;
-                graphEdge.label = `${percent.toFixed(1)}% (${edge.count})`;
+                graphEdge.percentOfSource = `${percent.toFixed(1)}%`;
             }
 
             directedGraph.edges.push(graphEdge);
@@ -487,6 +487,7 @@ class Edge {
     label?: string = undefined;
     visibility?: boolean = undefined;
     count?: number = undefined;
+    percentOfSource?: string = undefined;
 
     /// Source/target map to the id/index of a Node
     constructor(public id: number, public source: number, public target: number) {
@@ -510,6 +511,10 @@ class Edge {
 
         if (this.count !== undefined) {
             data.count = this.count;
+        }
+
+        if (this.percentOfSource !== undefined) {
+            data.percentOfSource = this.percentOfSource;
         }
 
         return { data };

@@ -44,4 +44,5 @@ export interface EdgeData extends cytoscape.EdgeDataDefinition {
     label?: string;
     hidden?: boolean;
     count?: number;
+    percentOfSource?: string;
 }

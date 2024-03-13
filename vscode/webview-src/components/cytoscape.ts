@@ -46,6 +46,12 @@ export function isSelectionMode(s: string): s is GraphSelectionMode {
     return !!validSelectionModes.find((m) => s === m);
 }
 
+export type EdgeLabelMode = "none" | "count" | "percentOfSource";
+const validEdgeLabelModes = ["none", "count", "percentOfSource"];
+export function isEdgeLayoutMode(s: string): s is EdgeLabelMode {
+    return !!validEdgeLabelModes.find((l) => s === l);
+}
+
 export interface CytoscapeProps {
     /** id attribute for the generated DOM element */
     id: string;
@@ -55,6 +61,7 @@ export interface CytoscapeProps {
 
     layout: LayoutType;
     selectionMode: GraphSelectionMode;
+    edgeLabelMode: EdgeLabelMode;
 
     pan: cytoscape.Position;
     onPan(pan: cytoscape.Position): void;
@@ -83,10 +90,11 @@ export function CytoscapeReact(props: CytoscapeProps): ReactNode {
     const containerRef = useRef<HTMLElement | undefined>();
     const cyRef = useRef<cytoscape.Core | undefined>();
 
-    // This ref is captured by the component mount/unmount useEffect
-    // closure below. Its contents are updated by the
-    // props.selectionMode effect handler.
+    // These refs are captured by the component mount/unmount useEffect
+    // closure below. Their contents are updated by the props.selectionMode effect handler.
     const selectionModeRef = useRef<GraphSelectionMode>("manual");
+    const layoutTypeRef = useRef<LayoutType>("cose-bilkent");
+    const edgeLabelModeRef = useRef<EdgeLabelMode>("none");
 
     // Compount mount/unmount effect
     useEffect(() => {
@@ -95,7 +103,7 @@ export function CytoscapeReact(props: CytoscapeProps): ReactNode {
             elements: props.graphElements.nodes.concat(props.graphElements.edges),
             layout: layoutOptions(props.layout, props.nodeCoordinates),
             data: { layoutName: props.layout },
-            style: makeCytoscapeStylesheet(),
+            style: makeCytoscapeStylesheet(props.edgeLabelMode),
             pan: props.pan,
             minZoom: 0,
             zoom: props.zoom,
@@ -144,12 +152,12 @@ export function CytoscapeReact(props: CytoscapeProps): ReactNode {
         });
 
         document.addEventListener("auxon.refresh", () => {
-            const layout = cy.layout(layoutOptions(cy.data("layoutName")));
+            const layout = cy.layout(layoutOptions(layoutTypeRef.current));
             layout.run();
         });
 
         document.addEventListener("auxon.themeChanged", () => {
-            cy.style(makeCytoscapeStylesheet());
+            cy.style(makeCytoscapeStylesheet(edgeLabelModeRef.current));
         });
 
         cyRef.current = cy;
@@ -173,6 +181,7 @@ export function CytoscapeReact(props: CytoscapeProps): ReactNode {
             const newLayout = cyRef.current.layout(layoutOptions(props.layout));
             newLayout.run();
             cyRef.current.data("layoutName", props.layout);
+            layoutTypeRef.current = props.layout;
         }
     }, [props.layout]);
 
@@ -195,13 +204,18 @@ export function CytoscapeReact(props: CytoscapeProps): ReactNode {
         }
     }, [props.pan]);
 
+    useEffect(() => {
+        edgeLabelModeRef.current = props.edgeLabelMode;
+        cyRef.current?.style(makeCytoscapeStylesheet(props.edgeLabelMode));
+    }, [props.edgeLabelMode]);
+
     return createElement("div", { ref: containerRef, id: props.id });
 }
 
-// Get the doc styles to access vscode theme colors
-const browserStyle = getComputedStyle(document.body);
+function makeCytoscapeStylesheet(edgeLabelMode: EdgeLabelMode): cytoscape.Stylesheet[] {
+    // Get the doc styles to access vscode theme colors
+    const browserStyle = getComputedStyle(document.body);
 
-function makeCytoscapeStylesheet(): cytoscape.Stylesheet[] {
     return [
         {
             selector: "node",
@@ -229,7 +243,16 @@ function makeCytoscapeStylesheet(): cytoscape.Stylesheet[] {
         {
             selector: "edge",
             style: {
-                label: "data(label)",
+                label: (edge: cytoscape.EdgeSingular): string => {
+                    switch (edgeLabelMode) {
+                        case "none":
+                            return "";
+                        case "count":
+                            return (edge.data() as transitionGraphWebViewApi.EdgeData).count?.toString() || "";
+                        case "percentOfSource":
+                            return (edge.data() as transitionGraphWebViewApi.EdgeData).percentOfSource || "";
+                    }
+                },
                 "curve-style": "bezier",
                 "target-arrow-shape": "triangle",
                 "line-style": "solid",
