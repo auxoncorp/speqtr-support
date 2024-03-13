@@ -177,6 +177,17 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
     }
 
     async getChildren(element?: MutatorsTreeItemData): Promise<MutatorsTreeItemData[]> {
+        const children = await this.getChildrenInner(element);
+        if (children.length === 0) {
+            this.view.message =
+                "The active data scope doesn't contain any mutators. Select a different data scope or refresh the view after mutators have announced themselves.";
+        } else {
+            this.view.message = undefined;
+        }
+        return children;
+    }
+
+    private async getChildrenInner(element?: MutatorsTreeItemData): Promise<MutatorsTreeItemData[]> {
         if (!element) {
             this.data = [];
 

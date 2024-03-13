@@ -143,6 +143,17 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
     }
 
     async getChildren(element?: SpecsTreeItemData): Promise<SpecsTreeItemData[]> {
+        const children = await this.getChildrenInner(element);
+        if (children.length === 0) {
+            this.view.message =
+                "No specs available. Create a new SpeQTr file or upload an existing one to get started.";
+        } else {
+            this.view.message = undefined;
+        }
+        return children;
+    }
+
+    private async getChildrenInner(element?: SpecsTreeItemData): Promise<SpecsTreeItemData[]> {
         if (!element) {
             this.data = [];
             const specs = await this.apiClient.specs().list();

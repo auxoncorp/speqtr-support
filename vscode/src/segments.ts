@@ -92,6 +92,17 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     }
 
     async getChildren(element?: SegmentTreeItemData): Promise<SegmentTreeItemData[]> {
+        const children = await this.getChildrenInner(element);
+        if (children.length === 0) {
+            this.activeView.message =
+                "The active workspace contains no segments. Record some data using one of our provided reflector plugins or the Auxon SDK.";
+        } else {
+            this.activeView.message = undefined;
+        }
+        return children;
+    }
+
+    private async getChildrenInner(element?: SegmentTreeItemData): Promise<SegmentTreeItemData[]> {
         // only the root has children
         if (element != null) {
             return [];

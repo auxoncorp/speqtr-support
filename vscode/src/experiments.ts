@@ -203,6 +203,17 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
     }
 
     async getChildren(element?: ExperimentsTreeItemData): Promise<ExperimentsTreeItemData[]> {
+        const children = await this.getChildrenInner(element);
+        if (children.length === 0) {
+            this.view.message =
+                "No experiments available. Create a new experiment file or upload an existing one to get started.";
+        } else {
+            this.view.message = undefined;
+        }
+        return children;
+    }
+
+    private async getChildrenInner(element?: ExperimentsTreeItemData): Promise<ExperimentsTreeItemData[]> {
         if (!element) {
             const experimentNames = await this.apiClient.experiments().list();
             const items = await Promise.all(

@@ -62,6 +62,16 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
     }
 
     async getChildren(element?: EventsTreeItemData): Promise<EventsTreeItemData[]> {
+        const children = await this.getChildrenInner(element);
+        if (children.length === 0) {
+            this.view.message = "Select a timeline to view its events.";
+        } else {
+            this.view.message = undefined;
+        }
+        return children;
+    }
+
+    private async getChildrenInner(element?: EventsTreeItemData): Promise<EventsTreeItemData[]> {
         if (!this.selectedTimelineId) {
             return [];
         }
