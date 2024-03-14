@@ -178,7 +178,7 @@
                 },
                 {
                     "command": "auxon.modality.log",
-                    "when": "view =~ /auxon\\.[a-zA-Z]*_segments/ || view == auxon.timelines || (view == auxon.events && viewItem == event)",
+                    "when": "view =~ /auxon\\.[a-zA-Z]*_segments/ || (view == auxon.timelines && viewItem == timeline) || (view == auxon.events && viewItem == event)",
                     "group": "inline"
                 },
                 {
