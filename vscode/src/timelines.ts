@@ -80,6 +80,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
                 this.disableTimelineGrouping();
             })
         );
+        this.updateGroupingMenuContext();
     }
 
     refresh(): void {
@@ -103,7 +104,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
 
     private async getChildrenInner(element?: TimelineTreeItemData): Promise<TimelineTreeItemData[]> {
         if (element) {
-            return element.children();
+            return element.children(this.apiClient);
         }
 
         // root element
@@ -156,7 +157,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             });
 
             if (groupByTimelineNameComponents) {
-                const root = new TimelineGroupByNameTreeItemData("", []);
+                const root = new TimelineGroupByNameTreeItemData("");
                 for (const timeline of timelines) {
                     let timelineNamePath: string[] = [];
                     if (timeline.name) {
@@ -165,7 +166,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
                     root.insertNode(timeline, timelineNamePath);
                 }
                 root.updateDescriptions();
-                return root.children();
+                return root.children(this.apiClient);
             } else {
                 return timelines.map((timeline_overview) => new TimelineLeafTreeItemData(timeline_overview));
             }
@@ -271,6 +272,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         } else if (this.uiState.getGroupingAttrKeys().length > 0) {
             groupingMode = TimelinesGroupingMode.ByAttributes;
         }
+        console.log("updateGroupingMenuContext = ", groupingMode);
         vscode.commands.executeCommand("setContext", "auxon.timelinesGroupingMode", groupingMode);
     }
 }
@@ -279,6 +281,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
 abstract class TimelineTreeItemData {
     abstract name: string;
     abstract contextValue: string;
+    childItems: TimelineTreeItemData[] = [];
     timelineId?: api.TimelineId = undefined;
     description?: string = undefined;
     tooltip?: vscode.MarkdownString = undefined;
@@ -286,7 +289,7 @@ abstract class TimelineTreeItemData {
 
     treeItem(): vscode.TreeItem {
         let state = vscode.TreeItemCollapsibleState.Collapsed;
-        if (this.children().length == 0) {
+        if (!this.canHaveChildren()) {
             state = vscode.TreeItemCollapsibleState.None;
         }
 
@@ -309,13 +312,21 @@ abstract class TimelineTreeItemData {
         return item;
     }
 
-    children(): TimelineTreeItemData[] {
+    canHaveChildren(): boolean {
+        return false;
+    }
+
+    async children(_apiClient: api.Client): Promise<TimelineTreeItemData[]> {
         return [];
     }
 
     postwalk(f: (n: TimelineTreeItemData) => void) {
-        for (const child of this.children()) {
-            child.postwalk(f);
+        // We don't need to get the children of TimelineLeafTreeItemData (attributes),
+        // this lets us skip doing an API call and some data formatting
+        if (!(this instanceof TimelineLeafTreeItemData)) {
+            for (const child of this.childItems) {
+                child.postwalk(f);
+            }
         }
         f(this);
     }
@@ -338,7 +349,9 @@ abstract class TimelineTreeItemData {
 
     updateDescriptions() {
         this.postwalk((n) => {
-            if (n.children().length > 0) {
+            // Skip over TimelineLeafTreeItemData so we don't request attributes
+            // for every timeline
+            if (!(n instanceof TimelineLeafTreeItemData) && n.childItems.length > 0) {
                 const timelineCount = n.getTimelineIds().length;
                 n.description = `${timelineCount} timeline`;
                 if (timelineCount > 1) {
@@ -350,14 +363,18 @@ abstract class TimelineTreeItemData {
 }
 
 export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
-    constructor(public name: string, private childItems: TimelineTreeItemData[]) {
+    contextValue = "timelineGroup";
+
+    constructor(public name: string) {
         super();
         this.iconPath = new vscode.ThemeIcon("git-pull-request-draft");
     }
 
-    contextValue = "timelineGroup";
+    override canHaveChildren(): boolean {
+        return this.childItems.length !== 0;
+    }
 
-    override children(): TimelineTreeItemData[] {
+    override async children(_apiClient: api.Client): Promise<TimelineTreeItemData[]> {
         return this.childItems;
     }
 
@@ -369,7 +386,7 @@ export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
         } else {
             let nextNodeIndex = this.childItems.findIndex((item) => item.name == nextNodeName);
             if (nextNodeIndex == -1) {
-                this.childItems.push(new TimelineGroupByNameTreeItemData(nextNodeName, []));
+                this.childItems.push(new TimelineGroupByNameTreeItemData(nextNodeName));
                 nextNodeIndex = this.childItems.length - 1;
             }
 
@@ -377,7 +394,8 @@ export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
             if (!(nextNode instanceof TimelineGroupByNameTreeItemData)) {
                 // Some non-namegroup node is there, with the same name. Replace it with a namegroup,
                 // and insert the old node as a child.
-                const newNode = new TimelineGroupByNameTreeItemData(nextNodeName, [nextNode]);
+                const newNode = new TimelineGroupByNameTreeItemData(nextNodeName);
+                newNode.childItems = [nextNode];
                 nextNode = newNode;
                 this.childItems[nextNodeIndex] = nextNode;
             }
@@ -417,7 +435,11 @@ export class TimelineGroupTreeItemData extends TimelineTreeItemData {
         this.name = name;
     }
 
-    override children(): TimelineTreeItemData[] {
+    override canHaveChildren(): boolean {
+        return this.childItems.length !== 0;
+    }
+
+    override async children(_apiClient: api.Client): Promise<TimelineTreeItemData[]> {
         const timelines = this.timeline_group.timelines.sort((a, b) => {
             if (!a?.name) {
                 return 1;
@@ -428,7 +450,8 @@ export class TimelineGroupTreeItemData extends TimelineTreeItemData {
             return a.name.localeCompare(b.name);
         });
 
-        return timelines.map((timeline_overview) => new TimelineLeafTreeItemData(timeline_overview));
+        this.childItems = timelines.map((timeline_overview) => new TimelineLeafTreeItemData(timeline_overview));
+        return this.childItems;
     }
 }
 
@@ -450,5 +473,47 @@ export class TimelineLeafTreeItemData extends TimelineTreeItemData {
         let tooltip = `- **Timeline Name**: ${this.timeline_overview.name}`;
         tooltip += `\n- **Timeline Id**: ${this.timeline_overview.id}`;
         this.tooltip = new vscode.MarkdownString(tooltip);
+    }
+
+    override canHaveChildren(): boolean {
+        return true;
+    }
+
+    override async children(apiClient: api.Client): Promise<TimelineTreeItemData[]> {
+        const timeline = await apiClient.timeline(this.timelineId as string).get();
+        for (const [k, v] of Object.entries(timeline.attributes)) {
+            this.childItems.push(new TimelineAttributeTreeItem(k, v));
+        }
+        return this.childItems;
+    }
+}
+
+export class TimelineAttributeTreeItem extends TimelineTreeItemData {
+    name = "";
+    contextValue = "timelineAttribute";
+
+    constructor(public key: string, public value: api.AttrVal) {
+        super();
+        let v;
+        if (Object.prototype.hasOwnProperty.call(value, "TimelineId")) {
+            // The type checker doesn't like the implicit 'any' type on the AttrVal union
+            // @ts-ignore
+            v = value["TimelineId"] as string;
+        } else if (Object.prototype.hasOwnProperty.call(value, "Timestamp")) {
+            // @ts-ignore
+            v = value["Timestamp"] as string;
+        } else if (Object.prototype.hasOwnProperty.call(value, "LogicalTime")) {
+            // @ts-ignore
+            v = JSON.stringify(value);
+        } else if (Object.prototype.hasOwnProperty.call(value, "EventCoordinate")) {
+            // @ts-ignore
+            v = JSON.stringify(value);
+        } else if (Object.prototype.hasOwnProperty.call(value, "BigInt")) {
+            // @ts-ignore
+            v = value["BigInt"] as string;
+        } else {
+            v = value as string;
+        }
+        this.name = `${key}: ${v}`;
     }
 }
