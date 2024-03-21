@@ -3,6 +3,7 @@ import * as modalityLog from "./modalityLog";
 import * as handlebars from "handlebars";
 import * as api from "./modalityApi";
 import * as fs from "fs";
+import * as crypto from "crypto";
 import { Base64 } from "js-base64";
 import { getNonce } from "./webviewUtil";
 import * as transitionGraphWebViewApi from "../common-src/transitionGraphWebViewApi";
@@ -180,6 +181,7 @@ function showGraph(params: TransitionGraphParams) {
 
 export class TransitionGraph {
     private extensionContext: vscode.ExtensionContext;
+    private graph?: DirectedGraph;
 
     constructor(context: vscode.ExtensionContext, private readonly apiClient: api.Client) {
         this.extensionContext = context;
@@ -189,9 +191,17 @@ export class TransitionGraph {
         webview.onDidReceiveMessage(
             async (message: transitionGraphWebViewApi.VsCodeMessage) => {
                 switch (message.command) {
+                    case "requestNodesAndEdges":
+                        if (this.graph == null) {
+                            this.graph = await this.generateGraph(params);
+                        }
+                        postNodesAndEdges(webview, this.graph);
+                        break;
+
                     case "saveAsPng":
                         await this.saveAsPng(message.data);
                         break;
+
                     case "logSelectedNodes": {
                         vscode.commands.executeCommand(
                             "auxon.modality.log",
@@ -210,9 +220,6 @@ export class TransitionGraph {
 
         // Shows the loading indicator, until the graph shows up
         webview.html = this.generateHtmlContent(webview);
-
-        const graph = await this.generateGraph(params);
-        postNodesAndEdges(webview, graph);
     }
 
     private async saveAsPng(data: string) {
@@ -369,7 +376,7 @@ export class TransitionGraph {
             const sourceOccurCount = res.nodes[edge.source]?.count;
             if (sourceOccurCount) {
                 const percent = (edge.count / sourceOccurCount) * 100;
-                graphEdge.label = `${percent.toFixed(1)}% (${edge.count})`;
+                graphEdge.percentOfSource = `${percent.toFixed(1)}%`;
             }
 
             directedGraph.edges.push(graphEdge);
@@ -476,16 +483,20 @@ class Node {
 }
 
 class Edge {
+    uuid: string;
     label?: string = undefined;
     visibility?: boolean = undefined;
     count?: number = undefined;
+    percentOfSource?: string = undefined;
 
     /// Source/target map to the id/index of a Node
-    constructor(public id: number, public source: number, public target: number) {}
+    constructor(public id: number, public source: number, public target: number) {
+        this.uuid = crypto.randomUUID();
+    }
 
     toCytoscapeObject(): cytoscape.EdgeDefinition {
         const data: transitionGraphWebViewApi.EdgeData = {
-            idx: this.id,
+            id: this.uuid,
             source: this.source.toString(),
             target: this.target.toString(),
         };
@@ -500,6 +511,10 @@ class Edge {
 
         if (this.count !== undefined) {
             data.count = this.count;
+        }
+
+        if (this.percentOfSource !== undefined) {
+            data.percentOfSource = this.percentOfSource;
         }
 
         return { data };

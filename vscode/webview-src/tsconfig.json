@@ -5,6 +5,6 @@
         "rootDir": "..",
         "lib": ["es2021", "dom"]
     },
-    "include": ["./**/*.ts"],
+    "include": ["./**/*.ts", "components/cytoscape.tsx"],
     "references": [{ "path": "../common-src" }]
 }
