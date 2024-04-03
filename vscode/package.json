@@ -227,7 +227,7 @@
                 },
                 {
                     "command": "auxon.events.inspect",
-                    "when": "view == auxon.events && viewItem == event"
+                    "when": "view == auxon.events && viewItem == event && !listMultiSelection"
                 },
                 {
                     "command": "auxon.specs.showLatest",
