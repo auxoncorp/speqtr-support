@@ -272,7 +272,6 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         } else if (this.uiState.getGroupingAttrKeys().length > 0) {
             groupingMode = TimelinesGroupingMode.ByAttributes;
         }
-        console.log("updateGroupingMenuContext = ", groupingMode);
         vscode.commands.executeCommand("setContext", "auxon.timelinesGroupingMode", groupingMode);
     }
 }
