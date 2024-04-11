@@ -7,13 +7,16 @@ import * as modalityEventInspect from "./modalityEventInspect";
 
 import * as commonNotebookCells from "./notebooks/common.json";
 import * as eventTimingNotebookCells from "./notebooks/eventTiming.json";
-import * as eventAttributeValuesNotebookCells from "./notebooks/eventAttributeValues.json";
 import * as eventMultiAttributeValuesNotebookCells from "./notebooks/eventMultiAttributeValues.json";
 type JupyterNotebookCell = (typeof commonNotebookCells.cells)[0];
 
+export interface SelectedTimeline {
+    timelineId: api.TimelineId;
+    timelineName: string;
+}
+
 export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTreeItemData> {
-    selectedTimelineId?: api.TimelineId = undefined;
-    selectedTimelineName?: string = undefined;
+    selectedTimelines: SelectedTimeline[] = [];
     view: vscode.TreeView<EventsTreeItemData>;
 
     private _onDidChangeTreeData: vscode.EventEmitter<EventsTreeItemData | EventsTreeItemData[] | undefined> =
@@ -34,9 +37,6 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
             this.view,
             vscode.commands.registerCommand("auxon.events.refresh", () => this.refresh()),
             vscode.commands.registerCommand("auxon.events.logSelected", () => this.logSelectedCommand()),
-            vscode.commands.registerCommand("auxon.events.setSelectedTimeline", (timelineId, timelineName) =>
-                this.setSelectedTimeline(timelineId, timelineName)
-            ),
             vscode.commands.registerCommand("auxon.events.createEventTimingNotebook", async (item) =>
                 this.createEventTimingNotebook(item)
             ),
@@ -72,76 +72,81 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
     }
 
     private async getChildrenInner(element?: EventsTreeItemData): Promise<EventsTreeItemData[]> {
-        if (!this.selectedTimelineId) {
+        if (this.selectedTimelines.length === 0) {
             return [];
         }
 
         if (!element) {
             const children = [];
-            const eventsSummary = await this.apiClient.events().eventsSummaryForTimeline(this.selectedTimelineId);
-            for (const summary of eventsSummary.events) {
-                let name = summary.name;
-                if (name == null) {
-                    name = "<unnamed>";
-                }
-                const attrs = [];
-                for (const attr of summary.attributes) {
-                    if (attr.startsWith("event.")) {
-                        attrs.push(attr.replace("event.", ""));
+            for (const selectedTimeline of this.selectedTimelines) {
+                const eventsSummary = await this.apiClient
+                    .events()
+                    .eventsSummaryForTimeline(selectedTimeline.timelineId);
+                for (const summary of eventsSummary.events) {
+                    let name = summary.name;
+                    if (name == null) {
+                        name = "<unnamed>";
                     }
+                    const attrs = [];
+                    for (const attr of summary.attributes) {
+                        if (attr.startsWith("event.")) {
+                            attrs.push(attr.replace("event.", ""));
+                        }
+                    }
+                    children.push(
+                        new EventNameTreeItemData(
+                            name,
+                            summary.n_instances,
+                            attrs,
+                            selectedTimeline.timelineName,
+                            selectedTimeline.timelineId
+                        )
+                    );
                 }
-                children.push(new EventNameTreeItemData(name, summary.n_instances, attrs, this.selectedTimelineId));
             }
 
             children.sort((a, b) => a.eventName.localeCompare(b.eventName));
             return children;
         } else {
             if (element instanceof EventNameTreeItemData) {
-                return element.attributes.map((attrKey) => new EventAttributeTreeItemData(element.eventName, attrKey));
+                return element.attributes.map(
+                    (attrKey) =>
+                        new EventAttributeTreeItemData(
+                            element.eventName,
+                            element.timelineName,
+                            element.timelineId,
+                            attrKey
+                        )
+                );
             } else {
                 return [];
             }
         }
     }
 
-    setSelectedTimeline(timelineId?: api.TimelineId, timelineName?: string) {
-        if (timelineId && timelineName) {
-            this.selectedTimelineId = timelineId;
-            this.selectedTimelineName = timelineName;
-            this.refresh();
-        }
+    setSelectedTimelines(timelines: SelectedTimeline[]) {
+        this.selectedTimelines = timelines;
+        this.refresh();
     }
 
     logSelectedCommand() {
-        if (this.selectedTimelineId == null) {
+        if (this.selectedTimelines.length === 0) {
             vscode.window.showWarningMessage(`No timeline is selected`);
             return;
         }
 
         const thingsToLog = [];
-        const literalTimelineId = "%" + this.selectedTimelineId.replace(/-/g, "");
-
         for (const itemData of this.view.selection) {
-            thingsToLog.push(`${itemData.eventName}@*(_.timeline.id=${literalTimelineId})`);
-        }
-        vscode.commands.executeCommand(
-            modalityLog.MODALITY_LOG_COMMAND,
-            new modalityLog.ModalityLogCommandArgs({ thingToLog: thingsToLog })
-        );
-    }
-
-    async createEventTimingNotebook(item: EventNameTreeItemData) {
-        let selectedEventNames = this.view.selection.map((data) => data.eventName);
-        // Add the item the command was executed on, it may not be in the selection
-        selectedEventNames.push(item.eventName);
-        selectedEventNames = [...new Set(selectedEventNames)]; // dedupe
-        for (const eventName of selectedEventNames) {
-            const varMap = this.templateVariableMap();
-            if (varMap == null) {
-                return;
+            if (itemData instanceof EventNameTreeItemData && itemData.timelineId) {
+                const literalTimelineId = "%" + itemData.timelineId.replace(/-/g, "");
+                thingsToLog.push(`"${itemData.eventName}"@*(_.timeline.id=${literalTimelineId})`);
             }
-            varMap["eventName"] = eventName;
-            await this.createJupyterNotebook(eventTimingNotebookCells.cells, varMap);
+        }
+        if (thingsToLog.length !== 0) {
+            vscode.commands.executeCommand(
+                modalityLog.MODALITY_LOG_COMMAND,
+                new modalityLog.ModalityLogCommandArgs({ thingToLog: thingsToLog })
+            );
         }
     }
 
@@ -152,39 +157,76 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
         }
     }
 
-    async createEventAttrNotebook(item: EventAttributeTreeItemData) {
-        if (this.view.selection.length == 1) {
-            const varMap = this.templateVariableMap();
+    async createEventTimingNotebook(item: EventNameTreeItemData) {
+        type SelectedEvent = {
+            name: string;
+            timelineId: api.TimelineId;
+            timelineName: string;
+        };
+
+        const selection: EventNameTreeItemData[] = [];
+        for (const item of this.view.selection) {
+            if (item instanceof EventNameTreeItemData) {
+                selection.push(item);
+            }
+        }
+        // Add the item the command was executed on, it may not be in the selection
+        selection.push(item);
+        let selectedEvents: SelectedEvent[] = selection.map((data) => {
+            return { name: data.eventName, timelineId: data.timelineId, timelineName: data.timelineName };
+        });
+        // dedupe
+        selectedEvents = selectedEvents.filter(
+            (v, i, a) => a.findIndex((v2) => JSON.stringify(v2) === JSON.stringify(v)) === i
+        );
+        for (const event of selectedEvents) {
+            const varMap = this.templateVariableMap(event.timelineName, event.timelineId);
             if (varMap == null) {
                 return;
             }
+            varMap["eventName"] = event.name;
+            await this.createJupyterNotebook(eventTimingNotebookCells.cells, varMap);
+        }
+    }
 
-            varMap.eventName = item.eventName;
-            varMap.eventAttribute = item.attribute;
-            await this.createJupyterNotebook(eventAttributeValuesNotebookCells.cells, varMap);
-        } else {
-            let selectedEventAttrs = [...this.view.selection, ...[item]];
-            selectedEventAttrs = [...new Set(selectedEventAttrs)]; // dedupe
+    async createEventAttrNotebook(item: EventAttributeTreeItemData) {
+        type EventName = string;
+        type EventMeta = {
+            timelineName: string;
+            attributes: Set<string>;
+        };
 
-            const attributesByEvent = new Map<string, string[]>();
-            for (const ev of selectedEventAttrs) {
-                if (!(ev instanceof EventAttributeTreeItemData)) {
-                    throw new Error("Internal error: event tree node not of expected type");
+        // Group attributes by event@timeline, we'll make a notebook for
+        // each group
+        const eventGroups = new Map<api.TimelineId, Map<EventName, EventMeta>>();
+        for (const data of [...this.view.selection, ...[item]]) {
+            if (data instanceof EventAttributeTreeItemData) {
+                let eventToMeta = null;
+                if (!eventGroups.has(data.timelineId)) {
+                    eventGroups.set(data.timelineId, new Map<EventName, EventMeta>());
                 }
-                if (attributesByEvent.has(ev.eventName)) {
-                    const attributes = attributesByEvent.get(ev.eventName);
-                    if (attributes != null) {
-                        attributes.push(ev.attribute);
+                eventToMeta = eventGroups.get(data.timelineId);
+
+                if (eventToMeta != null) {
+                    let eventMeta = null;
+                    if (!eventToMeta.has(data.eventName)) {
+                        eventToMeta.set(data.eventName, {
+                            timelineName: data.timelineName,
+                            attributes: new Set<string>(),
+                        });
                     }
-                } else {
-                    const attributes = [];
-                    attributes.push(ev.attribute);
-                    attributesByEvent.set(ev.eventName, attributes);
+                    eventMeta = eventToMeta.get(data.eventName);
+
+                    if (eventMeta != null) {
+                        eventMeta.attributes.add(data.attribute);
+                    }
                 }
             }
+        }
 
-            attributesByEvent.forEach(async (attributes: string[], eventName: string) => {
-                const varMap = this.templateVariableMap();
+        for (const [timelineId, eventToMeta] of eventGroups) {
+            for (const [eventName, eventMeta] of eventToMeta) {
+                const varMap = this.templateVariableMap(eventMeta.timelineName, timelineId);
                 if (varMap == null) {
                     return;
                 }
@@ -193,19 +235,19 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
                 const cells = lodash.cloneDeep(eventMultiAttributeValuesNotebookCells.cells.slice(0, 2));
                 const srcCell = eventMultiAttributeValuesNotebookCells.cells[2];
                 const figShowCell = eventMultiAttributeValuesNotebookCells.cells[3];
-                const eventAttributesList = [];
-                for (let i = 0; i < attributes.length; i++) {
-                    eventAttributesList.push("'event." + attributes[i] + "'");
-                    varMap["eventAttribute" + i] = attributes[i];
+                const eventAttributesList: string[] = [];
+                Array.from(eventMeta.attributes).forEach((attr, i) => {
+                    eventAttributesList.push("'event." + attr + "'");
+                    varMap["eventAttribute" + i] = attr;
                     const newSrc = srcCell.source[0].replace(/eventAttribute/g, "eventAttribute" + i);
                     cells[1].source.push(newSrc);
-                }
+                });
                 cells[1].source.push(figShowCell.source[0]);
 
                 varMap.eventAttributes = eventAttributesList.join(", ");
 
                 await this.createJupyterNotebook(cells, varMap);
-            });
+            }
         }
     }
 
@@ -262,12 +304,12 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
         return cells;
     }
 
-    templateVariableMap(): TemplateVariableMap | undefined {
+    templateVariableMap(timelineName: string, timelineId: api.TimelineId): TemplateVariableMap | undefined {
         let segments: string;
         switch (this.wss.activeSegments.type) {
             case "WholeWorkspace":
                 vscode.window.showWarningMessage(`This notebook is not supported in 'whole workspace' mode.`);
-                return;
+                return undefined;
             case "Explicit": {
                 segments = this.wss.activeSegments.segmentIds
                     .map((seg) => {
@@ -277,16 +319,11 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
             }
         }
 
-        if (this.selectedTimelineId == null || this.selectedTimelineName == null) {
-            vscode.window.showWarningMessage(`A timeline must be selected to generate a notebook`);
-            return;
-        }
-
         return {
             workspaceVersionId: this.wss.activeWorkspaceVersionId,
             segments,
-            timelineId: "%" + this.selectedTimelineId.replace(/-/g, ""),
-            timelineName: this.selectedTimelineName,
+            timelineId: "%" + timelineId.replace(/-/g, ""),
+            timelineName: timelineName,
         };
     }
 }
@@ -311,6 +348,7 @@ export class EventNameTreeItemData {
         public eventName: string,
         public numInstances: number,
         public attributes: string[],
+        public timelineName: string,
         public timelineId: api.TimelineId
     ) {}
 
@@ -332,13 +370,19 @@ class EventNameTreeItem extends vscode.TreeItem {
                 ? vscode.TreeItemCollapsibleState.Collapsed
                 : vscode.TreeItemCollapsibleState.None
         );
-        const tooltip = `- **Instances**:: ${data.numInstances}`;
+        let tooltip = `${data.eventName} @ ${data.timelineName}`;
+        tooltip += `\n- **Instances**:: ${data.numInstances}`;
         this.tooltip = new vscode.MarkdownString(tooltip);
     }
 }
 
 export class EventAttributeTreeItemData {
-    constructor(public eventName: string, public attribute: string) {}
+    constructor(
+        public eventName: string,
+        public timelineName: string,
+        public timelineId: api.TimelineId,
+        public attribute: string
+    ) {}
 }
 
 class EventAttributeTreeItem extends vscode.TreeItem {

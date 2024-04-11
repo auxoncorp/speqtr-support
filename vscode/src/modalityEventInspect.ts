@@ -13,7 +13,7 @@ function runModalityEventInspectCommand(event: string) {
     const modality = config.toolPath("modality");
 
     // We're going to send the text of the command line to the terminal. Build up the args list here.
-    const modalityArgs = ["LESS=R", modality, "event", "inspect", event];
+    const modalityArgs = ["LESS=R", modality, "event", "inspect", `"${event}"`];
 
     for (const extra of config.extraCliArgs("modality event inspect")) {
         modalityArgs.push(extra);
