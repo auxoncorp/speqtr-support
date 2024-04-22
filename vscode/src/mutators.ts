@@ -103,7 +103,7 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
         let groupingMode = "NONE";
         if (this.uiState.getGroupByMutatorName()) {
             groupingMode = "MUTATOR_NAME";
-        } else if (this.uiState.getGroupByWorkspaceAttrs() && this.workspaceMutatorGroupingAttrs.length != 0) {
+        } else if (this.uiState.getGroupByWorkspaceAttrs()) {
             groupingMode = "WORKSPACE_ATTRS";
         }
 
@@ -180,7 +180,7 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
         const children = await this.getChildrenInner(element);
         if (children.length === 0) {
             this.view.message =
-                "The active data scope doesn't contain any mutators. Select a different data scope or refresh the view after mutators have announced themselves.";
+                "No mutators available. Select a different data scope or refresh the view after mutators have announced themselves or the relevant workspace mutator grouping attributes are available.";
         } else {
             this.view.message = undefined;
         }
@@ -324,11 +324,9 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
     }
 
     groupByWorkspaceAttrs() {
-        if (this.workspaceMutatorGroupingAttrs.length != 0) {
-            this.uiState.setGroupByMutatorName(false);
-            this.uiState.setGroupByWorkspaceAttrs(true);
-            this.refresh();
-        }
+        this.uiState.setGroupByMutatorName(false);
+        this.uiState.setGroupByWorkspaceAttrs(true);
+        this.refresh();
     }
 
     createMutation(item: MutatorsTreeItemData) {
