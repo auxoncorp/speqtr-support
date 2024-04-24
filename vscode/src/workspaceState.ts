@@ -39,9 +39,17 @@ export class WorkspaceAndSegmentState {
                 vscode.window.showWarningMessage(
                     `Cannot find workspace with name '${activeWorkspaceName}'.\nReverting to the default workspace.`
                 );
-                await _setActiveWorkspaceByName("default");
+                await _setActiveWorkspaceByNameWithLatestSegment("default");
                 return WorkspaceAndSegmentState.create(apiClient);
             }
+        }
+
+        // When the default workspace is active, it may not actually be written down
+        // in the CLI context dir. The CLI will produce a warning on stdout when it's
+        // not explicit in some cases, which makes handling the json output more difficult.
+        // This will be fixed in a future release.
+        if (activeWorkspaceName == "default") {
+            await _setActiveWorkspaceByName(activeWorkspaceName);
         }
 
         const usedSegmentConfig = await cliConfig.usedSegments();
@@ -130,7 +138,7 @@ export class WorkspaceAndSegmentState {
     }
 
     async setActiveWorkspaceByName(workspaceName: string) {
-        await _setActiveWorkspaceByName(workspaceName);
+        await _setActiveWorkspaceByNameWithLatestSegment(workspaceName);
         this.refresh();
     }
 
@@ -206,10 +214,15 @@ async function _useLatestSegment() {
     ]);
 }
 
+async function _setActiveWorkspaceByNameWithLatestSegment(workspaceName: string) {
+    const modality = config.toolPath("modality");
+    await _setActiveWorkspaceByName(workspaceName);
+    await execFile(modality, ["segment", "use", "--latest", ...config.extraCliArgs("modality segment use")]);
+}
+
 async function _setActiveWorkspaceByName(workspaceName: string) {
     const modality = config.toolPath("modality");
     await execFile(modality, ["workspace", "use", workspaceName, ...config.extraCliArgs("modality workspace use")]);
-    await execFile(modality, ["segment", "use", "--latest", ...config.extraCliArgs("modality segment use")]);
 }
 
 export type ActiveSegments = ExplicitActiveSegments | WholeWorkspaceActiveSegments;
