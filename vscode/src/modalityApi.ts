@@ -1,5 +1,6 @@
 import * as gen from "./generated/src/modality-api";
 import createClient from "openapi-fetch";
+import axios from "axios";
 
 // See https://github.com/ajaishankar/openapi-typescript-fetch#server-side-usage
 import fetch, { Headers, Request, Response } from "node-fetch";
@@ -74,6 +75,19 @@ export type ExperimentMutationChecklist = gen.components["schemas"]["ExperimentM
 export type Experiment = gen.components["schemas"]["Experiment"];
 
 type InternalClient = ReturnType<typeof createClient<gen.paths>>;
+
+export async function isModalitydReachable(baseUrl: string): Promise<boolean> {
+    if (baseUrl.endsWith("/")) {
+        baseUrl = baseUrl.slice(0, -1);
+    }
+    const url = baseUrl + "/v1/alive";
+    try {
+        const _response = await axios.get(url);
+    } catch (_exception) {
+        return false;
+    }
+    return true;
+}
 
 export class Client {
     client: InternalClient;
