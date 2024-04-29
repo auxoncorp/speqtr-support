@@ -68,8 +68,17 @@ export async function activate(context: vscode.ExtensionContext) {
     // when we new them up, so we don't need to hold on to them.
     new workspaces.WorkspacesTreeDataProvider(apiClient, wss, context);
     new segments.SegmentsTreeDataProvider(apiClient, specCoverageProvider, wss, context);
-    new timelines.TimelinesTreeDataProvider(apiClient, wss, context);
-    new events.EventsTreeDataProvider(apiClient, wss, context);
+    const timelinesProvider = new timelines.TimelinesTreeDataProvider(apiClient, wss, context);
+    const eventsProvider = new events.EventsTreeDataProvider(apiClient, wss, context);
+
+    timelinesProvider.view.onDidChangeSelection(async (event) => {
+        const selection = event.selection
+            .filter((item) => item instanceof timelines.TimelineLeafTreeItemData && item.timelineId != undefined)
+            .map((item) => {
+                return { timelineId: item.timelineId as api.TimelineId, timelineName: item.name };
+            });
+        eventsProvider.setSelectedTimelines(selection);
+    });
 
     new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider, wss, context);
 

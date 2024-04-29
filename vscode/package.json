@@ -635,10 +635,6 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "auxon.events.setSelectedTimeline",
-                "title": "Update events summary for the selected timeline"
-            },
-            {
                 "command": "auxon.events.createEventTimingNotebook",
                 "title": "View Event Timing Plots in a Jupyter Notebook"
             },
