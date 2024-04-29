@@ -34,6 +34,7 @@ export class WorkspacesTreeDataProvider implements vscode.TreeDataProvider<Works
     }
 
     refresh(): void {
+        this.wss.refresh();
         this._onDidChangeTreeData.fire(undefined);
     }
 

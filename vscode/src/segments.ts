@@ -84,6 +84,7 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     }
 
     refresh(): void {
+        this.wss.refresh();
         this._onDidChangeTreeData.fire(undefined);
     }
 
