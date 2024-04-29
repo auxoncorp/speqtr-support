@@ -31,12 +31,20 @@ let lspClient: LanguageClient;
 export async function activate(context: vscode.ExtensionContext) {
     log = vscode.window.createOutputChannel("Auxon");
 
+    const apiUrl = await config.modalityUrl();
+    const modalitydIsAlive = await api.isModalitydReachable(apiUrl.toString());
+    if (!modalitydIsAlive) {
+        const msg =
+            `The Auxon Modality backend server cannot be reached at '${apiUrl}'. ` +
+            `If modalityd is not running locally, set the 'auxon.modalityUrl' configuration`;
+        throw new Error(msg);
+    }
+
     // If this is a fresh install, prompt for new first user creation
     await user.handleNewUserCreation();
 
     lspClient = await lsp.activateLspClient(context);
 
-    const apiUrl = await config.modalityUrl();
     const allowInsecure = await config.allowInsecureHttps();
     let token = await config.userAuthToken();
 

@@ -1025,6 +1025,7 @@
         "@viz-js/viz": "^3.0.1",
         "@vscode/codicons": "^0.0.32",
         "@vscode/webview-ui-toolkit": "^1.4.0",
+        "axios": "^1.6.8",
         "cytoscape": "^3.28.1",
         "cytoscape-context-menus": "^4.1.0",
         "cytoscape-cose-bilkent": "^4.1.0",
