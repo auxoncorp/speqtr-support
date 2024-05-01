@@ -5,8 +5,13 @@
 import * as api from "./modalityApi";
 import * as vscode from "vscode";
 import * as modalityLog from "./modalityLog";
+import * as config from "./config";
 import * as transitionGraph from "./transitionGraph";
 import * as workspaceState from "./workspaceState";
+import * as child_process from "child_process";
+import * as util from "util";
+
+const execFile = util.promisify(child_process.execFile);
 
 class TimelinesTreeMemento {
     constructor(private readonly memento: vscode.Memento) {}
@@ -78,6 +83,18 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             }),
             vscode.commands.registerCommand("auxon.timelines.clearGroupTimelinesByNameComponents", () => {
                 this.disableTimelineGrouping();
+            }),
+            vscode.commands.registerCommand("auxon.timelines.delete", (itemData) => {
+                if (itemData.timelineId) {
+                    this.deleteTimelines([itemData.timelineId]);
+                }
+            }),
+            vscode.commands.registerCommand("auxon.timelines.deleteMany", (itemData?: TimelineTreeItemData) => {
+                let timelineIds = this.view.selection.flatMap((data) => data.getTimelineIds());
+                if (itemData) {
+                    timelineIds = timelineIds.concat(itemData.getTimelineIds());
+                }
+                this.deleteTimelines(timelineIds);
             }),
             this.wss.onDidChangeUsedSegments(() => this.refresh())
         );
@@ -195,6 +212,41 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             modalityLog.MODALITY_LOG_COMMAND,
             new modalityLog.ModalityLogCommandArgs({ thingToLog: timelineIds })
         );
+    }
+
+    async deleteTimelines(timelineIds: api.TimelineId[]) {
+        timelineIds = [...new Set(timelineIds)]; // dedupe
+
+        if (timelineIds.length == 0) {
+            return;
+        }
+
+        let prefix = `Really delete ${timelineIds.length} timeline`;
+        if (timelineIds.length > 1) {
+            prefix += "s";
+        }
+
+        const answer = await vscode.window.showInformationMessage(
+            `${prefix}? This will delete all events on the selected timelines.`,
+            "Delete",
+            "Cancel"
+        );
+        if (answer == "Delete") {
+            let filterExpr = "";
+            timelineIds.forEach((tid, index) => {
+                const literalTimelineId = "%" + tid.replace(/-/g, "");
+                filterExpr += `_.timeline.id = ${literalTimelineId}`;
+                if (index < timelineIds.length - 1) {
+                    filterExpr += " OR ";
+                }
+            });
+
+            const modality = config.toolPath("modality");
+            await execFile(modality, ["delete", "--force", filterExpr, ...config.extraCliArgs("modality delete")], {
+                encoding: "utf8",
+            });
+            this.refresh();
+        }
     }
 
     transitionGraph(item: TimelineTreeItemData) {
