@@ -43,7 +43,8 @@ export class EventsTreeDataProvider implements vscode.TreeDataProvider<EventsTre
             vscode.commands.registerCommand("auxon.events.createEventAttrNotebook", async (itemData) =>
                 this.createEventAttrNotebook(itemData)
             ),
-            vscode.commands.registerCommand("auxon.events.inspect", (itemData) => this.inspectEventCommand(itemData))
+            vscode.commands.registerCommand("auxon.events.inspect", (itemData) => this.inspectEventCommand(itemData)),
+            this.wss.onDidChangeUsedSegments(() => this.refresh())
         );
     }
 

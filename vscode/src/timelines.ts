@@ -78,7 +78,8 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
             }),
             vscode.commands.registerCommand("auxon.timelines.clearGroupTimelinesByNameComponents", () => {
                 this.disableTimelineGrouping();
-            })
+            }),
+            this.wss.onDidChangeUsedSegments(() => this.refresh())
         );
         this.updateGroupingMenuContext();
     }
