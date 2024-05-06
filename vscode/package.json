@@ -214,6 +214,16 @@
                     "when": "view == auxon.timelines && listMultiSelection"
                 },
                 {
+                    "command": "auxon.timelines.delete",
+                    "when": "view == auxon.timelines && viewItem == timeline && !listMultiSelection",
+                    "group": "2_context@2"
+                },
+                {
+                    "command": "auxon.timelines.deleteMany",
+                    "when": "view == auxon.timelines && ((viewItem == timeline && listMultiSelection) || viewItem == timelineGroup)",
+                    "group": "2_context@2"
+                },
+                {
                     "command": "auxon.events.createEventTimingNotebook",
                     "when": "view == auxon.events && viewItem == event"
                 },
@@ -620,6 +630,14 @@
             {
                 "command": "auxon.timelines.logSelected",
                 "title": "Log Selected Timelines"
+            },
+            {
+                "command": "auxon.timelines.delete",
+                "title": "Delete Timeline"
+            },
+            {
+                "command": "auxon.timelines.deleteMany",
+                "title": "Delete Timelines"
             },
             {
                 "command": "auxon.timelines.transitionGraph",
