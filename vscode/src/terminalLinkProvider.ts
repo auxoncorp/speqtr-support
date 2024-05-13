@@ -42,7 +42,9 @@ const EVENT_COORDS_TERMINAL_LINK_PROVIDER: vscode.TerminalLinkProvider<EventCoor
                 startIndex: match.index,
                 length: match[0].length,
                 tooltip: "View log around this event",
-                data: { around: coord, radius: "5" },
+                // NOTE: restore the around behavor
+                // data: { around: coord, radius: "5" },
+                data: { from: coord },
             };
             links.push(link);
         }
