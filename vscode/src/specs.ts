@@ -247,14 +247,12 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
 
     async coverage(item: SpecsTreeItemData) {
         const activeSegments = await cliConfig.activeSegments();
-        if (activeSegments.length > 1) {
-            throw new Error("Can't currently show coverage for multiple segments at once");
-        } else if (activeSegments.length == 0) {
+        if (activeSegments.length == 0) {
             throw new Error("No segments are active");
         }
 
         const params: specCoverage.SpecCoverageParams = {
-            segmentId: activeSegments[0].id,
+            segmentIds: activeSegments.map(seg => seg.id)
         };
 
         // consider the clicked item to be part of the selection for
