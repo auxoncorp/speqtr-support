@@ -87,6 +87,7 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
             vscode.commands.registerCommand("auxon.mutators.createMutation", (itemData) => {
                 this.createMutation(itemData);
             }),
+            this.wss.onDidChangeActiveWorkspace(() => this.refresh()),
             this.wss.onDidChangeUsedSegments(() => this.refresh())
         );
 
@@ -94,6 +95,8 @@ export class MutatorsTreeDataProvider implements vscode.TreeDataProvider<Mutator
     }
 
     refresh(): void {
+        this.workspaceMutatorGroupingAttrs = this.wss.mutatorGroupingAttrs;
+
         vscode.commands.executeCommand(
             "setContext",
             "auxon.mutators.unavailable",

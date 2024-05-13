@@ -1,16 +1,18 @@
 import * as api from "./modalityApi";
 import * as vscode from "vscode";
 import * as handlebars from "handlebars";
-("");
 import * as fs from "fs";
+import * as child_process from "child_process";
+import * as util from "util";
+
+import { toolPath } from "./config";
+const execFile = util.promisify(child_process.execFile);
 
 export interface SpecCoverageParams {
-    segmentId: api.WorkspaceSegmentId;
+    segmentIds: api.WorkspaceSegmentId[];
     specNames?: string[];
     specVersions?: string[];
     specResultIds?: api.SpecEvalResultId[];
-    specFilter?: string;
-    caseFilter?: string;
 }
 
 /// Shows a spec coverage report as a webview, when asked.
@@ -33,43 +35,86 @@ export class SpecCoverageProvider {
     }
 
     async showSpecCoverage(params: SpecCoverageParams) {
-        const coverage = await this.apiClient
-            .segment(params.segmentId)
-            .specCoverage(
-                params.specNames,
-                params.specVersions,
-                params.specResultIds,
-                params.specFilter,
-                params.caseFilter
-            );
+        const conform = toolPath("conform");
+        var args = ["spec", "coverage", "--format", "html"];
 
-        let percentageBehaviorsCovered = 0.0;
-        if (coverage.coverage_aggregates.n_behaviors > 0 && coverage.coverage_aggregates.n_behaviors_executed > 0) {
-            percentageBehaviorsCovered = 100.0 - coverage.coverage_aggregates.percentage_behaviors_vacuous;
+        var segmentationRule = undefined;
+        for (const seg of params.segmentIds) {
+            if (segmentationRule) {
+                if (seg.rule_name != segmentationRule) {
+                    throw new Error("Cannot create a coverage report for segments originating from different segmentation rules");
+                }
+            } else {
+                segmentationRule = seg.rule_name;
+            }
+            args.push("--segment")
+            args.push(seg.segment_name)
         }
 
-        const html = this.template({
-            designUnit: 8,
-            borderWidth: 1,
-            cornerRadius: 0,
-            header: {
-                percentageSpecsExecuted: coverage.coverage_aggregates.percentage_specs_executed,
-                percentageSpecsPassing: coverage.coverage_aggregates.percentage_specs_passing,
-                percentageBehaviorsCovered,
-                percentageCasesEverMatched: coverage.coverage_aggregates.percentage_cases_ever_matched,
-            },
-            specs: coverage.spec_coverages.map(specViewModel).sort((a, b) => a.name.localeCompare(b.name)),
-            params,
-            percentageBehaviorsCovered,
-        });
+        if (segmentationRule) {
+            args.push("--segmentation-rule", segmentationRule);
+        }
 
+        var specFilters = [];
+        if (params.specNames) {
+            for (const name of params.specNames) {
+                specFilters.push(`_.name='${name}'`)
+            }
+        }
+
+        if (params.specVersions) {
+            for (const version of params.specVersions) {
+                specFilters.push(`_.spec.version_id = "${version}"`)
+            }
+        }
+
+        // TODO what about params.specResultIds?
+        if (specFilters.length > 0) {
+            args.push("--spec-filter");
+            args.push(specFilters.join(" or "));
+        }
+
+        const coverageRes = await execFile(conform, args, { encoding: "utf8" });
+
+        // const coverage = await this.apiClient
+        //     .segment(params.segmentId)
+        //     .specCoverage(
+        //         params.specNames,
+        //         params.specVersions,
+        //         params.specResultIds,
+        //         params.specFilter,
+        //         params.caseFilter
+        //     );
+
+        // let percentageBehaviorsCovered = 0.0;
+        // if (coverage.coverage_aggregates.n_behaviors > 0 && coverage.coverage_aggregates.n_behaviors_executed > 0) {
+        //     percentageBehaviorsCovered = 100.0 - coverage.coverage_aggregates.percentage_behaviors_vacuous;
+        // }
+
+        // const html = this.template({
+        //     designUnit: 8,
+        //     borderWidth: 1,
+        //     cornerRadius: 0,
+        //     header: {
+        //         percentageSpecsExecuted: coverage.coverage_aggregates.percentage_specs_executed,
+        //         percentageSpecsPassing: coverage.coverage_aggregates.percentage_specs_passing,
+        //         percentageBehaviorsCovered,
+        //         percentageCasesEverMatched: coverage.coverage_aggregates.percentage_cases_ever_matched,
+        //     },
+        //     specs: coverage.spec_coverages.map(specViewModel).sort((a, b) => a.name.localeCompare(b.name)),
+        //     params,
+        //     percentageBehaviorsCovered,
+        // });
+
+        
         const panel = vscode.window.createWebviewPanel(
             "auxon.specCoverageView",
-            `Coverage Report: ${params.segmentId.segment_name}`,
+            "Coverage Report", // TODO formatted version
+            //`Coverage Report: ${params.segmentId.segment_name}`,
             vscode.ViewColumn.One,
             {}
         );
-        panel.webview.html = html;
+        panel.webview.html = coverageRes.stdout;
     }
 }
 
