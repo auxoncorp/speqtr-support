@@ -405,7 +405,7 @@ abstract class TimelineTreeItemData {
 }
 
 export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
-    contextValue = "timelineGroup";
+    contextValue = "timelineGroupByName";
 
     constructor(public name: string) {
         super();
@@ -478,7 +478,7 @@ export class TimelineGroupTreeItemData extends TimelineTreeItemData {
     }
 
     override canHaveChildren(): boolean {
-        return this.childItems.length !== 0;
+        return this.timeline_group.timelines.length !== 0;
     }
 
     override async children(_apiClient: api.Client): Promise<TimelineTreeItemData[]> {
@@ -491,7 +491,6 @@ export class TimelineGroupTreeItemData extends TimelineTreeItemData {
             }
             return a.name.localeCompare(b.name);
         });
-
         this.childItems = timelines.map((timeline_overview) => new TimelineLeafTreeItemData(timeline_overview));
         return this.childItems;
     }
