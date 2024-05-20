@@ -88,7 +88,10 @@ export async function activate(context: vscode.ExtensionContext) {
         eventsProvider.setSelectedTimelines(selection);
     });
 
-    new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider, wss, context);
+    const specsProvider = new specs.SpecsTreeDataProvider(apiClient, specCoverageProvider, wss, context);
+    // Pre-load specs provided so that the deviant panel can reveal spec tree items without having the user
+    // explicitly load the specs panel first
+    const _ignored = specsProvider.getChildren();
 
     new mutators.MutatorsTreeDataProvider(apiClient, wss, context);
     new mutations.MutationsTreeDataProvider(apiClient, wss, context);
