@@ -281,7 +281,7 @@
                 },
                 {
                     "command": "auxon.specs.showVersion",
-                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection && false",
+                    "when": "view == auxon.specs && viewItem == specVersion && !listMultiSelection",
                     "group": "1_context@1"
                 },
                 {

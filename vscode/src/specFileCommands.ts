@@ -228,3 +228,26 @@ export function runConformEvalCommand(args: SpecEvalCommandArgs): Thenable<vscod
 
     return vscode.tasks.executeTask(task);
 }
+
+export async function inspectSpecSpeqtr(specNameOrVersion: string): Promise<string | undefined> {
+    const conform = config.toolPath("conform");
+
+    try {
+        const res = await execFile(
+            conform,
+            ["spec", "inspect", "--with-speqtr", "--format", "json", specNameOrVersion],
+            {
+                encoding: "utf8",
+            }
+        );
+        const data = JSON.parse(res.stdout);
+        return data.target_version.content.speqtr;
+    } catch (e: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
+        if (Object.prototype.hasOwnProperty.call(e, "stderr")) {
+            vscode.window.showErrorMessage(e.stderr.trim());
+        } else {
+            vscode.window.showErrorMessage(e.toString());
+        }
+        return undefined;
+    }
+}
