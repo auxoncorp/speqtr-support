@@ -23,7 +23,8 @@ export class WorkspaceAndSegmentState {
         public activeWorkspaceName: string,
         public activeWorkspaceVersionId: string,
         public usedSegmentConfig: cliConfig.ContextSegment,
-        public activeSegments: ActiveSegments
+        public activeSegments: ActiveSegments,
+        public mutatorGroupingAttrs: string[]
     ) {}
 
     static async create(apiClient: api.Client): Promise<WorkspaceAndSegmentState> {
@@ -96,6 +97,7 @@ export class WorkspaceAndSegmentState {
                 }
             }
         }
+
         if (resetToLatestWorkspace) {
             vscode.window.showWarningMessage(`Active segment is for a different workspace; reverting to latest.`);
             await _useLatestSegment();
@@ -106,12 +108,16 @@ export class WorkspaceAndSegmentState {
             };
         }
 
+        const ws_def = await apiClient.workspace(activeWorkspaceVersionId).definition();
+        const mutatorGroupingAttrs = ws_def.mutator_grouping_attrs;
+
         return new WorkspaceAndSegmentState(
             apiClient,
             activeWorkspaceName,
             activeWorkspaceVersionId,
             usedSegmentConfig,
-            activeSegments
+            activeSegments,
+            mutatorGroupingAttrs
         );
     }
 
