@@ -356,7 +356,7 @@ export class EventNameTreeItemData {
     getModalityLogCommandArgs(): modalityLog.ModalityLogCommandArgs {
         const literalTimelineId = "%" + this.timelineId.replace(/-/g, "");
         return new modalityLog.ModalityLogCommandArgs({
-            thingToLog: `${this.eventName}@*(_.timeline.id=${literalTimelineId})`,
+            thingToLog: `'${this.eventName}'@*(_.timeline.id=${literalTimelineId})`,
         });
     }
 }
