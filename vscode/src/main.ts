@@ -36,8 +36,12 @@ export async function activate(context: vscode.ExtensionContext) {
     if (!modalitydIsAlive) {
         const msg =
             `The Auxon Modality backend server cannot be reached at '${apiUrl}'. ` +
-            `If modalityd is not running locally, set the 'auxon.modalityUrl' configuration`;
-        throw new Error(msg);
+            `If modalityd is not running locally, change the 'auxon.modalityUrl' extension setting and refresh the extension.`;
+        await vscode.window.showErrorMessage(msg);
+
+        // Can't do anything until the backend is reachable, this prevents a cascade of failures
+        // from being shown
+        return;
     }
 
     // If this is a fresh install, prompt for new first user creation
