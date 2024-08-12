@@ -72,6 +72,12 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
             vscode.commands.registerCommand("auxon.specs.evalVersion.dryRun", (item: SpecVersionTreeItemData) =>
                 this.evalVersionDryRun(item)
             ),
+            vscode.commands.registerCommand("auxon.specs.showLatest", (item: NamedSpecTreeItemData) =>
+                this.showLatest(item)
+            ),
+            vscode.commands.registerCommand("auxon.specs.showVersion", (item: SpecVersionTreeItemData) =>
+                this.showVersion(item)
+            ),
             vscode.commands.registerCommand("auxon.specs.delete", (item: NamedSpecTreeItemData) =>
                 this.deleteSpec(item)
             ),
@@ -203,6 +209,14 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
         this.conformEval({ spec_version: spec.specVersion, dry_run: true });
     }
 
+    async showLatest(spec: NamedSpecTreeItemData) {
+        await this.showSpec(spec.specMetadata.name);
+    }
+
+    async showVersion(spec: SpecVersionTreeItemData) {
+        await this.showSpec(spec.specVersion);
+    }
+
     async deleteSpec(spec: NamedSpecTreeItemData) {
         const answer = await vscode.window.showInformationMessage(
             `Really delete spec '${spec.specMetadata.name}'? This will delete all spec versions and stored results.`,
@@ -308,6 +322,17 @@ export class SpecsTreeDataProvider implements vscode.TreeDataProvider<SpecsTreeI
 
     conformEval(args: specFileCommands.SpecEvalCommandArgs) {
         specFileCommands.runConformEvalCommand(args);
+    }
+
+    async showSpec(specNameOrVersion: string) {
+        const speqtr = await specFileCommands.inspectSpecSpeqtr(specNameOrVersion);
+        if (speqtr) {
+            const doc = await vscode.workspace.openTextDocument({
+                language: "speqtr",
+                content: speqtr,
+            });
+            await vscode.window.showTextDocument(doc);
+        }
     }
 }
 
