@@ -24,7 +24,7 @@ export class WorkspaceAndSegmentState {
         public activeWorkspaceVersionId: string,
         public usedSegmentConfig: cliConfig.ContextSegment,
         public activeSegments: ActiveSegments,
-        public mutatorGroupingAttrs: string[],
+        public mutatorGroupingAttrs: string[]
     ) {}
 
     static async create(apiClient: api.Client): Promise<WorkspaceAndSegmentState> {
@@ -108,8 +108,8 @@ export class WorkspaceAndSegmentState {
             };
         }
 
-        let ws_def = await apiClient.workspace(activeWorkspaceVersionId).definition();
-        let mutatorGroupingAttrs = ws_def.mutator_grouping_attrs;
+        const ws_def = await apiClient.workspace(activeWorkspaceVersionId).definition();
+        const mutatorGroupingAttrs = ws_def.mutator_grouping_attrs;
 
         return new WorkspaceAndSegmentState(
             apiClient,
