@@ -166,6 +166,14 @@ export interface paths {
      * the graph is grouped by event.name.
      */
     get: operations["grouped_graph"];
+    /**
+     * Get the contents of the given timelines as a graph, grouped by event attrbutes.
+     * @description Get the contents of the given timelines as a graph, grouped by event attrbutes.
+     *
+     * If no keys are specified using the 'group_by' query parameter,
+     * the graph is grouped by event.name.
+     */
+    post: operations["post_grouped_graph"];
   };
   "/v2/timelines/{timeline_id}": {
     /**
@@ -1617,6 +1625,50 @@ export interface operations {
         timeline_id: string[];
         /** @description Grouping attr key */
         group_by?: string[] | null;
+      };
+    };
+    responses: {
+      /** @description Retrieve the graph successfully */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GroupedGraph"];
+        };
+      };
+      /** @description Invalid Timeline Id */
+      400: {
+        content: {
+          "application/json": components["schemas"]["TimelinesError"];
+        };
+      };
+      /** @description Operation not authorized */
+      403: {
+        content: never;
+      };
+      /** @description Timeline Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["TimelinesError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get the contents of the given timelines as a graph, grouped by event attrbutes.
+   * @description Get the contents of the given timelines as a graph, grouped by event attrbutes.
+   *
+   * If no keys are specified using the 'group_by' query parameter,
+   * the graph is grouped by event.name.
+   */
+  post_grouped_graph: {
+    parameters: {
+      query?: {
+        /** @description Grouping attr key */
+        group_by?: string[] | null;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TimelineId"][];
       };
     };
     responses: {

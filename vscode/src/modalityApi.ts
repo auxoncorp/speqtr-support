@@ -496,12 +496,11 @@ export class SegmentClient {
 export class TimelinesClient {
     constructor(private readonly client: InternalClient) {}
 
-    async groupedGraph(timeline_id: string[], groupBy: string[]): Promise<GroupedGraph> {
-        const timelineIdQuery = timeline_id.map((tid) => ["timeline_id", tid]);
-        const groupByQuery = groupBy.map((gb) => ["group_by", gb]);
-        const query = timelineIdQuery.concat(groupByQuery);
+    async groupedGraph(timeline_ids: string[], groupBy: string[]): Promise<GroupedGraph> {
+        const query = groupBy.map((gb) => ["group_by", gb]);
 
-        const res = await this.client.get("/v2/timelines/grouped_graph", {
+        const res = await this.client.post("/v2/timelines/grouped_graph", {
+            body: timeline_ids,
             params: {
                 // @ts-ignore
                 // The library's stated type for 'query' is inaccurate.
