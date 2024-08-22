@@ -1621,6 +1621,81 @@
                         "ApiKeyAuth": ["access"]
                     }
                 ]
+            },
+            "post": {
+                "tags": ["timelines"],
+                "summary": "Get the contents of the given timelines as a graph, grouped by event attrbutes.",
+                "description": "Get the contents of the given timelines as a graph, grouped by event attrbutes.\n\nIf no keys are specified using the 'group_by' query parameter,\nthe graph is grouped by event.name.",
+                "operationId": "post_grouped_graph",
+                "parameters": [
+                    {
+                        "name": "group_by",
+                        "in": "query",
+                        "description": "Grouping attr key",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "nullable": true
+                        },
+                        "explode": true
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/TimelineId"
+                                }
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Retrieve the graph successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GroupedGraph"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Timeline Id",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TimelinesError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Operation not authorized"
+                    },
+                    "404": {
+                        "description": "Timeline Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TimelinesError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": ["access"]
+                    }
+                ]
             }
         },
         "/v2/timelines/{timeline_id}": {
