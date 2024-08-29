@@ -53,6 +53,7 @@ export interface TimelineParams {
     timelines: string[];
     groupBy: string[];
     assignNodeProps?: AssignNodeProps;
+    workspaceVersionId?: api.WorkspaceVersionId;
 }
 
 export interface SegmentParams {
@@ -61,6 +62,7 @@ export interface SegmentParams {
     segmentIds: [api.WorkspaceSegmentId];
     groupBy: string[];
     assignNodeProps?: AssignNodeProps;
+    workspaceVersionId?: api.WorkspaceVersionId;
 }
 
 export type TransitionGraphParams = TimelineParams | SegmentParams;
@@ -167,12 +169,20 @@ export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
     step1();
 }
 
-export function showGraphForTimelines(timelineIds: string[], groupBy: string[]) {
-    showGraph({ type: "timelines", timelines: timelineIds, groupBy });
+export function showGraphForTimelines(
+    timelineIds: string[],
+    groupBy: string[],
+    workspaceVersionId?: api.WorkspaceVersionId
+) {
+    showGraph({ type: "timelines", timelines: timelineIds, groupBy, workspaceVersionId });
 }
 
-export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy: string[]) {
-    showGraph({ type: "segment", segmentIds: [segmentId], groupBy });
+export function showGraphForSegment(
+    segmentId: api.WorkspaceSegmentId,
+    groupBy: string[],
+    workspaceVersionId?: api.WorkspaceVersionId
+) {
+    showGraph({ type: "segment", segmentIds: [segmentId], groupBy, workspaceVersionId });
 }
 
 function showGraph(params: TransitionGraphParams) {
@@ -278,7 +288,9 @@ export class TransitionGraph {
 
         switch (params.type) {
             case "timelines":
-                res = await this.apiClient.timelines().groupedGraph(params.timelines, params.groupBy);
+                res = await this.apiClient
+                    .timelines()
+                    .groupedGraph(params.timelines, params.groupBy, params.workspaceVersionId);
                 break;
             case "segment":
                 if (params.segmentIds.length == 1) {
@@ -291,7 +303,9 @@ export class TransitionGraph {
                             timelineIds.push(tl.id);
                         }
                     }
-                    res = await this.apiClient.timelines().groupedGraph(timelineIds, params.groupBy);
+                    res = await this.apiClient
+                        .timelines()
+                        .groupedGraph(timelineIds, params.groupBy, params.workspaceVersionId);
                 }
                 break;
         }

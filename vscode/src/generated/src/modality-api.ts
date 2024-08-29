@@ -497,6 +497,11 @@ export interface components {
        * @description How many times did events of this group occur?
        */
       count?: number | null;
+      /**
+       * @description (rule, component) pairs for any timeline components associated with this
+       * node. Will be present if the graph was grouped by timeline component.
+       */
+      timeline_components: ((string & string)[])[];
     };
     LocatedError: {
       end: number;
@@ -612,7 +617,7 @@ export interface components {
     };
     SegmentRegionKind: {
       id: components["schemas"]["WorkspaceSegmentId"];
-      timeline_filter?: components["schemas"]["UnstructuredTimelineFilter"] | null;
+      timeline_selection?: components["schemas"]["TimelineSelection"] | null;
       workspace_name: components["schemas"]["WorkspaceName"];
     };
     SegmentationRuleName: string;
@@ -706,6 +711,11 @@ export interface components {
       id: components["schemas"]["TimelineId"];
       name?: string | null;
     };
+    TimelineSelection: OneOf<[{
+      Filter: components["schemas"]["UnstructuredTimelineFilter"];
+    }, {
+      Explicit: components["schemas"]["TimelineId"][];
+    }]>;
     /** @description Timelines operation errors */
     TimelinesError: OneOf<[{
       /** @description Invalid Uuid */
@@ -729,7 +739,7 @@ export interface components {
      */
     UnstructuredTimelineFilter: string;
     WholeWorkspaceRegionKind: {
-      timeline_filter?: components["schemas"]["UnstructuredTimelineFilter"] | null;
+      timeline_selection?: components["schemas"]["TimelineSelection"] | null;
       workspace_name: components["schemas"]["WorkspaceName"];
       workspace_version_id: components["schemas"]["WorkspaceVersionId"];
     };
@@ -1664,6 +1674,8 @@ export interface operations {
       query?: {
         /** @description Grouping attr key */
         group_by?: string[] | null;
+        /** @description Workspace version id */
+        workspace_version_id?: components["schemas"]["WorkspaceVersionId"] | null;
       };
     };
     requestBody: {

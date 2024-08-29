@@ -199,6 +199,7 @@ export class ExperimentsTreeDataProvider implements vscode.TreeDataProvider<Expe
             title: `Experiment Impact for scenario '${scenario.scenarioName}'`,
             groupBy: ["timeline.name"],
             assignNodeProps,
+            workspaceVersionId: this.wss.activeWorkspaceVersionId,
         });
     }
 

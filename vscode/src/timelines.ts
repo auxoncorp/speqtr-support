@@ -251,7 +251,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
 
     transitionGraph(item: TimelineTreeItemData) {
         transitionGraph.promptForGraphGrouping((groupBy) => {
-            transitionGraph.showGraphForTimelines(item.getTimelineIds(), groupBy);
+            transitionGraph.showGraphForTimelines(item.getTimelineIds(), groupBy, this.wss.activeWorkspaceVersionId);
         });
     }
 
@@ -260,7 +260,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         timelineIds = [...new Set(timelineIds)]; // dedupe
 
         transitionGraph.promptForGraphGrouping((groupBy) => {
-            transitionGraph.showGraphForTimelines(timelineIds, groupBy);
+            transitionGraph.showGraphForTimelines(timelineIds, groupBy, this.wss.activeWorkspaceVersionId);
         });
     }
 

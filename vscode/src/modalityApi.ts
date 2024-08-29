@@ -496,8 +496,15 @@ export class SegmentClient {
 export class TimelinesClient {
     constructor(private readonly client: InternalClient) {}
 
-    async groupedGraph(timeline_ids: string[], groupBy: string[]): Promise<GroupedGraph> {
+    async groupedGraph(
+        timeline_ids: string[],
+        groupBy: string[],
+        workspaceVersionId?: WorkspaceVersionId
+    ): Promise<GroupedGraph> {
         const query = groupBy.map((gb) => ["group_by", gb]);
+        if (workspaceVersionId) {
+            query.push(["workspace_version_id", workspaceVersionId]);
+        }
 
         const res = await this.client.post("/v2/timelines/grouped_graph", {
             body: timeline_ids,
