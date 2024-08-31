@@ -241,6 +241,13 @@ function makeCytoscapeStylesheet(edgeLabelMode: EdgeLabelMode): cytoscape.Styles
             },
         },
         {
+            selector: "node.component",
+            style: {
+                "text-valign": "top",
+                "background-color": browserStyle.getPropertyValue("--vscode-sideBar-background"),
+            },
+        },
+        {
             selector: "edge",
             style: {
                 label: (edge: cytoscape.EdgeSingular): string => {
@@ -272,6 +279,7 @@ function makeCytoscapeStylesheet(edgeLabelMode: EdgeLabelMode): cytoscape.Styles
             selector: "node:selected",
             style: {
                 "border-color": browserStyle.getPropertyValue("--vscode-editorGutter-deletedBackground"),
+                "background-color": browserStyle.getPropertyValue("--vscode-list-inactiveSelectionBackground"),
             },
         },
         {
