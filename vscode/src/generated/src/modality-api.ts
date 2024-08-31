@@ -708,6 +708,7 @@ export interface components {
     /** Format: uuid */
     TimelineId: string;
     TimelineOverview: {
+      components: ((string & string)[])[];
       id: components["schemas"]["TimelineId"];
       name?: string | null;
     };
@@ -1834,6 +1835,8 @@ export interface operations {
       query?: {
         /** @description Grouping attr key */
         group_by?: string[] | null;
+        /** @description Group by timeline component */
+        group_by_timeline_component?: boolean | null;
       };
       path: {
         /** @description Workspace version id */
@@ -1971,6 +1974,8 @@ export interface operations {
       query?: {
         /** @description Grouping attr key */
         group_by?: string[] | null;
+        /** @description Group by timeline component */
+        group_by_timeline_component?: boolean | null;
       };
       path: {
         /** @description Workspace Version Id */

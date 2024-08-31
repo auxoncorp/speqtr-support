@@ -1932,6 +1932,17 @@
                             "nullable": true
                         },
                         "explode": true
+                    },
+                    {
+                        "name": "group_by_timeline_component",
+                        "in": "query",
+                        "description": "Group by timeline component",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "nullable": true
+                        },
+                        "explode": true
                     }
                 ],
                 "responses": {
@@ -2190,6 +2201,17 @@
                             "items": {
                                 "type": "string"
                             },
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "group_by_timeline_component",
+                        "in": "query",
+                        "description": "Group by timeline component",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
                             "nullable": true
                         },
                         "explode": true
@@ -4437,8 +4459,24 @@
             },
             "TimelineOverview": {
                 "type": "object",
-                "required": ["id"],
+                "required": ["id", "components"],
                 "properties": {
+                    "components": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        }
+                    },
                     "id": {
                         "$ref": "#/components/schemas/TimelineId"
                     },
