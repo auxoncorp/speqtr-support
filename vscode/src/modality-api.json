@@ -1641,6 +1641,20 @@
                             "nullable": true
                         },
                         "explode": true
+                    },
+                    {
+                        "name": "workspace_version_id",
+                        "in": "query",
+                        "description": "Workspace version id",
+                        "required": false,
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/WorkspaceVersionId"
+                                }
+                            ],
+                            "nullable": true
+                        }
                     }
                 ],
                 "requestBody": {
@@ -1918,6 +1932,17 @@
                             "nullable": true
                         },
                         "explode": true
+                    },
+                    {
+                        "name": "group_by_timeline_component",
+                        "in": "query",
+                        "description": "Group by timeline component",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "nullable": true
+                        },
+                        "explode": true
                     }
                 ],
                 "responses": {
@@ -2176,6 +2201,17 @@
                             "items": {
                                 "type": "string"
                             },
+                            "nullable": true
+                        },
+                        "explode": true
+                    },
+                    {
+                        "name": "group_by_timeline_component",
+                        "in": "query",
+                        "description": "Group by timeline component",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
                             "nullable": true
                         },
                         "explode": true
@@ -3697,7 +3733,7 @@
             "GroupedGraphNode": {
                 "type": "object",
                 "description": "A node in a `GroupedGraph`",
-                "required": ["attr_vals"],
+                "required": ["attr_vals", "timeline_components"],
                 "properties": {
                     "attr_vals": {
                         "type": "array",
@@ -3717,6 +3753,23 @@
                         "description": "How many times did events of this group occur?",
                         "nullable": true,
                         "minimum": 0
+                    },
+                    "timeline_components": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "description": "(rule, component) pairs for any timeline components associated with this\nnode. Will be present if the graph was grouped by timeline component."
                     }
                 }
             },
@@ -4112,10 +4165,10 @@
                     "id": {
                         "$ref": "#/components/schemas/WorkspaceSegmentId"
                     },
-                    "timeline_filter": {
+                    "timeline_selection": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/UnstructuredTimelineFilter"
+                                "$ref": "#/components/schemas/TimelineSelection"
                             }
                         ],
                         "nullable": true
@@ -4406,8 +4459,24 @@
             },
             "TimelineOverview": {
                 "type": "object",
-                "required": ["id"],
+                "required": ["id", "components"],
                 "properties": {
+                    "components": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        }
+                    },
                     "id": {
                         "$ref": "#/components/schemas/TimelineId"
                     },
@@ -4416,6 +4485,31 @@
                         "nullable": true
                     }
                 }
+            },
+            "TimelineSelection": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "required": ["Filter"],
+                        "properties": {
+                            "Filter": {
+                                "$ref": "#/components/schemas/UnstructuredTimelineFilter"
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "required": ["Explicit"],
+                        "properties": {
+                            "Explicit": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/TimelineId"
+                                }
+                            }
+                        }
+                    }
+                ]
             },
             "TimelinesError": {
                 "oneOf": [
@@ -4467,10 +4561,10 @@
                 "type": "object",
                 "required": ["workspace_name", "workspace_version_id"],
                 "properties": {
-                    "timeline_filter": {
+                    "timeline_selection": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/UnstructuredTimelineFilter"
+                                "$ref": "#/components/schemas/TimelineSelection"
                             }
                         ],
                         "nullable": true

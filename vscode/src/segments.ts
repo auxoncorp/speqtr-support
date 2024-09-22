@@ -162,8 +162,13 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     }
 
     transitionGraph(item: SegmentTreeItemData) {
-        transitionGraph.promptForGraphGrouping((groupBy) => {
-            transitionGraph.showGraphForSegment(item.segment.id, groupBy);
+        transitionGraph.promptForGraphGrouping((groupBy, groupByTimelineComponent) => {
+            transitionGraph.showGraphForSegment(
+                item.segment.id,
+                groupBy,
+                groupByTimelineComponent,
+                this.wss.activeWorkspaceVersionId
+            );
         });
     }
 }

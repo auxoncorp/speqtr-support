@@ -52,7 +52,9 @@ export interface TimelineParams {
     title?: string;
     timelines: string[];
     groupBy: string[];
+    groupByTimelineComponent: boolean;
     assignNodeProps?: AssignNodeProps;
+    workspaceVersionId?: api.WorkspaceVersionId;
 }
 
 export interface SegmentParams {
@@ -60,7 +62,9 @@ export interface SegmentParams {
     title?: string;
     segmentIds: [api.WorkspaceSegmentId];
     groupBy: string[];
+    groupByTimelineComponent: boolean;
     assignNodeProps?: AssignNodeProps;
+    workspaceVersionId?: api.WorkspaceVersionId;
 }
 
 export type TransitionGraphParams = TimelineParams | SegmentParams;
@@ -100,10 +104,11 @@ interface GraphGroupingItem {
     label: string;
     kind?: vscode.QuickPickItemKind;
     groupBy?: string[];
+    groupByTimelineComponent?: boolean;
     custom?: boolean;
 }
 
-export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
+export function promptForGraphGrouping(picked: (groupBy: string[], groupByTimelineComponent: boolean) => void) {
     function step1() {
         const quickPick: vscode.QuickPick<GraphGroupingItem> = vscode.window.createQuickPick();
         const disposables: vscode.Disposable[] = [quickPick];
@@ -111,10 +116,15 @@ export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
         quickPick.title = "Transition Graph: Select event grouping method";
         quickPick.items = [
             {
+                label: "Group by timeline",
+                groupBy: ["timeline.name", "timeline.id"],
+                groupByTimelineComponent: true,
+            },
+            {
                 label: "Group by event and timeline",
                 groupBy: ["event.name", "timeline.name", "timeline.id"],
+                groupByTimelineComponent: true,
             },
-            { label: "Group by timeline", groupBy: ["timeline.name", "timeline.id"] },
             { label: "", kind: vscode.QuickPickItemKind.Separator },
             { label: "Custom Grouping...", custom: true },
         ];
@@ -126,7 +136,7 @@ export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
             quickPick.onDidChangeSelection((selection) => {
                 quickPick.hide();
                 if (selection[0]?.groupBy) {
-                    picked(selection[0]?.groupBy);
+                    picked(selection[0]?.groupBy, selection[0]?.groupByTimelineComponent || false);
                 } else if (selection[0]?.custom) {
                     step2();
                 }
@@ -152,7 +162,7 @@ export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
                 const val = manualInput.value;
                 manualInput.hide();
                 const groupBy = val.split(",").map((s) => s.trim());
-                picked(groupBy);
+                picked(groupBy, false);
             }),
             manualInput.onDidTriggerButton((item) => {
                 manualInput.hide();
@@ -167,12 +177,22 @@ export function promptForGraphGrouping(picked: (groupBy: string[]) => void) {
     step1();
 }
 
-export function showGraphForTimelines(timelineIds: string[], groupBy: string[]) {
-    showGraph({ type: "timelines", timelines: timelineIds, groupBy });
+export function showGraphForTimelines(
+    timelineIds: string[],
+    groupBy: string[],
+    groupByTimelineComponent: boolean,
+    workspaceVersionId?: api.WorkspaceVersionId
+) {
+    showGraph({ type: "timelines", timelines: timelineIds, groupBy, groupByTimelineComponent, workspaceVersionId });
 }
 
-export function showGraphForSegment(segmentId: api.WorkspaceSegmentId, groupBy: string[]) {
-    showGraph({ type: "segment", segmentIds: [segmentId], groupBy });
+export function showGraphForSegment(
+    segmentId: api.WorkspaceSegmentId,
+    groupBy: string[],
+    groupByTimelineComponent: boolean,
+    workspaceVersionId?: api.WorkspaceVersionId
+) {
+    showGraph({ type: "segment", segmentIds: [segmentId], groupBy, groupByTimelineComponent, workspaceVersionId });
 }
 
 function showGraph(params: TransitionGraphParams) {
@@ -278,11 +298,20 @@ export class TransitionGraph {
 
         switch (params.type) {
             case "timelines":
-                res = await this.apiClient.timelines().groupedGraph(params.timelines, params.groupBy);
+                res = await this.apiClient
+                    .timelines()
+                    .groupedGraph(
+                        params.timelines,
+                        params.groupBy,
+                        params.groupByTimelineComponent,
+                        params.workspaceVersionId
+                    );
                 break;
             case "segment":
                 if (params.segmentIds.length == 1) {
-                    res = await this.apiClient.segment(params.segmentIds[0]).groupedGraph(params.groupBy);
+                    res = await this.apiClient
+                        .segment(params.segmentIds[0])
+                        .groupedGraph(params.groupBy, params.groupByTimelineComponent);
                 } else {
                     const timelineIds: api.TimelineId[] = [];
                     // Not ideal, but okay for now #2714
@@ -291,7 +320,14 @@ export class TransitionGraph {
                             timelineIds.push(tl.id);
                         }
                     }
-                    res = await this.apiClient.timelines().groupedGraph(timelineIds, params.groupBy);
+                    res = await this.apiClient
+                        .timelines()
+                        .groupedGraph(
+                            timelineIds,
+                            params.groupBy,
+                            params.groupByTimelineComponent,
+                            params.workspaceVersionId
+                        );
                 }
                 break;
         }
@@ -306,6 +342,10 @@ export class TransitionGraph {
             return directedGraph;
         }
 
+        // rule name -> component name -> node id
+        const componentNodeId: { [key: string]: { [key: string]: string } } = {};
+
+        let nextComponentNodeId = res.nodes.length;
         for (let i = 0; i < res.nodes.length; i++) {
             const node = res.nodes[i];
             let title: string;
@@ -325,11 +365,36 @@ export class TransitionGraph {
                 title = node.attr_vals.join(", ");
             }
 
+            let parentComponentNodeId = null;
+            for (const [ruleName, componentName] of node.timeline_components) {
+                if (!componentNodeId[ruleName]) {
+                    componentNodeId[ruleName] = {};
+                }
+
+                if (!componentNodeId[ruleName][componentName]) {
+                    const componentNode = new Node(nextComponentNodeId);
+                    componentNodeId[ruleName][componentName] = nextComponentNodeId.toString();
+                    componentNode.label = `${ruleName}: ${componentName}`;
+                    componentNode.addClass("component");
+                    if (parentComponentNodeId != null) {
+                        componentNode.parent = parentComponentNodeId;
+                    }
+                    directedGraph.nodes.push(componentNode);
+
+                    nextComponentNodeId += 1;
+                }
+
+                parentComponentNodeId = componentNodeId[ruleName][componentName];
+            }
+
             const graphNode = new Node(i);
             if (node.count) {
                 graphNode.count = node.count;
             }
             graphNode.label = title;
+            if (parentComponentNodeId != null) {
+                graphNode.parent = parentComponentNodeId;
+            }
 
             if (params.assignNodeProps) {
                 const classes = params.assignNodeProps.getClasses(title);

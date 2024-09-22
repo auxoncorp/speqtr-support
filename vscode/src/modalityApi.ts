@@ -343,7 +343,12 @@ export class SegmentClient {
         return unwrapData<string[], any>(res);
     }
 
-    async groupedGraph(groupBy: string[]): Promise<GroupedGraph> {
+    async groupedGraph(groupBy: string[], groupByTimelineComponent: boolean): Promise<GroupedGraph> {
+        const query = groupBy.map((gb) => ["group_by", gb]);
+        if (groupByTimelineComponent) {
+            query.push(["group_by_timeline_component", "true"]);
+        }
+
         const res = await this.client.get(
             "/v2/workspaces/{workspace_version_id}/segments/{rule_name}/{segment_name}/grouped_graph",
             {
@@ -354,7 +359,7 @@ export class SegmentClient {
                     // The actual type is "Something you can pass to the UrlSearchParams constructor".
                     // Here, we use the 'array of tuples' form to get the group_by query parameter
                     // to appear multiple times.
-                    query: groupBy.map((gb) => ["group_by", gb]),
+                    query,
                 },
             }
         );
@@ -496,8 +501,20 @@ export class SegmentClient {
 export class TimelinesClient {
     constructor(private readonly client: InternalClient) {}
 
-    async groupedGraph(timeline_ids: string[], groupBy: string[]): Promise<GroupedGraph> {
+    async groupedGraph(
+        timeline_ids: string[],
+        groupBy: string[],
+        groupByTimelineComponent: boolean,
+        workspaceVersionId?: WorkspaceVersionId
+    ): Promise<GroupedGraph> {
         const query = groupBy.map((gb) => ["group_by", gb]);
+        if (groupByTimelineComponent) {
+            query.push(["group_by_timeline_component", "true"]);
+        }
+
+        if (workspaceVersionId) {
+            query.push(["workspace_version_id", workspaceVersionId]);
+        }
 
         const res = await this.client.post("/v2/timelines/grouped_graph", {
             body: timeline_ids,

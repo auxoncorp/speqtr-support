@@ -3,7 +3,7 @@
     "compilerOptions": {
         "outDir": "../out/ts/webview",
         "rootDir": "..",
-        "lib": ["es2021", "dom"]
+        "lib": ["ES2021", "ES2021.String", "DOM"]
     },
     "include": ["./**/*.ts", "components/cytoscape.tsx"],
     "references": [{ "path": "../common-src" }]

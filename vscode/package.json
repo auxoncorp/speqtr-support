@@ -220,7 +220,7 @@
                 },
                 {
                     "command": "auxon.timelines.deleteMany",
-                    "when": "view == auxon.timelines && ((viewItem == timeline && listMultiSelection) || viewItem == timelineGroup || viewItem == timelineGroupByName)",
+                    "when": "view == auxon.timelines && ((viewItem == timeline && listMultiSelection) || viewItem == timelineGroup)",
                     "group": "2_context@2"
                 },
                 {
@@ -405,6 +405,16 @@
                     "command": "auxon.timelines.refresh",
                     "when": "view == auxon.timelines",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "auxon.timelines.groupTimelinesByComponent",
+                    "when": "view == auxon.timelines && auxon.timelinesGroupingMode != 'BY_COMPONENT'",
+                    "group": "7_modification@1"
+                },
+                {
+                    "command": "auxon.timelines.clearGroupTimelinesByComponent",
+                    "when": "view == auxon.timelines && auxon.timelinesGroupingMode == 'BY_COMPONENT'",
+                    "group": "7_modification@1"
                 },
                 {
                     "command": "auxon.timelines.setGroupingAttrs",
@@ -616,12 +626,20 @@
                 "title": "✓ Group timelines by attribute"
             },
             {
+                "command": "auxon.timelines.groupTimelinesByComponent",
+                "title": "Group timelines by component"
+            },
+            {
+                "command": "auxon.timelines.clearGroupTimelinesByComponent",
+                "title": "✓ Group timelines by component"
+            },
+            {
                 "command": "auxon.timelines.groupTimelinesByNameComponents",
-                "title": "Group timelines by name components"
+                "title": "Group timelines by period-separated name"
             },
             {
                 "command": "auxon.timelines.clearGroupTimelinesByNameComponents",
-                "title": "✓ Group timelines by name components"
+                "title": "✓ Group timelines by period-separated name"
             },
             {
                 "command": "auxon.timelines.inspect",

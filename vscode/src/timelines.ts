@@ -16,6 +16,14 @@ const execFile = util.promisify(child_process.execFile);
 class TimelinesTreeMemento {
     constructor(private readonly memento: vscode.Memento) {}
 
+    getGroupByTimelineComponent(): boolean {
+        return this.memento.get("timelinesTree_groupByTimelineComponent", true);
+    }
+
+    async setGroupByTimelineComponent(val: boolean): Promise<void> {
+        return this.memento.update("timelinesTree_groupByTimelineComponent", val);
+    }
+
     getGroupByTimelineNameComponents(): boolean {
         return this.memento.get("timelinesTree_groupByTimelineNameComponents", false);
     }
@@ -35,6 +43,7 @@ class TimelinesTreeMemento {
 
 enum TimelinesGroupingMode {
     FlatList = "FLAT_LIST",
+    ByComponent = "BY_COMPONENT",
     ByAttributes = "BY_ATTRIBUTES",
     ByNameComponents = "BY_NAME_COMPONENTS",
 }
@@ -76,6 +85,12 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
                 this.setGroupingAttrs();
             }),
             vscode.commands.registerCommand("auxon.timelines.clearGroupingAttrs", () => {
+                this.disableTimelineGrouping();
+            }),
+            vscode.commands.registerCommand("auxon.timelines.groupTimelinesByComponent", async () => {
+                await this.groupTimelinesByComponent();
+            }),
+            vscode.commands.registerCommand("auxon.timelines.clearGroupTimelinesByComponent", () => {
                 this.disableTimelineGrouping();
             }),
             vscode.commands.registerCommand("auxon.timelines.groupTimelinesByNameComponents", () => {
@@ -126,6 +141,7 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         }
 
         // root element
+        const groupByTimelineComponent = this.uiState.getGroupByTimelineComponent();
         const groupingAttrKeys = this.uiState.getGroupingAttrKeys();
         const groupByTimelineNameComponents = this.uiState.getGroupByTimelineNameComponents();
         if (groupingAttrKeys.length > 0) {
@@ -174,7 +190,19 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
                 return a.name.localeCompare(b.name);
             });
 
-            if (groupByTimelineNameComponents) {
+            if (groupByTimelineComponent) {
+                const root = new TimelineGroupByNameTreeItemData("");
+                for (const timeline of timelines) {
+                    const namePath = [];
+                    for (const componentTuple of timeline.components) {
+                        const nodeName = `${componentTuple[0]}: ${componentTuple[1]}`;
+                        namePath.push(nodeName);
+                    }
+                    root.insertNode(timeline, namePath);
+                }
+                root.updateDescriptions();
+                return root.children(this.apiClient);
+            } else if (groupByTimelineNameComponents) {
                 const root = new TimelineGroupByNameTreeItemData("");
                 for (const timeline of timelines) {
                     let timelineNamePath: string[] = [];
@@ -250,8 +278,13 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     transitionGraph(item: TimelineTreeItemData) {
-        transitionGraph.promptForGraphGrouping((groupBy) => {
-            transitionGraph.showGraphForTimelines(item.getTimelineIds(), groupBy);
+        transitionGraph.promptForGraphGrouping((groupBy, groupByTimelineComponent) => {
+            transitionGraph.showGraphForTimelines(
+                item.getTimelineIds(),
+                groupBy,
+                groupByTimelineComponent,
+                this.wss.activeWorkspaceVersionId
+            );
         });
     }
 
@@ -259,14 +292,20 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         let timelineIds = this.view.selection.flatMap((data) => data.getTimelineIds());
         timelineIds = [...new Set(timelineIds)]; // dedupe
 
-        transitionGraph.promptForGraphGrouping((groupBy) => {
-            transitionGraph.showGraphForTimelines(timelineIds, groupBy);
+        transitionGraph.promptForGraphGrouping((groupBy, groupByTimelineComponent) => {
+            transitionGraph.showGraphForTimelines(
+                timelineIds,
+                groupBy,
+                groupByTimelineComponent,
+                this.wss.activeWorkspaceVersionId
+            );
         });
     }
 
     async disableTimelineGrouping() {
-        this.uiState.setGroupingAttrKeys([]);
-        this.uiState.setGroupByTimelineNameComponents(false);
+        await this.uiState.setGroupingAttrKeys([]);
+        await this.uiState.setGroupByTimelineNameComponents(false);
+        await this.uiState.setGroupByTimelineComponent(false);
         this.refresh();
     }
 
@@ -283,14 +322,22 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
         const pickedItems = await vscode.window.showQuickPick(pickItems, { canPickMany: true });
         if (pickedItems) {
             // User actually selected some attributes to use
-            this.uiState.setGroupingAttrKeys(pickedItems.map((pi) => pi.label).sort());
+            await this.uiState.setGroupingAttrKeys(pickedItems.map((pi) => pi.label).sort());
             this.refresh();
         }
     }
 
-    groupTimelinesByNameComponents() {
-        this.uiState.setGroupingAttrKeys([]);
-        this.uiState.setGroupByTimelineNameComponents(true);
+    async groupTimelinesByComponent() {
+        await this.uiState.setGroupingAttrKeys([]);
+        await this.uiState.setGroupByTimelineComponent(true);
+        await this.uiState.setGroupByTimelineNameComponents(false);
+        this.refresh();
+    }
+
+    async groupTimelinesByNameComponents() {
+        await this.uiState.setGroupingAttrKeys([]);
+        await this.uiState.setGroupByTimelineComponent(false);
+        await this.uiState.setGroupByTimelineNameComponents(true);
         this.refresh();
     }
 
@@ -317,10 +364,13 @@ export class TimelinesTreeDataProvider implements vscode.TreeDataProvider<Timeli
     }
 
     // We use this to manage the context menu sort option checkboxes.
-    // It's not elegant, but it's all we can do for now
+    // It's not elegant, but it's all we can do for now, until
+    // https://github.com/microsoft/vscode/issues/109306 lands (5 years and counting!)
     updateGroupingMenuContext() {
         let groupingMode = TimelinesGroupingMode.FlatList;
-        if (this.uiState.getGroupByTimelineNameComponents()) {
+        if (this.uiState.getGroupByTimelineComponent()) {
+            groupingMode = TimelinesGroupingMode.ByComponent;
+        } else if (this.uiState.getGroupByTimelineNameComponents()) {
             groupingMode = TimelinesGroupingMode.ByNameComponents;
         } else if (this.uiState.getGroupingAttrKeys().length > 0) {
             groupingMode = TimelinesGroupingMode.ByAttributes;
@@ -405,7 +455,7 @@ abstract class TimelineTreeItemData {
 }
 
 export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
-    contextValue = "timelineGroupByName";
+    contextValue = "timelineGroup";
 
     constructor(public name: string) {
         super();
@@ -420,8 +470,8 @@ export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
         return this.childItems;
     }
 
-    insertNode(timeline: api.TimelineOverview, timelineNamePath: string[]) {
-        const nextNodeName = timelineNamePath.shift();
+    insertNode(timeline: api.TimelineOverview, nodePath: string[]) {
+        const nextNodeName = nodePath.shift();
 
         if (!nextNodeName) {
             this.childItems.push(new TimelineLeafTreeItemData(timeline));
@@ -446,7 +496,7 @@ export class TimelineGroupByNameTreeItemData extends TimelineTreeItemData {
             if (!(nextNode instanceof TimelineGroupByNameTreeItemData)) {
                 throw new Error("Internal error: timeline tree node not of expected type");
             }
-            nextNode.insertNode(timeline, timelineNamePath);
+            nextNode.insertNode(timeline, nodePath);
         }
     }
 }
@@ -457,6 +507,7 @@ export class TimelineGroupTreeItemData extends TimelineTreeItemData {
 
     constructor(public timeline_group: api.TimelineGroup) {
         super();
+        this.iconPath = new vscode.ThemeIcon("git-pull-request-draft");
 
         let name = null;
         for (const val of Object.values(this.timeline_group.group_attributes)) {
