@@ -5,6 +5,7 @@ import * as specCoverage from "./specCoverage";
 import * as transitionGraph from "./transitionGraph";
 import * as workspaceState from "./workspaceState";
 import { ModalityLogCommandArgs } from "./modalityLog";
+import { SegmentId } from "common-src/experimentWebViewApi";
 
 export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<SegmentTreeItemData> {
     modalityView: vscode.TreeView<SegmentTreeItemData>;
@@ -88,8 +89,8 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
         this._onDidChangeTreeData.fire(undefined);
     }
 
-    getTreeItem(element: SegmentTreeItemData): SegmentTreeItem {
-        return new SegmentTreeItem(element);
+    getTreeItem(element: SegmentTreeItemData): vscode.TreeItem {
+        return element.treeItem();
     }
 
     async getChildren(element?: SegmentTreeItemData): Promise<SegmentTreeItemData[]> {
@@ -104,27 +105,47 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     }
 
     private async getChildrenInner(element?: SegmentTreeItemData): Promise<SegmentTreeItemData[]> {
-        // only the root has children
-        if (element != null) {
-            return [];
+        if (element) {
+            return element.childItems;
         }
 
         const workspaceSegments = await this.apiClient.workspace(this.wss.activeWorkspaceVersionId).segments();
-
-        const items = [];
-        for (const segment of workspaceSegments) {
-            items.push(new SegmentTreeItemData(segment, this.wss.isSegmentActive(segment.id)));
-        }
-
-        items.sort((a, b) => {
-            if (a?.segment?.latest_receive_time == null) {
+        workspaceSegments.sort((a, b) => {
+            if (a.latest_receive_time == null) {
                 return 1;
             }
-            if (b?.segment?.latest_receive_time == null) {
+            if (b.latest_receive_time == null) {
                 return -1;
             }
-            return a.segment.latest_receive_time - b.segment.latest_receive_time;
+            return a.latest_receive_time - b.latest_receive_time;
         });
+
+        const root = new GroupSegmentTreeItemData("<root>");
+        for (const segment of workspaceSegments) {
+            const namePath = segment.id.segment_name.split("/");
+            let currentItem = root;
+            for (;;) {
+                const nodeName = namePath.shift();
+                if (!nodeName) {
+                    break;
+                }
+
+                if (namePath.length == 0) {
+                    currentItem.childItems.push(
+                        new LeafSegmentTreeItemData(nodeName, segment, this.wss.isSegmentActive(segment.id))
+                    );
+                    break;
+                }
+
+                let newItem = currentItem.childItems.find((i) => i.name == nodeName);
+                if (!newItem) {
+                    newItem = new GroupSegmentTreeItemData(nodeName);
+                    currentItem.childItems.push(newItem);
+                }
+
+                currentItem = newItem;
+            }
+        }
 
         if (this.wss.isWholeWorkspaceActive()) {
             this.activeView.message =
@@ -132,17 +153,19 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
             return [];
         } else {
             this.activeView.message = undefined;
-            return items;
+            return root.childItems;
         }
     }
 
-    async setActiveCommand(item: SegmentTreeItemData) {
+    async setActiveCommand(item: LeafSegmentTreeItemData) {
         await this.wss.setActiveSegments([item.segment.id]);
     }
 
     async setActiveFromSelectionCommand() {
-        const segmentIds = this.activeView.selection.map((item) => item.segment.id);
-        this.wss.setActiveSegments(segmentIds);
+        const segmentIds = this.activeView.selection.map((item) => item.segmentId()).filter((id) => id != null);
+        if (segmentIds != null) {
+            this.wss.setActiveSegments(segmentIds);
+        }
     }
 
     async setLatestActiveCommand() {
@@ -157,11 +180,11 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
         await this.wss.setWholeWorkspaceActive();
     }
 
-    async showSpecCoverageForSegment(item: SegmentTreeItemData) {
+    async showSpecCoverageForSegment(item: LeafSegmentTreeItemData) {
         await this.cov.showSpecCoverage({ segmentId: item.segment.id });
     }
 
-    transitionGraph(item: SegmentTreeItemData) {
+    transitionGraph(item: LeafSegmentTreeItemData) {
         transitionGraph.promptForGraphGrouping((groupBy, groupByTimelineComponent) => {
             transitionGraph.showGraphForSegment(
                 item.segment.id,
@@ -173,10 +196,76 @@ export class SegmentsTreeDataProvider implements vscode.TreeDataProvider<Segment
     }
 }
 
+abstract class SegmentTreeItemData {
+    abstract name: string;
+    abstract contextValue: string;
+    childItems: SegmentTreeItemData[] = [];
+    timelineId?: api.TimelineId = undefined;
+    description?: string = undefined;
+    tooltip?: vscode.MarkdownString = undefined;
+    iconPath?: vscode.ThemeIcon = undefined;
+
+    treeItem(): vscode.TreeItem {
+        let state = vscode.TreeItemCollapsibleState.Collapsed;
+        if (!this.canHaveChildren()) {
+            state = vscode.TreeItemCollapsibleState.None;
+        }
+
+        const item = new vscode.TreeItem(this.name, state);
+        item.contextValue = this.contextValue;
+        item.description = this.description;
+        item.tooltip = this.tooltip;
+        item.iconPath = this.iconPath;
+
+        return item;
+    }
+
+    canHaveChildren(): boolean {
+        return false;
+    }
+
+    segmentId(): SegmentId | null {
+        return null;
+    }
+
+    abstract segmentCount(): number;
+
+    // async children(_apiClient: api.Client): Promise<SegmentTreeItemData[]> {
+    //     return [];
+    // }
+}
+
 const ACTIVE_ITEM_MARKER = "✦";
 
-export class SegmentTreeItemData {
-    constructor(public segment: api.WorkspaceSegmentMetadata, public isActive: boolean) {}
+export class LeafSegmentTreeItemData extends SegmentTreeItemData {
+    contextValue = "segment";
+
+    constructor(public name: string, public segment: api.WorkspaceSegmentMetadata, public isActive: boolean) {
+        super();
+
+        // js date is millis since the epoch; we have nanos.
+        if (segment.latest_receive_time != null) {
+            const segDate = new Date(segment.latest_receive_time / 1_000_000);
+            this.description = segDate.toLocaleString();
+        }
+
+        let tooltip = `- **Segment Name**: ${segment.id.segment_name}`;
+        tooltip += `\n- **Segmentation Rule Name**: ${segment.id.rule_name}`;
+        if (isActive) {
+            tooltip += `\n- **${ACTIVE_ITEM_MARKER}** This is the currently active segment.`;
+        }
+        this.tooltip = new vscode.MarkdownString(tooltip);
+
+        if (isActive) {
+            this.iconPath = new vscode.ThemeIcon("pass", new vscode.ThemeColor("debugIcon.startForeground"));
+        } else {
+            this.iconPath = new vscode.ThemeIcon("git-compare");
+        }
+    }
+
+    segmentId(): SegmentId | null {
+        return this.segment.id;
+    }
 
     getModalityLogCommandArgs(): ModalityLogCommandArgs {
         return new ModalityLogCommandArgs({
@@ -184,32 +273,34 @@ export class SegmentTreeItemData {
             segment: this.segment.id.segment_name,
         });
     }
+
+    segmentCount(): number {
+        return 1;
+    }
 }
 
-class SegmentTreeItem extends vscode.TreeItem {
-    contextValue = "segment";
+export class GroupSegmentTreeItemData extends SegmentTreeItemData {
+    contextValue = "segment_group";
 
-    constructor(public readonly data: SegmentTreeItemData) {
-        const label = `${data.segment.id.segment_name}`;
-        super(label, vscode.TreeItemCollapsibleState.None);
+    constructor(public name: string) {
+        super();
+    }
 
-        // js date is millis since the epoch; we have nanos.
-        if (data?.segment?.latest_receive_time != null) {
-            const segDate = new Date(data.segment.latest_receive_time / 1_000_000);
-            this.description = segDate.toLocaleString();
-        }
+    canHaveChildren(): boolean {
+        return true;
+    }
 
-        let tooltip = `- **Segment Name**: ${data.segment.id.segment_name}`;
-        tooltip += `\n- **Segmentation Rule Name**: ${data.segment.id.rule_name}`;
-        if (data.isActive) {
-            tooltip += `\n- **${ACTIVE_ITEM_MARKER}** This is the currently active segment.`;
-        }
-        this.tooltip = new vscode.MarkdownString(tooltip);
-
-        if (data.isActive) {
-            this.iconPath = new vscode.ThemeIcon("pass", new vscode.ThemeColor("debugIcon.startForeground"));
+    treeItem(): vscode.TreeItem {
+        const count = this.segmentCount();
+        if (count == 1) {
+            this.description = "1 segment";
         } else {
-            this.iconPath = new vscode.ThemeIcon("git-compare");
+            this.description = `${count} segments`;
         }
+        return super.treeItem();
+    }
+
+    segmentCount(): number {
+        return this.childItems.map((i) => i.segmentCount()).reduce((a, b) => a + b);
     }
 }
