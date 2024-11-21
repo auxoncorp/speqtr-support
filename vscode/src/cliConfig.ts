@@ -70,6 +70,15 @@ export async function usedSegments(): Promise<ContextSegment> {
  */
 export async function activeSegments(): Promise<api.WorkspaceSegmentMetadata[]> {
     const modality = toolPath("modality");
+
+    const segmentUseRes = await execFile(modality, ["segment", "use", "--format", "json"], { encoding: "utf8" });
+    const segmentUseJson = JSON.parse(segmentUseRes.stdout);
+    if (segmentUseJson == "All") {
+        const segmentListRes = await execFile(modality, ["segment", "list", "--detailed", "--format", "json"], { encoding: "utf8" });
+        const mds = JSON.parse(segmentListRes.stdout).segments as api.WorkspaceSegmentMetadata[];
+        return mds;
+    }
+
     try {
         const res = await execFile(modality, ["segment", "inspect", "--format", "json"], { encoding: "utf8" });
         return JSON.parse(res.stdout).segments as api.WorkspaceSegmentMetadata[];
